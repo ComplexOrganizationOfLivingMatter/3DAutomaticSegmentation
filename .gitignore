@@ -23,3 +23,6 @@
 hs_err_pid*
 /target/
 *.tif
+
+# Data folder
+PostProcessingGland/data/
