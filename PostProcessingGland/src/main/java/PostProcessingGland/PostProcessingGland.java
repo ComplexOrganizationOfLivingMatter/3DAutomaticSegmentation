@@ -17,20 +17,29 @@ import ij.process.FloatPolygon;
 import net.imglib2.RandomAccessibleInterval;
 
 import java.awt.Color;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.function.Predicate;
+
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import java.util.ArrayList;
 
 import org.scijava.command.Command;
 import org.scijava.plugin.Plugin;
 
-import 3DAutomaticSegmentation.PostProcessingGland;
+import PostProcessingGland.GUI.PostProcessingWindows;
+private String initialDirectory;
 
 public class PostProcessingGland implements PlugIn {
 
-	// Need to create a Window
-
+	// Window
+	PostProcessingWindows PostProcessingWindow;
+	
 	/**
 	 * Constructor by default
 	 */
@@ -63,7 +72,17 @@ public class PostProcessingGland implements PlugIn {
 	 * Plugin run method (non-Javadoc)
 	 * @see ij.plugin.PlugIn#run(java.lang.String)
 	 */
-
+	public void run(String arg) {
+		// Build GUI
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				ImagePlus raw_img;
+				// Create the main window
+				PostProcessingWindow = new PostProcessingWindows(raw_img);
+			}
+		});
+	}
+	
 	/**
 	 * Static method to enable multipoint selection It is mainly used to create
 	 * ROIs
@@ -80,123 +99,25 @@ public class PostProcessingGland implements PlugIn {
 		ij.gui.Toolbar.getInstance().setTool(ij.gui.Toolbar.POLYGON);
 	}
 
-  //----------------- 2D View
-  /**
-   * Put current cell to overlays (requires updateOverlay to be effective)
-   */
-  @IJ1ScriptableMethod(target=VIEW_2D, ui="STD", pr=0)
-  static public void putCurrentCellToOverlay() { 
-  	if (currentCell!=null) {
-          addToOverlay(currentCell);
-  	}    			
-  }
-  
-  /**
-   * Put dots of current user selected slice to overlays (requires updateOverlay to be effective)
-   */
-  @IJ1ScriptableMethod(target=VIEW_2D, ui="STD", pr=0)
-  static public void putCurrentSliceToOverlay() { 
-  	if (workingImP!=null) {
-		float ZS=(float) opt.getOptParam("ZScale");
-		int zSlice; //= workingImP.getZ();
+/*	public void initPostProcessingWindow() {
+		try {
+			ImagePlus raw_img = IJ.openImage();
+			
+			if (raw_img != null) {
+        
+        // this.initialDirectory = raw_img.getOriginalFileInfo().directory;
+        // postProcessing = new PostProcessingWindows(raw_img);
+        // postProcessing.pack();
 
-        if ((workingImP.getNFrames()!=1)||(workingImP.getNChannels()!=1)) {
-        	zSlice = workingImP.getZ();
-        } else {
-        	zSlice = workingImP.getSlice();
-        }
-    	for (Cell c:allCells) {
-    		CellT ct = c.getCellTAt(LimeSeg.currentFrame);
-    		if (ct!=null) {
-    			for (DotN dn:ct.dots) {
-    				if ((int)(dn.pos.z/ZS)==zSlice-1) {
-    					LimeSeg.dots_to_overlay.add(dn);
-    				}
-    			}
-    		}
-    	}
-  	}
-  }
+
+			} else {
+				// JOptionPane.showMessageDialog(panel.getParent(), "You must introduce a valid image or set of images.");
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}*/
   
-  @IJ1ScriptableMethod(target=VIEW_2D, ui="STD", pr=0)
-  static public void putCurrentTimePointToOverlay() { 
-  	if (workingImP!=null) {
-    	for (Cell c:allCells) {
-    		CellT ct = c.getCellTAt(LimeSeg.currentFrame);
-    		if (ct!=null) {
-    			for (DotN dn:ct.dots) {
-    					LimeSeg.dots_to_overlay.add(dn);
-    			}
-    		}
-    	}
-  	}
-  }
-  
-  /**
-   *  Clears image overlay (requires updateOverlay to be effective)
-   */
-  @IJ1ScriptableMethod(target=VIEW_2D, ui="STD", pr=0)
-  static public void clearOverlay() {
-      if (dots_to_overlay!=null)
-          dots_to_overlay.clear();
-  }
-  
-  /**
-   * Adds all cells into image overlay (requires updateOverlay to be effective
-   */
-  @IJ1ScriptableMethod(target=VIEW_2D, ui="STD", pr=1)
-  static public void addAllCellsToOverlay() {
-      for (int i=0;i<allCells.size();i++) {
-          Cell c= allCells.get(i);
-          addToOverlay(c);
-      }
-  } 
-  
-  /**
-   * updates Overlay of the working image with registeres dots to be overlayed
-   */
-  @IJ1ScriptableMethod(target=VIEW_2D, ui="STD", pr=2)
-  static public void updateOverlay() {
-      Overlay ov = new Overlay();
-      if (workingImP!=null) {
-        workingImP.setOverlay(ov);
-        Iterator<DotN> i=dots_to_overlay.iterator();
-        float ZS=(float) opt.getOptParam("ZScale");
-        if ((workingImP.getNFrames()!=1)||(workingImP.getNChannels()!=1)) {
-            while (i.hasNext()) {
-                DotN nd = i.next();
-                PointRoi roi;
-                roi = new PointRoi(nd.pos.x,nd.pos.y);//,c);
-                Color color = new Color((int)(nd.ct.c.color[0]*255),(int)(nd.ct.c.color[1]*255),(int)(nd.ct.c.color[2]*255));
-                roi.setStrokeColor(color);
-                int zpos=1+(int)(nd.pos.z/ZS);
-                if ((zpos>0)&&(zpos<=workingImP.getNSlices())) {
-                    roi.setPosition(nd.ct.c.cellChannel, zpos, nd.ct.frame);
-                    ov.addElement(roi); 
-                }   
-            }   
-        } else {
-            while (i.hasNext()) {
-                DotN nd = i.next();
-                PointRoi roi;
-                roi = new PointRoi(nd.pos.x,nd.pos.y);//,c);   
-                Color color = new Color((int)(nd.ct.c.color[0]*255),(int)(nd.ct.c.color[1]*255),(int)(nd.ct.c.color[2]*255));
-                roi.setStrokeColor(color);
-                int zpos=1+(int)((float) (nd.pos.z)/(float) (ZS));
-                if ((zpos>0)&&(zpos<=workingImP.getNSlices())) {
-                    roi.setPosition(zpos);
-                    ov.addElement(roi);  
-                }
-            }
-        }
-        workingImP.updateAndDraw();
-      }
-  } 
-	
-	@Override
-	public void run(String arg) {
-		// TODO Auto-generated method stub
-		
-	}
 	
 }
