@@ -36,6 +36,9 @@ import ij.gui.Overlay;
 import ij.gui.PlotWindow;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
+import ij.measure.Measurements;
+import ij.measure.ResultsTable;
+import ij.plugin.filter.Analyzer;
 import ij.plugin.frame.RoiManager;
 import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
@@ -144,8 +147,7 @@ public class MainWindow extends JFrame{
 				
 				
 				
-				//IJ.setThreshold(imp,110.0,255.0);
-				
+				//Visualize overlay
 				IJ.run(imp, "Analyze Particles...", "show=Overlay");
 				
 				Overlay overlay = imp.getOverlay();
@@ -157,7 +159,13 @@ public class MainWindow extends JFrame{
 				
 				
 				//roiManager = new RoiManager();
-			
+				 
+				IJ.run("Clear Results", "");
+				int saveMeasurements = Analyzer.getMeasurements();
+				Analyzer.setMeasurements(Measurements.CENTROID);
+				 
+				IJ.run(imp, "Analyze Particles...", "  size=100-infinity circularity=0.3-1 Show=Outlines");
+				ResultsTable rt = ResultsTable.getResultsTable();
 				
 			
 			}
