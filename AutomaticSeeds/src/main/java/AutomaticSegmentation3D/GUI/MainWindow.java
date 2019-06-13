@@ -32,12 +32,19 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.ImageWindow;
 import ij.gui.OvalRoi;
+import ij.gui.Overlay;
 import ij.gui.PlotWindow;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
+import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
 import inra.ijpb.binary.BinaryImages;
+import inra.ijpb.data.image.Images3D;
 import inra.ijpb.morphology.MinimaAndMaxima;
 import inra.ijpb.morphology.MinimaAndMaxima3D;
+import inra.ijpb.morphology.Morphology;
+import inra.ijpb.morphology.Strel;
 import inra.ijpb.watershed.Watershed;
 import vib.segment.CustomCanvas;
 import javax.swing.JScrollPane;
@@ -54,6 +61,7 @@ public class MainWindow extends JFrame{
 	
 	private JPanel panel;
 	private JButton OpenButton;
+	private RoiManager roiManager;
 	
 	
 	public MainWindow() {
@@ -127,39 +135,30 @@ public class MainWindow extends JFrame{
 		OpenButton = new JButton("Open");
 		OpenButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				
+				
 				ImagePlus imp= IJ.openImage();
-				//raw_img.show();
-				//ImageStack image = imp.getImageStack();
-				// find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity
-				//ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, 3, 26 );
-				// impose minima on gradient image
-				//ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( image, regionalMinima, 26 );
-				// label minima using connected components (32-bit output)
-				//ImageStack labeledMinima = BinaryImages.componentsLabeling( regionalMinima, 6, 32 );
-				// apply marker-based watershed using the labeled minima on the minima-imposed 
-				// gradient image (the last value indicates the use of dams in the output)
-				//ImageStack resultStack = Watershed.computeWatershed( imposedMinima, labeledMinima, 6, true );
+				
+				//Create threshold
+				IJ.setAutoThreshold(imp, "Triangle dark no-reset");
+				
+				
+				
+				//IJ.setThreshold(imp,110.0,255.0);
+				
+				IJ.run(imp, "Analyze Particles...", "show=Overlay");
+				
+				Overlay overlay = imp.getOverlay();
+				overlay.setStrokeColor(Color.red);
+				
 				imp.show();
-				// create image with watershed result
-				//ImagePlus resultImage = new ImagePlus( "ImposedMinima", imposedMinima );
-				//resultImage.show();
-				RoiManager rm = RoiManager.getInstance();
-				if (rm == null) {
-					rm = new RoiManager();
-				}
-				IJ.run("ROI Manager...", "");
-				IJ.run("To ROI Manager", "");
-				rm.select(0);
-				IJ.setThreshold(imp, 105, 362);
-				
-				//Create an overlay
-				//IJ.run(imp, "Analyze Particles...", "size=50-Infinity display add");
+				//IJ.run(imp, "Set Measurements...","Area Centroid Display-Label");
+				//IJ.run(imp, "Analyze Particles...", "size = 100-infinity circularity = 0.3-1 Display-results Exclude-On-Edges");
 				
 				
+				//roiManager = new RoiManager();
+			
 				
-				//ImageProcessor mascara= raw_img.getMask();
-				//ImagePlus imageMasc= new ImagePlus("mascara",mascara);
-				//imageMasc.show();
 			
 			}
 		});
