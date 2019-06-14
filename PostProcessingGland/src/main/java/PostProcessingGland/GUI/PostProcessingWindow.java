@@ -2,6 +2,7 @@
 package PostProcessingGland.GUI;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.Scrollbar;
 import java.awt.event.ActionEvent;
@@ -39,7 +40,9 @@ public class PostProcessingWindow extends ImageWindow implements
 	private ImageOverlay overlayResult;
 
 	private JFrame processingFrame = new JFrame("PostProcessing");
-	private JPanel rightPanel = new JPanel();
+	private JPanel upRightPanel = new JPanel();
+	private JPanel middlePanel = new JPanel();
+	private JPanel bottomRightPanel = new JPanel();
 	private JLabel idLabel = new JLabel("ID Cells");
 	private JLabel lumenLabel = new JLabel("Lumen Processing");
 	private JButton btnSave = new JButton("Save Cell");
@@ -79,20 +82,26 @@ public class PostProcessingWindow extends ImageWindow implements
 
 	private void initGUI(ImagePlus raw_img) {
 
-		rightPanel.setLayout(new MigLayout());
-		rightPanel.add(idLabel, "wrap", "alignx right");
-		rightPanel.add(btnSave, "wrap", "alignx right");
-		rightPanel.add(btnInsert, "wrap", "alignx right");
-		rightPanel.add(lumenLabel, "alignx right");
-		rightPanel.add(btnLumen, "wrap", "alignx right");
+		upRightPanel.setLayout(new MigLayout("alignx right, wrap"));
+		upRightPanel.add(idLabel, "wrap");
+		
+		middlePanel.setLayout(new MigLayout("alignx right, wrap, gapy 10::50"));
+		middlePanel.add(btnSave, "wrap");
+		middlePanel.add(btnInsert, "wrap");
+		
+		bottomRightPanel.setLayout(new MigLayout("alignx right, wrap, gapy 10::50"));
+		bottomRightPanel.add(lumenLabel, "wrap");
+		bottomRightPanel.add(btnLumen);
 		
 
-		processingFrame.add(rightPanel);
+		processingFrame.add(canvas);
+		processingFrame.add(upRightPanel);
+		processingFrame.add(middlePanel);
+		processingFrame.add(bottomRightPanel);
+		processingFrame.setMinimumSize(new Dimension(1024,1024));
 		processingFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		processingFrame.pack();
 		processingFrame.setVisible(true);
-		
-		processingFrame.add(canvas);
 
 		initializeGUIItems(raw_img);
 
