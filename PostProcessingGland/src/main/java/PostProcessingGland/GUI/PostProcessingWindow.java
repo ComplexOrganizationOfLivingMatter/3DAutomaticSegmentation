@@ -80,17 +80,19 @@ public class PostProcessingWindow extends ImageWindow implements
 	private void initGUI(ImagePlus raw_img) {
 
 		rightPanel.setLayout(new MigLayout());
-		rightPanel.add(idLabel, "wrap");
-		rightPanel.add(btnSave, "wrap");
-		rightPanel.add(btnInsert, "wrap");
-		rightPanel.add(btnLumen, "wrap");
-		rightPanel.add(lumenLabel);
+		rightPanel.add(idLabel, "wrap", "alignx right");
+		rightPanel.add(btnSave, "wrap", "alignx right");
+		rightPanel.add(btnInsert, "wrap", "alignx right");
+		rightPanel.add(lumenLabel, "alignx right");
+		rightPanel.add(btnLumen, "wrap", "alignx right");
 		
 
 		processingFrame.add(rightPanel);
 		processingFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		processingFrame.pack();
 		processingFrame.setVisible(true);
+		
+		processingFrame.add(canvas);
 
 		initializeGUIItems(raw_img);
 
