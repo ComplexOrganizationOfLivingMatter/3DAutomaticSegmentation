@@ -1,45 +1,20 @@
 /**
  * PostProcessingGland
  */
+
 package PostProcessingGland;
 
 import ij.IJ;
 import ij.ImageJ;
-import ij.ImagePlus;
-import ij.WindowManager;
-
-import ij.gui.Overlay;
-import ij.gui.PointRoi;
-import ij.gui.Roi;
-import ij.macro.Functions;
 import ij.plugin.PlugIn;
-import ij.process.FloatPolygon;
-import net.imglib2.RandomAccessibleInterval;
-
-import java.awt.Color;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.text.DecimalFormat;
-import java.util.Iterator;
-import java.util.function.Predicate;
-
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-
-import java.util.ArrayList;
-
-import org.scijava.command.Command;
-import org.scijava.plugin.Plugin;
-
-import PostProcessingGland.GUI.PostProcessingWindows;
-private String initialDirectory;
+import PostProcessingGland.GUI.OpeningWindow;
 
 public class PostProcessingGland implements PlugIn {
 
 	// Window
-	PostProcessingWindows PostProcessingWindow;
-	
+	OpeningWindow openingWindow;
+
 	/**
 	 * Constructor by default
 	 */
@@ -56,9 +31,10 @@ public class PostProcessingGland implements PlugIn {
 		// set the plugins.dir property to make the plugin appear in the Plugins
 		// menu
 		Class<?> clazz = PostProcessingGland.class;
-		String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
-		String pluginsDir = url.substring("file:".length(),
-				url.length() - clazz.getName().length() - ".class".length() - "classes".length());
+		String url = clazz.getResource("/" + clazz.getName().replace('.', '/') +
+			".class").toString();
+		String pluginsDir = url.substring("file:".length(), url.length() - clazz
+			.getName().length() - ".class".length() - "classes".length());
 		System.setProperty("plugins.dir", pluginsDir);
 
 		// start ImageJ
@@ -75,14 +51,16 @@ public class PostProcessingGland implements PlugIn {
 	public void run(String arg) {
 		// Build GUI
 		SwingUtilities.invokeLater(new Runnable() {
+
 			public void run() {
-				ImagePlus raw_img;
 				// Create the main window
-				PostProcessingWindow = new PostProcessingWindows(raw_img);
+				openingWindow = new OpeningWindow();
+				openingWindow.pack();
+				openingWindow.setVisible(true);
 			}
 		});
 	}
-	
+
 	/**
 	 * Static method to enable multipoint selection It is mainly used to create
 	 * ROIs
@@ -92,32 +70,10 @@ public class PostProcessingGland implements PlugIn {
 	}
 
 	/**
-	 * Static method to enable polygon selection It is mainly used to create
-	 * ROIs
+	 * Static method to enable polygon selection It is mainly used to create ROIs
 	 */
 	public static void callToolbarPolygon() {
 		ij.gui.Toolbar.getInstance().setTool(ij.gui.Toolbar.POLYGON);
 	}
 
-/*	public void initPostProcessingWindow() {
-		try {
-			ImagePlus raw_img = IJ.openImage();
-			
-			if (raw_img != null) {
-        
-        // this.initialDirectory = raw_img.getOriginalFileInfo().directory;
-        // postProcessing = new PostProcessingWindows(raw_img);
-        // postProcessing.pack();
-
-
-			} else {
-				// JOptionPane.showMessageDialog(panel.getParent(), "You must introduce a valid image or set of images.");
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}*/
-  
-	
 }
