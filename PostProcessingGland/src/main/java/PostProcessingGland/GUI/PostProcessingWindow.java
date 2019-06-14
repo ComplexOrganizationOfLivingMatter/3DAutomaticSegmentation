@@ -27,7 +27,7 @@ import ij.gui.ImageCanvas;
 import ij.gui.ImageWindow;
 import ij.gui.Roi;
 
-public class PostProcessingWindows extends ImageWindow implements
+public class PostProcessingWindow extends ImageWindow implements
 	ActionListener
 {
 
@@ -52,7 +52,7 @@ public class PostProcessingWindows extends ImageWindow implements
 	// private JTableModel tableInf;
 	// private Scrollbar sliceSelector;
 
-	public PostProcessingWindows(ImagePlus raw_img) {
+	public PostProcessingWindow(ImagePlus raw_img) {
 		super(raw_img, new CustomCanvas(raw_img));
 		// super(raw_img, new CustomCanvas(raw_img));
 
