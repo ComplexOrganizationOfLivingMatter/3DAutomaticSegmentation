@@ -100,7 +100,7 @@ public class OpeningWindow extends JFrame {
 			}
 		});
 		centralPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
-		centralPanel.setLayout(null);
+		centralPanel.setLayout(new MigLayout("align 50% 50%"));
 		getContentPane().add(centralPanel);
 		initGUIItems();
 		
