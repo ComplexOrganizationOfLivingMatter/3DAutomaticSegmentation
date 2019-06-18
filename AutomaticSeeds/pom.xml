@@ -54,7 +54,15 @@
 	</properties>
 
 	<dependencies>
-
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>3D_Objects_Counter</artifactId>
+			<version>2.0.2-SNAPSHOT</version>
+		</dependency>
+		  <dependency>
+            <groupId>sc.fiji</groupId>
+            <artifactId>VIB_</artifactId>
+        </dependency>
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>Fiji_Plugins</artifactId>
@@ -83,6 +91,10 @@
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-ij</artifactId>
 		</dependency>
+		     <dependency>
+            <groupId>net.imglib2</groupId>
+            <artifactId>imglib2</artifactId>
+        </dependency>
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
