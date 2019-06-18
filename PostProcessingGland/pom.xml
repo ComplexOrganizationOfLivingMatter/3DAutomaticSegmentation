@@ -116,7 +116,13 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 		</dependency>
-
+		
+		<!-- https://github.com/smurn/jPLY -->
+		<dependency>
+    		<groupId>org.smurn</groupId>
+   			<artifactId>jply</artifactId>
+    		<version>0.2.0</version>
+		</dependency>
 
 	</dependencies>
 	<build>
