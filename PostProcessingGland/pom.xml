@@ -8,7 +8,7 @@
 		<version>26.0.0</version>
 		<relativePath />
 	</parent>
-	
+
 	<groupId>sc.fiji</groupId>
 	<artifactId>PostProcessingGland_</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -116,12 +116,19 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 		</dependency>
-		
+
 		<!-- https://github.com/smurn/jPLY -->
 		<dependency>
-    		<groupId>org.smurn</groupId>
-   			<artifactId>jply</artifactId>
-    		<version>0.2.0</version>
+			<groupId>org.smurn</groupId>
+			<artifactId>jply</artifactId>
+			<version>0.2.0</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/eu.kiaru/limeseg -->
+		<dependency>
+			<groupId>eu.kiaru</groupId>
+			<artifactId>limeseg</artifactId>
+			<version>0.4.2</version>
 		</dependency>
 
 	</dependencies>
