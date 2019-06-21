@@ -20,6 +20,7 @@ import javax.swing.SwingUtilities;
 
 import net.miginfocom.swing.MigLayout;
 
+import PostProcessingGland.IOPlyLimeSeg;
 // import JTableModel;
 import PostProcessingGland.GUI.CustomElements.CustomCanvas;
 import PostProcessingGland.GUI.CustomElements.ImageOverlay;
@@ -52,6 +53,7 @@ public class PostProcessingWindow extends ImageWindow implements
 	// private JPanel IdPanel;
 
 	private String initialDirectory;
+	
 	// private JTableModel tableInf;
 	// private Scrollbar sliceSelector;
 
@@ -60,6 +62,9 @@ public class PostProcessingWindow extends ImageWindow implements
 		// super(raw_img, new CustomCanvas(raw_img));
 
 		this.initialDirectory = raw_img.getOriginalFileInfo().directory;
+    String path = this.initialDirectory.toString();
+    path = path + "/T_1.ply";
+    IOPlyLimeSeg.loadCellTFromPly(path); 
 
 		canvas = (CustomCanvas) super.getCanvas();
 
@@ -69,8 +74,17 @@ public class PostProcessingWindow extends ImageWindow implements
 		cellsROIs = new Hashtable<Integer, ArrayList<Roi>>();
 		// tableInf = tableInfo;
 		overlayResult = new ImageOverlay();
+		
+		if (overlayResult != null) {
+			if (canvas.getImageOverlay() == null) {
+				canvas.clearOverlay();
+				overlayResult.updateOverlay(raw_img);
+				overlayResult.putCurrentSliceToOverlay(raw_img);
+				canvas.setImageOverlay(overlayResult);
+			} 
+		}
 
-		removeAll();
+		//removeAll();
 
 		initGUI(raw_img);
 

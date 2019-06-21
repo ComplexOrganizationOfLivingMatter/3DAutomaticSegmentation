@@ -3,13 +3,10 @@ package PostProcessingGland.GUI;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.File;
-
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -20,7 +17,6 @@ import javax.swing.border.LineBorder;
 
 import net.miginfocom.swing.MigLayout;
 
-import PostProcessingGland.IOPlyLimeSeg;
 import PostProcessingGland.GUI.PostProcessingWindow;
 import ij.IJ;
 import ij.ImagePlus;
@@ -144,9 +140,6 @@ public class OpeningWindow extends JFrame {
 				        }
 				        
 				        this.initialDirectory = raw_img.getOriginalFileInfo().directory;
-				        String path = this.initialDirectory.toString();
-				        path = path + "/T_1.ply";
-				        IOPlyLimeSeg.loadCellTFromPly(path); 
 				        
 				        postprocessingWindow = new PostProcessingWindow(raw_img);
 				        postprocessingWindow.pack();
