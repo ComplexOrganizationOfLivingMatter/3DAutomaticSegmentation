@@ -8,6 +8,7 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Random;
 
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
@@ -35,7 +36,7 @@ CONTENT
  * - display them in 3D in a custom 3D viewer
  *
  */
-public class ImageOverlay {
+public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay {
 	
 //List of cells currently stored by LimeSeg
 	static public ArrayList<Cell> allCells;  				
@@ -127,11 +128,11 @@ public class ImageOverlay {
    * updates Overlay of the working image with registeres dots to be overlayed
    */
   
-  static public void updateOverlay(ImagePlus workingImP) {
+  static public void updateOverlay(ArrayList<DotN> dots, ImagePlus workingImP) {
       Overlay ov = new Overlay();
       if (workingImP!=null) {
         workingImP.setOverlay(ov);
-        Iterator<DotN> i=dots_to_overlay.iterator();
+        Iterator<DotN> i=dots.iterator();
         if ((workingImP.getNFrames()!=1)||(workingImP.getNChannels()!=1)) {
             while (i.hasNext()) {
                 DotN nd = i.next();
@@ -149,9 +150,14 @@ public class ImageOverlay {
             while (i.hasNext()) {
             		DotN loadedDots = i.next();
                 PointRoi roi;
-                roi = new PointRoi(loadedDots.pos.x,loadedDots.pos.y);//,c);   
-                Color color = new Color((int)(loadedDots.ct.c.color[0]*255),(int)(loadedDots.ct.c.color[1]*255),(int)(loadedDots.ct.c.color[2]*255));
-                roi.setStrokeColor(color);
+                roi = new PointRoi(loadedDots.pos.x,loadedDots.pos.y);//,c); 
+                Random rand = new Random();
+                float r = rand.nextFloat();
+                float g = rand.nextFloat();
+                float b = rand.nextFloat();
+                Color randomColor = new Color(r, g, b);
+                //Color color = new Color((int)(loadedDots.ct.c.color[0]*255),(int)(loadedDots.ct.c.color[1]*255),(int)(loadedDots.ct.c.color[2]*255));
+                roi.setColor(randomColor);
                 int zpos=1+(int)((float) (loadedDots.pos.z));
                 if ((zpos>0)&&(zpos<=workingImP.getNSlices())) {
                     roi.setPosition(zpos);
@@ -185,7 +191,9 @@ public class ImageOverlay {
           CellT ct= c.cellTs.get(i);
           addToOverlay(ct);
       }
-  }  
+  }
+
+	private ImagePlus workingImP;  
   
   /**
    * adds all points of all cellt found to be at the specified frame
@@ -217,4 +225,28 @@ public class ImageOverlay {
   	currentFrame=cFrame;
   	updateWorkingImage(workingImP);
   }
+  
+	public void setImage(ImagePlus workingImP) {
+		this.workingImP = workingImP;
+	}
+
+	/**
+	 * 
+	 * @return image processor to be painted in the overlay
+	 */
+	public ImagePlus getImage() {
+		return workingImP;
+	}
+
+	@Override
+	public void setComposite(Composite composite) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void paint(Graphics g, int x, int y, double magnification) {
+		// TODO Auto-generated method stub
+		
+	}
 }

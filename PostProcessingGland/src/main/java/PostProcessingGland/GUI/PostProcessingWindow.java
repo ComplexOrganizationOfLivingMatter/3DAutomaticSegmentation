@@ -24,6 +24,8 @@ import PostProcessingGland.IOPlyLimeSeg;
 // import JTableModel;
 import PostProcessingGland.GUI.CustomElements.CustomCanvas;
 import PostProcessingGland.GUI.CustomElements.ImageOverlay;
+import eu.kiaru.limeseg.struct.DotN;
+import fiji.util.gui.OverlayedImageCanvas.Overlay;
 import ij.ImagePlus;
 import ij.gui.ImageCanvas;
 import ij.gui.ImageWindow;
@@ -39,6 +41,7 @@ public class PostProcessingWindow extends ImageWindow implements
 	private Hashtable<Integer, ArrayList<Roi>> cellsROIs;
 	private CustomCanvas canvas;
 	private ImageOverlay overlayResult;
+	private ArrayList<DotN> dots = new ArrayList<>();
 
 	private JFrame processingFrame = new JFrame("PostProcessing");
 	private JPanel upRightPanel = new JPanel();
@@ -48,23 +51,21 @@ public class PostProcessingWindow extends ImageWindow implements
 	private JLabel lumenLabel = new JLabel("Lumen Processing");
 	private JButton btnSave = new JButton("Save Cell");
 	private JButton btnInsert = new JButton("Modify Cell");
-	private JButton btnLumen= new JButton("Add Lumen");
+	private JButton btnLumen = new JButton("Add Lumen");
 
 	// private JPanel IdPanel;
 
 	private String initialDirectory;
-	
+
 	// private JTableModel tableInf;
 	// private Scrollbar sliceSelector;
 
 	public PostProcessingWindow(ImagePlus raw_img) {
 		super(raw_img, new CustomCanvas(raw_img));
-		// super(raw_img, new CustomCanvas(raw_img));
 
 		this.initialDirectory = raw_img.getOriginalFileInfo().directory;
-    String path = this.initialDirectory.toString();
-    path = path + "/T_1.ply";
-    IOPlyLimeSeg.loadCellTFromPly(path); 
+		String path = this.initialDirectory.toString();
+		IOPlyLimeSeg.SearchPath(dots, path);
 
 		canvas = (CustomCanvas) super.getCanvas();
 
@@ -74,29 +75,30 @@ public class PostProcessingWindow extends ImageWindow implements
 		cellsROIs = new Hashtable<Integer, ArrayList<Roi>>();
 		// tableInf = tableInfo;
 		overlayResult = new ImageOverlay();
-		
+
 		if (overlayResult != null) {
 			if (canvas.getImageOverlay() == null) {
 				canvas.clearOverlay();
-				overlayResult.updateOverlay(raw_img);
-				overlayResult.putCurrentSliceToOverlay(raw_img);
-				canvas.setImageOverlay(overlayResult);
-			} 
+				overlayResult.updateOverlay(dots, raw_img);
+				overlayResult.setImage(raw_img);
+				canvas.addOverlay(overlayResult);
+				canvas.getImageOverlay();
+			}
 		}
 
-		//removeAll();
+		// removeAll();
 
 		initGUI(raw_img);
 
 		setEnablePanels(false);
 
-		//threadFinished = false;
+		// threadFinished = false;
 
 	}
 
 	private void initGUI(ImagePlus raw_img) {
 
-		upRightPanel.setLayout(new MigLayout("alignx right, wrap"));
+		/*upRightPanel.setLayout(new MigLayout("alignx right, wrap"));
 		upRightPanel.add(idLabel, "wrap");
 		
 		middlePanel.setLayout(new MigLayout("alignx right, wrap, gapy 10::50"));
@@ -107,12 +109,12 @@ public class PostProcessingWindow extends ImageWindow implements
 		bottomRightPanel.add(lumenLabel, "wrap");
 		bottomRightPanel.add(btnLumen);
 		
-
+		*/
 		processingFrame.add(canvas);
-		processingFrame.add(upRightPanel);
-		processingFrame.add(middlePanel);
-		processingFrame.add(bottomRightPanel);
-		processingFrame.setMinimumSize(new Dimension(1024,1024));
+		// processingFrame.add(upRightPanel);
+		// processingFrame.add(middlePanel);
+		// processingFrame.add(bottomRightPanel);
+		processingFrame.setMinimumSize(new Dimension(1024, 1024));
 		processingFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		processingFrame.pack();
 		processingFrame.setVisible(true);
@@ -130,13 +132,11 @@ public class PostProcessingWindow extends ImageWindow implements
 			}
 		});
 	}
-	
-	
+
 	/**
 	 * Enable/disable all the panels in the window
 	 * 
-	 * @param enabled
-	 *            true it will enable panels, false disable all panels
+	 * @param enabled true it will enable panels, false disable all panels
 	 */
 	protected void setEnablePanels(boolean enabled) {
 		btnSave.setEnabled(true);
