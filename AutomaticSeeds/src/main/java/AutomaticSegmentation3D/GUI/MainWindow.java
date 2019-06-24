@@ -38,9 +38,11 @@ import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.measure.Measurements;
 import ij.measure.ResultsTable;
+import ij.plugin.Thresholder;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.frame.RoiManager;
 import ij.process.ByteProcessor;
+import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 import inra.ijpb.binary.BinaryImages;
 import inra.ijpb.data.image.Images3D;
@@ -139,16 +141,30 @@ public class MainWindow extends JFrame{
 		OpenButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
-				
+				//Open the image
 				ImagePlus imp= IJ.openImage();
+				System.out.println("Sin convertir: "+imp.getBitDepth());
+				//Convert the image to 8-Bit
+				ImageConverter converter = new ImageConverter(imp);
+				converter.convertToGray8();
+				System.out.println("Convertida: "+imp.getBitDepth());
 				
-				//Create threshold
-				IJ.setAutoThreshold(imp, "Triangle dark no-reset");
+				//Create threshold and binarize the image
+				
+				ImageProcessor processor = imp.getProcessor();
+				
+				processor.setAutoThreshold("Triangle", true, 1);
+				
+				
+				imp.show();
+				System.out.println(processor.isBinary());
+				
+				
 				
 				
 				
 				//Visualize overlay
-				IJ.run(imp, "Analyze Particles...", "show=Overlay");
+				/*IJ.run(imp, "Analyze Particles...", "show=Overlay");
 				
 				Overlay overlay = imp.getOverlay();
 				overlay.setStrokeColor(Color.red);
@@ -166,7 +182,7 @@ public class MainWindow extends JFrame{
 				 
 				IJ.run(imp, "Analyze Particles...", "  size=100-infinity circularity=0.3-1 Show=Outlines");
 				ResultsTable rt = ResultsTable.getResultsTable();
-				
+				*/
 			
 			}
 		});
