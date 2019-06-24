@@ -44,6 +44,7 @@ import ij.plugin.frame.RoiManager;
 import ij.process.ByteProcessor;
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
+import ij.process.StackProcessor;
 import inra.ijpb.binary.BinaryImages;
 import inra.ijpb.data.image.Images3D;
 import inra.ijpb.morphology.MinimaAndMaxima;
@@ -151,13 +152,26 @@ public class MainWindow extends JFrame{
 				
 				//Create threshold and binarize the image
 				
+				//IJ.run(imp,"Make Binary","");
+				
 				ImageProcessor processor = imp.getProcessor();
-				
 				processor.setAutoThreshold("Triangle", true, 1);
+				processor.autoThreshold();
+				imp.setProcessor(processor);
+				/*
+				ImagePlus copia = imp.duplicateAll();
 				
-				
+
+				//IJ.run(imp,"Invert","");
+				for(int i=1;i<copia.getStackSize();i++) {
+					ImageProcessor processor2 = copia.getStack().getProcessor(i);
+					processor2.invert();
+					copia.getStack().setProcessor(processor2, i);
+				}
+				*/
 				imp.show();
-				System.out.println(processor.isBinary());
+				//copia.show();
+				System.out.println("Esta binarizada: "+imp.getChannelProcessor().isBinary());
 				
 				
 				
