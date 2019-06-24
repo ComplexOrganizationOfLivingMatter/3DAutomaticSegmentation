@@ -79,10 +79,11 @@ public class PostProcessingWindow extends ImageWindow implements
 		if (overlayResult != null) {
 			if (canvas.getImageOverlay() == null) {
 				canvas.clearOverlay();
-				overlayResult.updateOverlay(dots, raw_img);
+				raw_img.setOverlay(overlayResult.updateOverlay(dots, raw_img));
 				overlayResult.setImage(raw_img);
+				
 				canvas.addOverlay(overlayResult);
-				canvas.getImageOverlay();
+				canvas.setImageOverlay(overlayResult);
 			}
 		}
 
