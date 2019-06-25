@@ -144,59 +144,46 @@ public class MainWindow extends JFrame{
 				
 				//Open the image
 				ImagePlus imp= IJ.openImage();
+				//Test
 				System.out.println("Sin convertir: "+imp.getBitDepth());
 				//Convert the image to 8-Bit
 				ImageConverter converter = new ImageConverter(imp);
 				converter.convertToGray8();
+				//Test
 				System.out.println("Convertida: "+imp.getBitDepth());
 				
 				//Create threshold and binarize the image
 				
 				//IJ.run(imp,"Make Binary","");
 				
-				ImageProcessor processor = imp.getProcessor();
-				processor.setAutoThreshold("Triangle", true, 1);
-				processor.autoThreshold();
-				imp.setProcessor(processor);
-				/*
-				ImagePlus copia = imp.duplicateAll();
+				ImageProcessor processor = imp.getStack().getProcessor(30);
+				
+				
+				int thresh = processor.getAutoThreshold()+3;
+
+				System.out.println("thresh: "+thresh);
+				for(int i=1;i<=imp.getStackSize();i++) {
+					processor = imp.getStack().getProcessor(i);
+
+					//processor.setAutoThreshold("Triangle", true, 1);
+					processor.threshold(thresh);
+					
+					imp.getStack().setProcessor(processor, i);
+				}
 				
 
 				//IJ.run(imp,"Invert","");
-				for(int i=1;i<copia.getStackSize();i++) {
-					ImageProcessor processor2 = copia.getStack().getProcessor(i);
+				//Invert the binarized image
+				for(int i=1;i<=imp.getStackSize();i++) {
+					ImageProcessor processor2 = imp.getStack().getProcessor(i);
 					processor2.invert();
-					copia.getStack().setProcessor(processor2, i);
+					imp.getStack().setProcessor(processor2, i);
 				}
-				*/
+
 				imp.show();
-				//copia.show();
-				System.out.println("Esta binarizada: "+imp.getChannelProcessor().isBinary());
+				//Test
+				System.out.println("Esta binarizada: "+imp.getStack().getProcessor(5).isBinary());
 				
-				
-				
-				
-				
-				//Visualize overlay
-				/*IJ.run(imp, "Analyze Particles...", "show=Overlay");
-				
-				Overlay overlay = imp.getOverlay();
-				overlay.setStrokeColor(Color.red);
-				
-				imp.show();
-				//IJ.run(imp, "Set Measurements...","Area Centroid Display-Label");
-				//IJ.run(imp, "Analyze Particles...", "size = 100-infinity circularity = 0.3-1 Display-results Exclude-On-Edges");
-				
-				
-				//roiManager = new RoiManager();
-				 
-				IJ.run("Clear Results", "");
-				int saveMeasurements = Analyzer.getMeasurements();
-				Analyzer.setMeasurements(Measurements.CENTROID);
-				 
-				IJ.run(imp, "Analyze Particles...", "  size=100-infinity circularity=0.3-1 Show=Outlines");
-				ResultsTable rt = ResultsTable.getResultsTable();
-				*/
 			
 			}
 		});
