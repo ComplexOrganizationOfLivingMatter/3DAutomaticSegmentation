@@ -8,6 +8,7 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Random;
 
 import eu.kiaru.limeseg.struct.Cell;
@@ -136,7 +137,7 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
       if (workingImP!=null) {
         workingImP.setOverlay(ov);
         Iterator<DotN> i=dots.iterator();
-        if ((workingImP.getNFrames()!=1)||(workingImP.getNChannels()!=1)) {
+       /*  if ((workingImP.getNFrames()!=1)||(workingImP.getNChannels()!=1)) {
             while (i.hasNext()) {
                 DotN nd = i.next();
                 PointRoi roi;
@@ -150,9 +151,9 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
                 }   
             }   
         } else {
+        */
             while (i.hasNext()) {
             		DotN loadedDots = i.next();
-                
             		roi = new PointRoi(loadedDots.pos.x,loadedDots.pos.y);//,c); 
                 Random rand = new Random();
                 float r = rand.nextFloat();
@@ -161,13 +162,13 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
                 Color randomColor = new Color(r, g, b);
                 //Color color = new Color((int)(loadedDots.ct.c.color[0]*255),(int)(loadedDots.ct.c.color[1]*255),(int)(loadedDots.ct.c.color[2]*255));
                 roi.setColor(randomColor);
-                
-                int zpos=1+(int)((float) (loadedDots.pos.z));
-                if ((zpos>0)&&(zpos<=workingImP.getNSlices())) {
-                    roi.setPosition(zpos);  
-                }
+                //float zScale = workingImP  /workingImP.getHeight()
+                int zpos=1+(int)((float) (loadedDots.pos.z/ (float) 4.06)); // zScale == 4.06
+                roi.setPosition(zpos);
+                if (zpos == 15) {
                 ov.addElement(roi); 
-            }
+                }
+           // }
         }
         //workingImP.setOverlay(ov);
         //workingImP.updateAndDraw();
