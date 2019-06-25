@@ -108,23 +108,21 @@ public class IOPlyLimeSeg {
 			return;
 		}
 		File[] files = dir.listFiles(new FilenameFilter() {
-
-			@Override
 			public boolean accept(File dir, String name) {
-				return name.matches("T_[0-9]+.ply");
+				return name.startsWith("cell");
 			}
 		});
 		dots.clear();
 		for (File f : files) {
 			String fileName = f.getAbsolutePath();
-			System.out.println("Found cellT file : " + fileName);
+			System.out.println("Found cell folder : " + fileName);
 			Matcher matcher = pattern.matcher(f.getName());
 			matcher.find();
 			String match = matcher.group(); // Get the matching string
-			int tp = Integer.valueOf(match);
-			System.out.println("TP=" + tp);
-			
-			loadPlyFile(dots, f.getAbsolutePath());
+			int ply = Integer.valueOf(match);
+			System.out.println("Ply=" + ply);
+			File plyfile = new File(f.getAbsolutePath() + "/T_1.ply");
+			loadPlyFile(dots, plyfile.getAbsolutePath());
 		}
 	}
 
