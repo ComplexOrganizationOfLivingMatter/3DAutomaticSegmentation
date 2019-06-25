@@ -16,9 +16,9 @@ import org.smurn.jply.ElementReader;
 import org.smurn.jply.ElementType;
 import org.smurn.jply.PlyReader;
 import org.smurn.jply.PlyReaderFile;
-import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
+import PostProcessingGland.Elements.Cell;
 
 /**
  * Class that will be called by Fiji/ImageJ and load the output of the 3D
@@ -39,7 +39,10 @@ import eu.kiaru.limeseg.struct.DotN;
 
 public class IOPlyLimeSeg {
 	
-	private ArrayList<DotN> dots = new ArrayList<DotN>();
+	public ArrayList<DotN> dots = new ArrayList<DotN>();
+	public static ArrayList<Cell> allCells = new ArrayList<Cell>();
+	public Cell currentCell = new Cell();
+
 
 	public IOPlyLimeSeg() {
 		// TODO Auto-generated constructor stub
@@ -113,6 +116,8 @@ public class IOPlyLimeSeg {
 			}
 		});
 		dots.clear();
+		Cell currentCell = new Cell();
+		int id = 1;
 		for (File f : files) {
 			String fileName = f.getAbsolutePath();
 			System.out.println("Found cell folder : " + fileName);
@@ -123,6 +128,9 @@ public class IOPlyLimeSeg {
 			System.out.println("Ply=" + ply);
 			File plyfile = new File(f.getAbsolutePath() + "/T_1.ply");
 			loadPlyFile(dots, plyfile.getAbsolutePath());
+			currentCell.addDots(id, dots);
+			dots.clear();
+			id++;
 		}
 	}
 
@@ -185,5 +193,33 @@ public class IOPlyLimeSeg {
 		}
 	}
 	 */
+	
+	
+	/*
+  /**
+* Get all the Cells at a specific frame
+
+
+public ArrayList<Cell> getAllCellsAt (int frame) {
+	ArrayList<Cell> cellsInZ = new ArrayList<Cell>(); 
+	for (int i=0;i<dotsList.size();i++) {
+       if (dotsList.get(i).pos.z == frame) {
+           DotN dot = dotsList.get(i);
+           cellsInZ.addDots(dot);
+       }
+   }
+   return CellsInZ;	
+}
+
+/**
+* 
+* @param id label of the Cell
+* @return the Cell object which has the id label.
+
+public Cell getCell(int id) {
+	
+}
+
+*/
 
 }
