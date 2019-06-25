@@ -184,7 +184,22 @@ public class MainWindow extends JFrame{
 				//Test
 				System.out.println("Esta binarizada: "+imp.getStack().getProcessor(5).isBinary());
 				
-			
+				//Morphological segmentation
+				//Settings
+				int gradient_radius = 5;
+				int tol = 5;
+				int conn = 26;
+				boolean dams = true;
+				Strel gradient = Strel.Shape.DISK.fromRadius(gradient_radius);
+				ImageStack image = Morphology.gradient(imp.getImageStack(), gradient);
+				ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, tol, conn );
+				ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( image, regionalMinima, conn );
+				ImageStack labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, 32 );
+			    // apply marker-based watershed using the labeled minima on the minima-imposed gradient image (the true value indicates the use of dams in the output)
+			    ImageStack ip_segmented = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, dams );
+			    ImagePlus imp_segmented = new ImagePlus("MorphSegmented",ip_segmented);
+			    imp_segmented.show();
+			    
 			}
 		});
 		OpenButton.setBounds(682, 412, 97, 25);
