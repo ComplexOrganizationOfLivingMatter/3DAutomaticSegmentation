@@ -40,7 +40,7 @@ CONTENT
 public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay {
 	
 //List of cells currently stored by LimeSeg
-	static public ArrayList<Cell> allCells;  				
+ static public ArrayList<Cell> allCells;  				
 	
 //Set of dots being overlayed on workingImP
 	static public ArrayList<DotN> dots_to_overlay;			
@@ -52,22 +52,14 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
 	static public DotN currentDot;							
  
 //Current working image in IJ1 format 
+	private ImagePlus workingImP;
+	
 // Used for IJ1 interaction (ROI, and JOGLCellRenderer synchronization)        
-	
 	static public int currentFrame=1;
-	
 	private static PointRoi roi = new PointRoi();
+
 	
-//----------------- 2D View
-  /**
-   * Put current cell to overlays (requires updateOverlay to be effective)
-   */
-  static public void putCurrentCellToOverlay() { 
-  	if (currentCell!=null) {
-          addToOverlay(currentCell);
-  	}    			
-  }
-  
+//----------------- 2D View  
   /**
    * Put dots of current user selected slice to overlays (requires updateOverlay to be effective)
    * @return 
@@ -117,13 +109,13 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
   }
   
   /**
-   * Adds all cells into image overlay (requires updateOverlay to be effective
+   * Adds all cells into image overlay (requires updateOverlay to be effective)
    */
 
   static public void addAllCellsToOverlay() {
       for (int i=0;i<allCells.size();i++) {
           Cell c= allCells.get(i);
-          addToOverlay(c);
+          //addToOverlay(c);
       }
   } 
   
@@ -175,46 +167,20 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
       }
 			return ov;
   } 
-	
-  /** Methods **/
   
   /**
-   * adds a cell timepoint to list of points which will be overlayed
-   * @param ct cell timepoint to add
+   * adds ROIs of a specific frame to list of points which will be overlayed
+   * @param zPosition frame to add.
    */
   static public void addToOverlay(CellT zPosition) {
       for (int i=0;i<zPosition.dots.size();i++) {
           DotN zDots = zPosition.dots.get(i);
-          dots_to_overlay.add(zDots);           
-      }
-  }
-  
-  /**
-   * adds a cell to list of points which will be overlayed (i.e. all associated cell timepoints)
-   * @param c cell timepoint to add
-   */
-  static public void addToOverlay(Cell c) {
-      for (int i=0;i<c.cellTs.size();i++) {
-          CellT ct= c.cellTs.get(i);
-          addToOverlay(ct);
+          dots_to_overlay.add(zDots); 
       }
   }
 
-	private ImagePlus workingImP;  
-  
-  /**
-   * adds all points of all cellt found to be at the specified frame
-   * @param frame
-   */
-  public void addToOverlay(int frame) {
-      for (int i=0;i<allCells.size();i++) {
-          Cell c= allCells.get(i);
-          CellT ct = c.getCellTAt(frame);
-          if (ct!=null) {
-              addToOverlay(ct);
-          }
-      }
-  } 
+
+	  
   
   static public void setWorkingImage(ImagePlus workingImP) {        
     currentFrame = workingImP.getCurrentSlice();
@@ -239,12 +205,12 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
 
 	/**
 	 * 
-	 * @return image processor to be painted in the overlay
+	 * @return imageplus to be painted in the overlay
 	 */
 	public ImagePlus getImage() {
 		return workingImP;
 	}
-
+	
 	@Override
 	public void setComposite(Composite composite) {
 		// TODO Auto-generated method stub
@@ -256,4 +222,5 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
 		// TODO Auto-generated method stub
 		
 	}
+	
 }

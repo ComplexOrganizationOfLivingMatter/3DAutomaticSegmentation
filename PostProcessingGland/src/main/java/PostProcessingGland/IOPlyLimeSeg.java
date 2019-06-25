@@ -102,7 +102,7 @@ public class IOPlyLimeSeg {
 	static public void SearchPath(ArrayList<DotN> dots, String path) {
 		// path should contain the folder with the ply files for each timepoint
 		Pattern pattern = Pattern.compile("[0-9]+");
-		File dir = new File(path);
+		File dir = new File(path + "/OutputLimeSeg");
 		if (!dir.isDirectory()) {
 			System.out.println("Error, folder for cell " + " not found.");
 			return;
