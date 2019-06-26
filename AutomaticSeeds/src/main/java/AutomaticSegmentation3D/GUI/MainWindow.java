@@ -40,6 +40,7 @@ import ij.measure.Measurements;
 import ij.measure.ResultsTable;
 import ij.plugin.Thresholder;
 import ij.plugin.filter.Analyzer;
+import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.frame.RoiManager;
 import ij.process.ByteProcessor;
 import ij.process.ImageConverter;
@@ -51,6 +52,7 @@ import inra.ijpb.morphology.MinimaAndMaxima;
 import inra.ijpb.morphology.MinimaAndMaxima3D;
 import inra.ijpb.morphology.Morphology;
 import inra.ijpb.morphology.Strel;
+import inra.ijpb.morphology.Strel3D;
 import inra.ijpb.watershed.Watershed;
 import vib.segment.CustomCanvas;
 import javax.swing.JScrollPane;
@@ -144,6 +146,7 @@ public class MainWindow extends JFrame{
 				
 				//Open the image
 				ImagePlus imp= IJ.openImage();
+				
 				//Test
 				System.out.println("Sin convertir: "+imp.getBitDepth());
 				//Convert the image to 8-Bit
@@ -171,16 +174,9 @@ public class MainWindow extends JFrame{
 					imp.getStack().setProcessor(processor, i);
 				}
 				
-
-				//IJ.run(imp,"Invert","");
-				//Invert the binarized image
-				for(int i=1;i<=imp.getStackSize();i++) {
-					ImageProcessor processor2 = imp.getStack().getProcessor(i);
-					processor2.invert();
-					imp.getStack().setProcessor(processor2, i);
-				}
-
 				imp.show();
+				
+				
 				//Test
 				System.out.println("Esta binarizada: "+imp.getStack().getProcessor(5).isBinary());
 				
@@ -188,17 +184,22 @@ public class MainWindow extends JFrame{
 				//Settings
 				int gradient_radius = 5;
 				int tol = 5;
-				int conn = 26;
+				int conn = 6;
 				boolean dams = true;
-				Strel gradient = Strel.Shape.DISK.fromRadius(gradient_radius);
+				Strel3D gradient = Strel3D.Shape.CUBE.fromRadius(gradient_radius);
+				
+				//Segmentation
 				ImageStack image = Morphology.gradient(imp.getImageStack(), gradient);
 				ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, tol, conn );
 				ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( image, regionalMinima, conn );
 				ImageStack labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, 32 );
+				
 			    // apply marker-based watershed using the labeled minima on the minima-imposed gradient image (the true value indicates the use of dams in the output)
-			    ImageStack ip_segmented = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, dams );
+				ImageStack ip_segmented = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, dams );
 			    ImagePlus imp_segmented = new ImagePlus("MorphSegmented",ip_segmented);
 			    imp_segmented.show();
+			    
+			    
 			    
 			}
 		});
