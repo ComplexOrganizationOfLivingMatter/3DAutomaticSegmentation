@@ -15,8 +15,6 @@ import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
 
-import PostProcessingGland.IOPlyLimeSeg;
-
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.gui.PointRoi;
@@ -37,7 +35,7 @@ CONTENT
  * - display them in 3D in a custom 3D viewer
  *
  */
-public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay {
+public class SegmentationOverlay extends epigraph.GUI.CustomElements.ImageOverlay {
 	
 //List of cells currently stored by LimeSeg
  static public ArrayList<Cell> allCells;  				
@@ -49,14 +47,14 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
 	static public Cell currentCell;    						
   
 //Current selected Dot of limeseg
-	static public DotN currentDot;							
+	static public ArrayList<DotN> currentDots;							
  
 //Current working image in IJ1 format 
 	private ImagePlus workingImP;
 	
 // Used for IJ1 interaction (ROI, and JOGLCellRenderer synchronization)        
 	static public int currentFrame=1;
-	private static PointRoi roi = new PointRoi();
+	private static PointRoi roi;
 
 	
 //----------------- 2D View  
@@ -75,11 +73,11 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
         	zSlice = workingImP.getSlice();
         }
     	for (Cell c:allCells) {
-    		CellT ct = c.getCellTAt(ImageOverlay.currentFrame);
+    		CellT ct = c.getCellTAt(SegmentationOverlay.currentFrame);
     		if (ct!=null) {
     			for (DotN dn:ct.dots) {
     				if ((int)(dn.pos.z)==zSlice-1) {
-    					ImageOverlay.dots_to_overlay.add(dn);
+    					SegmentationOverlay.dots_to_overlay.add(dn);
     				}
     			}
     		}
@@ -90,10 +88,10 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
   static public void putCurrentZPositionToOverlay(ImagePlus workingImP) { 
   	if (workingImP!=null) {
     	for (Cell c:allCells) {
-    		CellT ct = c.getCellTAt(ImageOverlay.currentFrame);
+    		CellT ct = c.getCellTAt(SegmentationOverlay.currentFrame);
     		if (ct!=null) {
     			for (DotN dn:ct.dots) {
-    					ImageOverlay.dots_to_overlay.add(dn);
+    				SegmentationOverlay.dots_to_overlay.add(dn);
     			}
     		}
     	}
@@ -207,10 +205,10 @@ public class ImageOverlay implements fiji.util.gui.OverlayedImageCanvas.Overlay 
 	 * 
 	 * @return imageplus to be painted in the overlay
 	 */
-	public ImagePlus getImage() {
+	/* public ImagePlus getImage() {
 		return workingImP;
 	}
-	
+	*/
 	@Override
 	public void setComposite(Composite composite) {
 		// TODO Auto-generated method stub

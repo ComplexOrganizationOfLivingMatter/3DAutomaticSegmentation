@@ -22,7 +22,7 @@ public class CustomCanvas extends OverlayedImageCanvas {
 	 * default serial version UID
 	 */
 	private static final long serialVersionUID = 1L;
-	private ImageOverlay imageOverlay;
+	private SegmentationOverlay imageOverlay;
 
 	/**
 	 * Constructor by default
@@ -109,7 +109,7 @@ public class CustomCanvas extends OverlayedImageCanvas {
 	 * @param overlay
 	 *            Set overlay image
 	 */
-	public void setImageOverlay(ImageOverlay overlay) {
+	public void setImageOverlay(SegmentationOverlay overlay) {
 		imageOverlay = overlay;
 	}
 
@@ -118,7 +118,7 @@ public class CustomCanvas extends OverlayedImageCanvas {
 	 * 
 	 * @return overlay image
 	 */
-	public ImageOverlay getImageOverlay() {
+	public SegmentationOverlay getImageOverlay() {
 		return imageOverlay;
 	}
 }
