@@ -9,6 +9,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -20,10 +22,13 @@ import javax.swing.SwingUtilities;
 
 import net.miginfocom.swing.MigLayout;
 
-import PostProcessingGland.IOPlyLimeSeg;
+import PostProcessingGland.Elements.Cell3D;
 // import JTableModel;
 import PostProcessingGland.GUI.CustomElements.CustomCanvas;
-import PostProcessingGland.GUI.CustomElements.ImageOverlay;
+import PostProcessingGland.GUI.CustomElements.SegmentationOverlay;
+import eu.kiaru.limeseg.LimeSeg;
+import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
+import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.DotN;
 import fiji.util.gui.OverlayedImageCanvas.Overlay;
 import ij.ImagePlus;
@@ -35,13 +40,15 @@ public class PostProcessingWindow extends ImageWindow implements
 	ActionListener
 {
 
-	private ArrayList<ImageOverlay> Output3dSegmentation;
-	private ArrayList<ArrayList<String>> TotalpolDistriRoi;
+	
+	private IOXmlPlyLimeSeg OutputLimeSeg;
 	private ArrayList<Integer> idCells;
 	private Hashtable<Integer, ArrayList<Roi>> cellsROIs;
 	private CustomCanvas canvas;
-	private ImageOverlay overlayResult;
-	private ArrayList<DotN> dots = new ArrayList<>();
+	private SegmentationOverlay overlayResult;
+	private Cell LimeSegCell;
+	private LimeSeg limeSeg;
+	public ArrayList<Cell> allCells;
 
 	private JFrame processingFrame = new JFrame("PostProcessing");
 	private JPanel upRightPanel = new JPanel();
@@ -56,6 +63,8 @@ public class PostProcessingWindow extends ImageWindow implements
 	// private JPanel IdPanel;
 
 	private String initialDirectory;
+	public Cell3D PostProcessCell;
+	public ArrayList<Cell3D> all3dCells;
 
 	// private JTableModel tableInf;
 	// private Scrollbar sliceSelector;
@@ -64,22 +73,38 @@ public class PostProcessingWindow extends ImageWindow implements
 		super(raw_img, new CustomCanvas(raw_img));
 
 		this.initialDirectory = raw_img.getOriginalFileInfo().directory;
-		String path = this.initialDirectory.toString();
-		IOPlyLimeSeg.SearchPath(dots, path);
+		limeSeg = new LimeSeg();
+		LimeSeg.allCells = new ArrayList<Cell>();
+		LimeSegCell = new Cell();
+		all3dCells = new ArrayList<Cell3D>();
+		String directory = this.initialDirectory.toString();
+		File dir = new File(directory + "/OutputLimeSeg");
+		File[] files = dir.listFiles(new FilenameFilter() {
+
+			public boolean accept(File dir, String name) {
+				return name.startsWith("cell");
+			}
+		});
+
+		for (File f : files) {
+			String path = f.toString();
+			LimeSegCell.id_Cell = path.substring(path.indexOf("_") + 1);
+			OutputLimeSeg.hydrateCellT(LimeSegCell, path);
+			PostProcessCell = new Cell3D(LimeSegCell.id_Cell,LimeSegCell.cellTs.get(0).dots);
+			all3dCells.add(PostProcessCell);
+		}
 
 		canvas = (CustomCanvas) super.getCanvas();
 
 		// Init parameters
 		idCells = new ArrayList<Integer>();
-		Output3dSegmentation = new ArrayList<ImageOverlay>();
 		cellsROIs = new Hashtable<Integer, ArrayList<Roi>>();
 		// tableInf = tableInfo;
-		overlayResult = new ImageOverlay();
-
+		overlayResult = new SegmentationOverlay();
 		if (overlayResult != null) {
 			if (canvas.getImageOverlay() == null) {
 				canvas.clearOverlay();
-				raw_img.setOverlay(overlayResult.updateOverlay(dots, raw_img));
+				raw_img.setOverlay(overlayResult.updateOverlay(all3dCells.get(43).dotsList, raw_img));
 				overlayResult.setImage(raw_img);
 				
 				canvas.addOverlay(overlayResult);
