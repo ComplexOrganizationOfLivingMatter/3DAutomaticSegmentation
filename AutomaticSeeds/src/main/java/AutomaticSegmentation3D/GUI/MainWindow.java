@@ -12,6 +12,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.image.ColorModel;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -53,6 +54,10 @@ import inra.ijpb.morphology.MinimaAndMaxima3D;
 import inra.ijpb.morphology.Morphology;
 import inra.ijpb.morphology.Strel;
 import inra.ijpb.morphology.Strel3D;
+import inra.ijpb.plugins.MorphologicalSegmentation;
+import inra.ijpb.plugins.MorphologicalSegmentation.ResultMode;
+import inra.ijpb.util.ColorMaps;
+import inra.ijpb.util.ColorMaps.CommonLabelMaps;
 import inra.ijpb.watershed.Watershed;
 import vib.segment.CustomCanvas;
 import javax.swing.JScrollPane;
@@ -184,23 +189,51 @@ public class MainWindow extends JFrame{
 				//Settings
 				int gradient_radius = 5;
 				int tol = 5;
-				int conn = 6;
+				int conn = 26;
 				boolean dams = true;
+				
 				Strel3D gradient = Strel3D.Shape.CUBE.fromRadius(gradient_radius);
 				
 				//Segmentation
+				
+			
+				
 				ImageStack image = Morphology.gradient(imp.getImageStack(), gradient);
+				//ImagePlus imageP = new ImagePlus("",image);
+				//imageP.show();
+				
 				ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, tol, conn );
+				//imageP = new ImagePlus("",regionalMinima);
+				//imageP.show();
 				ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( image, regionalMinima, conn );
-				ImageStack labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, 32 );
+				//imageP = new ImagePlus("",imposedMinima);
+				//imageP.show();
+				ImageStack labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, 32);
+				//ImagePlus labeled = new ImagePlus("",labeledMinima);
+				
+				
+				//labeled.show();
 				
 			    // apply marker-based watershed using the labeled minima on the minima-imposed gradient image (the true value indicates the use of dams in the output)
-				ImageStack ip_segmented = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, dams );
+				ImageStack ip_segmented = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, true );
+				
 			    ImagePlus imp_segmented = new ImagePlus("MorphSegmented",ip_segmented);
-			    imp_segmented.show();
+			    imp_segmented.setCalibration(imp.getCalibration());
+			    //ImagePlus binarized = BinaryImages.binarize(imp_segmented);
 			    
+			    // Adjust min and max values to display
+				Images3D.optimizeDisplayRange( imp_segmented );
+
+				byte[][] colorMap = CommonLabelMaps.fromLabel( CommonLabelMaps.GOLDEN_ANGLE.getLabel() ).computeLut( 255, false );
+				ColorModel cm = ColorMaps.createColorModel(colorMap, Color.BLACK);
+				imp_segmented.getProcessor().setColorModel(cm);
+				imp_segmented.getImageStack().setColorModel(cm);
+				imp_segmented.updateAndDraw();
 			    
-			    
+				imp_segmented.show();
+			    /*ImageStack binarized_Stack = BinaryImages.binarize(imp_segmented.getImageStack());
+			    ImagePlus binarized_Image = new ImagePlus("Binarized", binarized_Stack);
+			    binarized_Image.show();*/
 			}
 		});
 		OpenButton.setBounds(682, 412, 97, 25);
