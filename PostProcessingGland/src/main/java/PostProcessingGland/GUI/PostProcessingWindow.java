@@ -12,12 +12,18 @@ import java.awt.event.ComponentEvent;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Hashtable;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 
 import net.miginfocom.swing.MigLayout;
@@ -26,6 +32,7 @@ import PostProcessingGland.Elements.Cell3D;
 // import JTableModel;
 import PostProcessingGland.GUI.CustomElements.CustomCanvas;
 import PostProcessingGland.GUI.CustomElements.SegmentationOverlay;
+import PostProcessingGland.PostProcessingGland;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
@@ -42,7 +49,6 @@ public class PostProcessingWindow extends ImageWindow implements
 
 	
 	private IOXmlPlyLimeSeg OutputLimeSeg;
-	private ArrayList<Integer> idCells;
 	private Hashtable<Integer, ArrayList<Roi>> cellsROIs;
 	private CustomCanvas canvas;
 	private SegmentationOverlay overlayResult;
@@ -50,15 +56,14 @@ public class PostProcessingWindow extends ImageWindow implements
 	private LimeSeg limeSeg;
 	public ArrayList<Cell> allCells;
 
-	private JFrame processingFrame = new JFrame("PostProcessing");
-	private JPanel upRightPanel = new JPanel();
-	private JPanel middlePanel = new JPanel();
-	private JPanel bottomRightPanel = new JPanel();
-	private JLabel idLabel = new JLabel("ID Cells");
-	private JLabel lumenLabel = new JLabel("Lumen Processing");
-	private JButton btnSave = new JButton("Save Cell");
-	private JButton btnInsert = new JButton("Modify Cell");
-	private JButton btnLumen = new JButton("Add Lumen");
+	private JFrame processingFrame;
+	private JPanel upRightPanel;
+	private JPanel middlePanel;
+	private JPanel bottomRightPanel;
+	private JButton btnSave;
+	private JButton btnInsert;
+	private JButton btnLumen;
+	private JSpinner labelCell;
 
 	// private JPanel IdPanel;
 
@@ -82,33 +87,51 @@ public class PostProcessingWindow extends ImageWindow implements
 		File[] files = dir.listFiles(new FilenameFilter() {
 
 			public boolean accept(File dir, String name) {
-				return name.startsWith("cell");
+				return name.startsWith("cell_");
 			}
 		});
-
 		for (File f : files) {
 			String path = f.toString();
 			LimeSegCell.id_Cell = path.substring(path.indexOf("_") + 1);
 			OutputLimeSeg.hydrateCellT(LimeSegCell, path);
 			PostProcessCell = new Cell3D(LimeSegCell.id_Cell,LimeSegCell.cellTs.get(0).dots);
+			PostProcessCell.labelCell= Integer.parseInt(LimeSegCell.id_Cell);
 			all3dCells.add(PostProcessCell);
 		}
+		
+		Collections.sort(all3dCells, new Comparator<Cell3D>(){
+      @Override
+			public int compare(Cell3D cel1, Cell3D cel2) {
+        return cel1.getID().compareTo(cel2.getID());
+     }
+ });
 
 		canvas = (CustomCanvas) super.getCanvas();
+		PostProcessingGland.callToolbarPolygon();
 
-		// Init parameters
-		idCells = new ArrayList<Integer>();
+		// Init attributes.
 		cellsROIs = new Hashtable<Integer, ArrayList<Roi>>();
+		processingFrame = new JFrame("PostProcessingGland");
+		upRightPanel = new JPanel();
+		middlePanel = new JPanel();
+		bottomRightPanel = new JPanel();
+		labelCell = new JSpinner();
+		btnSave = new JButton("Save Cell");
+		btnInsert = new JButton("Modify Cell");
+		btnLumen = new JButton("Add Lumen");
+		
+		
 		// tableInf = tableInfo;
 		overlayResult = new SegmentationOverlay();
 		if (overlayResult != null) {
+			
 			if (canvas.getImageOverlay() == null) {
 				canvas.clearOverlay();
-				raw_img.setOverlay(overlayResult.updateOverlay(all3dCells.get(43).dotsList, raw_img));
+				raw_img.setOverlay(overlayResult.getAllOverlays(43,15,all3dCells, raw_img));
 				overlayResult.setImage(raw_img);
-				
 				canvas.addOverlay(overlayResult);
 				canvas.setImageOverlay(overlayResult);
+				
 			}
 		}
 
@@ -123,23 +146,28 @@ public class PostProcessingWindow extends ImageWindow implements
 	}
 
 	private void initGUI(ImagePlus raw_img) {
-
-		/*upRightPanel.setLayout(new MigLayout("alignx right, wrap"));
-		upRightPanel.add(idLabel, "wrap");
 		
-		middlePanel.setLayout(new MigLayout("alignx right, wrap, gapy 10::50"));
+		labelCell.setModel(new SpinnerNumberModel(1, 1,all3dCells.size(), 1));
+
+		upRightPanel.setLayout(new MigLayout());
+		upRightPanel.setBorder(BorderFactory.createTitledBorder("ID Cell"));
+		upRightPanel.add(labelCell);
+		
+		middlePanel.setLayout(new MigLayout());
+		middlePanel.setBorder(BorderFactory.createTitledBorder("Cell Correction"));
 		middlePanel.add(btnSave, "wrap");
 		middlePanel.add(btnInsert, "wrap");
 		
-		bottomRightPanel.setLayout(new MigLayout("alignx right, wrap, gapy 10::50"));
-		bottomRightPanel.add(lumenLabel, "wrap");
+		bottomRightPanel.setLayout(new MigLayout());
+		bottomRightPanel.setBorder(BorderFactory.createTitledBorder("Lumen Processing"));
 		bottomRightPanel.add(btnLumen);
 		
-		*/
-		processingFrame.add(canvas);
-		// processingFrame.add(upRightPanel);
-		// processingFrame.add(middlePanel);
-		// processingFrame.add(bottomRightPanel);
+
+		processingFrame.setLayout(new MigLayout());
+		processingFrame.add(canvas, "alignx center, span 1 5");
+		processingFrame.add(upRightPanel, "wrap, gapy 10::50, aligny top");
+		processingFrame.add(middlePanel, "aligny center, wrap, gapy 10::50");
+		processingFrame.add(bottomRightPanel);
 		processingFrame.setMinimumSize(new Dimension(1024, 1024));
 		processingFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		processingFrame.pack();
@@ -156,6 +184,7 @@ public class PostProcessingWindow extends ImageWindow implements
 				Rectangle r = canvas.getBounds();
 				canvas.setDstDimensions(r.width, r.height);
 			}
+			
 		});
 	}
 
