@@ -123,43 +123,43 @@ public class SegmentationOverlay extends
 	 * @return
 	 */
 
-	static public Overlay getAllOverlays(Integer id, Integer frame,
-		ArrayList<Cell3D> cells, ImagePlus workingImP)
+	public Overlay getOverlay(Integer id, Integer frame,
+		ArrayList<Cell3D> cells, ImagePlus workingImP, boolean allOverlays)
 	{
 		Overlay ov = new Overlay();
 		if (workingImP != null) {
 			workingImP.setOverlay(ov);
+			if (allOverlays) {
+				
 			for (int nCell = 0; nCell < cells.size(); nCell++) {
 				ArrayList<DotN> dots = cells.get(nCell).getCell3DAt(frame);
 				Iterator<DotN> i = dots.iterator();
 				while (i.hasNext()) {
 					DotN loadedDots = i.next();
-					roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);// ,c);
+					roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);
+					Color colorCurrentCell = new Color(0, 0, 255);
+					roi.setColor(colorCurrentCell);
 					if (nCell == id) {
-						Color colorCurrentCell = new Color(255, 0, 0);
+						colorCurrentCell = new Color(255, 0, 0);
 						roi.setStrokeColor(colorCurrentCell);
 					}
-					else {
-						Color colorCurrentCell = new Color(0, 0, 255);
-						roi.setColor(colorCurrentCell);
-					}
+					ov.addElement(roi);
+				}	
+			}
+		}
+			else {
+				ArrayList<DotN> dots = cells.get(id).getCell3DAt(frame);
+				Iterator<DotN> i = dots.iterator();
+				while (i.hasNext()) {
+					DotN loadedDots = i.next();
+					roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);
+					Color colorCurrentCell = new Color(255, 0, 0);
+					roi.setColor(colorCurrentCell);
 					ov.addElement(roi);
 				}
 			}
 		}
 		return ov;
-	}
-
-	/**
-	 * adds ROIs of a specific frame to list of points which will be overlayed
-	 * 
-	 * @param zPosition frame to add.
-	 */
-	static public void addToOverlay(CellT zPosition) {
-		for (int i = 0; i < zPosition.dots.size(); i++) {
-			DotN zDots = zPosition.dots.get(i);
-			dots_to_overlay.add(zDots);
-		}
 	}
 
 	static public void setWorkingImage(ImagePlus workingImP) {

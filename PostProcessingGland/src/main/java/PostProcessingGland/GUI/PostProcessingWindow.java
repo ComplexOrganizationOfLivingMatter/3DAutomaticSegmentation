@@ -19,6 +19,7 @@ import java.util.Hashtable;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -47,7 +48,6 @@ public class PostProcessingWindow extends ImageWindow implements
 	ActionListener
 {
 
-	
 	private IOXmlPlyLimeSeg OutputLimeSeg;
 	private Hashtable<Integer, ArrayList<Roi>> cellsROIs;
 	private CustomCanvas canvas;
@@ -63,6 +63,7 @@ public class PostProcessingWindow extends ImageWindow implements
 	private JButton btnSave;
 	private JButton btnInsert;
 	private JButton btnLumen;
+	private JCheckBox checkOverlay;
 	private JSpinner labelCell;
 
 	// private JPanel IdPanel;
@@ -94,47 +95,38 @@ public class PostProcessingWindow extends ImageWindow implements
 			String path = f.toString();
 			LimeSegCell.id_Cell = path.substring(path.indexOf("_") + 1);
 			OutputLimeSeg.hydrateCellT(LimeSegCell, path);
-			PostProcessCell = new Cell3D(LimeSegCell.id_Cell,LimeSegCell.cellTs.get(0).dots);
-			PostProcessCell.labelCell= Integer.parseInt(LimeSegCell.id_Cell);
+			PostProcessCell = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(
+				0).dots);
+			PostProcessCell.labelCell = Integer.parseInt(LimeSegCell.id_Cell);
 			all3dCells.add(PostProcessCell);
 		}
-		
-		Collections.sort(all3dCells, new Comparator<Cell3D>(){
-      @Override
+
+		Collections.sort(all3dCells, new Comparator<Cell3D>() {
+
+			@Override
 			public int compare(Cell3D cel1, Cell3D cel2) {
-        return cel1.getID().compareTo(cel2.getID());
-     }
- });
+				return cel1.getID().compareTo(cel2.getID());
+			}
+		});
 
 		canvas = (CustomCanvas) super.getCanvas();
 		PostProcessingGland.callToolbarPolygon();
 
-		// Init attributes.
-		cellsROIs = new Hashtable<Integer, ArrayList<Roi>>();
-		processingFrame = new JFrame("PostProcessingGland");
-		upRightPanel = new JPanel();
-		middlePanel = new JPanel();
-		bottomRightPanel = new JPanel();
-		labelCell = new JSpinner();
-		btnSave = new JButton("Save Cell");
-		btnInsert = new JButton("Modify Cell");
-		btnLumen = new JButton("Add Lumen");
-		
-		
+		initializeGUIItems(raw_img);
+
 		// tableInf = tableInfo;
 		overlayResult = new SegmentationOverlay();
 		if (overlayResult != null) {
 			
 			if (canvas.getImageOverlay() == null) {
 				canvas.clearOverlay();
-				raw_img.setOverlay(overlayResult.getAllOverlays(43,15,all3dCells, raw_img));
+				raw_img.setOverlay(overlayResult.getOverlay(0,15,all3dCells, raw_img,false));
 				overlayResult.setImage(raw_img);
 				canvas.addOverlay(overlayResult);
 				canvas.setImageOverlay(overlayResult);
 				
 			}
 		}
-
 		// removeAll();
 
 		initGUI(raw_img);
@@ -146,22 +138,23 @@ public class PostProcessingWindow extends ImageWindow implements
 	}
 
 	private void initGUI(ImagePlus raw_img) {
-		
-		labelCell.setModel(new SpinnerNumberModel(1, 1,all3dCells.size(), 1));
+
+		labelCell.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
 
 		upRightPanel.setLayout(new MigLayout());
 		upRightPanel.setBorder(BorderFactory.createTitledBorder("ID Cell"));
-		upRightPanel.add(labelCell);
-		
+		upRightPanel.add(labelCell, "wrap");
+		upRightPanel.add(checkOverlay);
+
 		middlePanel.setLayout(new MigLayout());
 		middlePanel.setBorder(BorderFactory.createTitledBorder("Cell Correction"));
 		middlePanel.add(btnSave, "wrap");
 		middlePanel.add(btnInsert, "wrap");
-		
+
 		bottomRightPanel.setLayout(new MigLayout());
-		bottomRightPanel.setBorder(BorderFactory.createTitledBorder("Lumen Processing"));
+		bottomRightPanel.setBorder(BorderFactory.createTitledBorder(
+			"Lumen Processing"));
 		bottomRightPanel.add(btnLumen);
-		
 
 		processingFrame.setLayout(new MigLayout());
 		processingFrame.add(canvas, "alignx center, span 1 5");
@@ -173,19 +166,62 @@ public class PostProcessingWindow extends ImageWindow implements
 		processingFrame.pack();
 		processingFrame.setVisible(true);
 
-		initializeGUIItems(raw_img);
-
 	}
 
 	private void initializeGUIItems(ImagePlus raw_img) {
+
+		// Init attributes.
+		cellsROIs = new Hashtable<Integer, ArrayList<Roi>>();
+		processingFrame = new JFrame("PostProcessingGland");
+		upRightPanel = new JPanel();
+		middlePanel = new JPanel();
+		bottomRightPanel = new JPanel();
+		labelCell = new JSpinner();
+		checkOverlay = new JCheckBox("Get all overlays");
+		checkOverlay.addActionListener(this);
+
+		btnSave = new JButton("Save Cell");
+		btnInsert = new JButton("Modify Cell");
+		btnLumen = new JButton("Add Lumen");
+
 		canvas.addComponentListener(new ComponentAdapter() {
 
 			public void componentResized(ComponentEvent ce) {
 				Rectangle r = canvas.getBounds();
 				canvas.setDstDimensions(r.width, r.height);
 			}
-			
+
 		});
+	}
+
+	/*
+	 * Group all the actions(non-Javadoc)
+	 * 
+	 * @see
+	 * java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+	 */
+	@Override
+	public void actionPerformed(ActionEvent e) {
+
+		if (e.getSource() == checkOverlay) {
+			if (checkOverlay.isSelected()) {
+				canvas.clearOverlay();
+				canvas.setOverlay(overlayResult.getOverlay(0, 15, all3dCells, canvas
+					.getImage(), true));
+				overlayResult.setImage(canvas.getImage());
+				canvas.addOverlay(overlayResult);
+				canvas.setImageOverlay(overlayResult);
+			}
+			else {
+				canvas.clearOverlay();
+				canvas.setOverlay(overlayResult.getOverlay(0, 15, all3dCells, canvas
+					.getImage(), false));
+				overlayResult.setImage(canvas.getImage());
+				canvas.addOverlay(overlayResult);
+				canvas.setImageOverlay(overlayResult);
+			}
+		}
+
 	}
 
 	/**
@@ -212,12 +248,6 @@ public class PostProcessingWindow extends ImageWindow implements
 	protected void enableActionButtons() {
 		btnSave.setEnabled(true);
 		btnInsert.setEnabled(true);
-	}
-
-	@Override
-	public void actionPerformed(ActionEvent arg0) {
-		// TODO Auto-generated method stub
-
 	}
 
 }
