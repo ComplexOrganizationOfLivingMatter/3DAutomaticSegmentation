@@ -14,6 +14,7 @@ public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 	 * List of dots contained within this cell
 	 */
 	public ArrayList<DotN> dotsList;
+	public Integer labelCell;
 
 	/**
 	 * Constructor
@@ -35,7 +36,8 @@ public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 	public ArrayList<DotN> getCell3DAt(int frame) {
 		ArrayList<DotN> allDots = new ArrayList<DotN>();
 		for (int i = 0; i < dotsList.size(); i++) {
-			if (allDots.get(i).pos.z == frame) {
+			 int zpos=1+(int)((float) (dotsList.get(i).pos.z/ (float) 4.06)); 
+			if (zpos == frame) {
 				DotN dot = dotsList.get(i);
 				allDots.add(dot);
 			}
@@ -47,5 +49,12 @@ public void clearCell() {
     if (this.dotsList!=null) {
         this.dotsList.clear();
 			}
-	}
+}
+    /**
+     * 
+     * @return the label of the cell 
+     */
+    public Integer getID() {
+          return this.labelCell;
+  			}
 }
