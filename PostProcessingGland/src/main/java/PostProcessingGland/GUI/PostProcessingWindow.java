@@ -26,6 +26,7 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeListener;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -48,6 +49,7 @@ public class PostProcessingWindow extends ImageWindow implements
 	ActionListener
 {
 
+	private static final ChangeListener listener = null;
 	private IOXmlPlyLimeSeg OutputLimeSeg;
 	private Hashtable<Integer, ArrayList<Roi>> cellsROIs;
 	private CustomCanvas canvas;
@@ -176,7 +178,10 @@ public class PostProcessingWindow extends ImageWindow implements
 		upRightPanel = new JPanel();
 		middlePanel = new JPanel();
 		bottomRightPanel = new JPanel();
+		
 		labelCell = new JSpinner();
+		labelCell.addChangeListener(listener);
+		
 		checkOverlay = new JCheckBox("Get all overlays");
 		checkOverlay.addActionListener(this);
 
@@ -222,6 +227,23 @@ public class PostProcessingWindow extends ImageWindow implements
 			}
 		}
 
+	}
+	
+	public void changePerformed(ChangeListener listener) {
+		if (listener.stateChanged()) {
+			canvas.clearOverlay();
+			if (checkOverlay.isSelected()) {
+			canvas.setOverlay(overlayResult.getOverlay((labelCell.getComponentCount()-1), 15, all3dCells, canvas
+				.getImage(), true));
+			} else {
+				canvas.setOverlay(overlayResult.getOverlay((labelCell.getComponentCount()-1), 15, all3dCells, canvas
+					.getImage(), false));
+			}
+			overlayResult.setImage(canvas.getImage());
+			canvas.addOverlay(overlayResult);
+			canvas.setImageOverlay(overlayResult);
+			
+		}
 	}
 
 	/**
