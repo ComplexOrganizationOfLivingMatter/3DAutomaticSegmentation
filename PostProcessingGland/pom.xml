@@ -131,6 +131,13 @@
 			<version>0.4.2</version>
 		</dependency>
 
+	<!-- https://mvnrepository.com/artifact/com.github.quickhull3d/quickhull3d -->
+	<dependency>
+		<groupId>com.github.quickhull3d</groupId>
+		<artifactId>quickhull3d</artifactId>
+		<version>1.0.0</version>
+	</dependency>
+
 	</dependencies>
 	<build>
 		<plugins>
