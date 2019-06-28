@@ -3,6 +3,7 @@ package PostProcessingGland.GUI;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Scrollbar;
 import java.awt.event.ActionEvent;
@@ -32,6 +33,7 @@ import javax.swing.event.ChangeListener;
 import net.miginfocom.swing.MigLayout;
 
 import PostProcessingGland.Elements.Cell3D;
+import PostProcessingGland.Elements.PolygonalRoi;
 // import JTableModel;
 import PostProcessingGland.GUI.CustomElements.CustomCanvas;
 import PostProcessingGland.GUI.CustomElements.SegmentationOverlay;
@@ -44,7 +46,10 @@ import fiji.util.gui.OverlayedImageCanvas.Overlay;
 import ij.ImagePlus;
 import ij.gui.ImageCanvas;
 import ij.gui.ImageWindow;
+import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
 import ij.gui.Roi;
+import ij.plugin.frame.RoiManager;
 
 public class PostProcessingWindow extends ImageWindow implements
 	ActionListener
@@ -57,6 +62,7 @@ public class PostProcessingWindow extends ImageWindow implements
 	private Cell LimeSegCell;
 	private LimeSeg limeSeg;
 	public ArrayList<Cell> allCells;
+	public PolygonalRoi newCell;
 
 	private JFrame processingFrame;
 	private JPanel upRightPanel;
@@ -67,6 +73,9 @@ public class PostProcessingWindow extends ImageWindow implements
 	private JButton btnLumen;
 	private JCheckBox checkOverlay;
 	private JSpinner cellSpinner;
+	
+	private PointRoi dotsRoi;
+	private PolygonRoi polyRoi;
 
 	// private JPanel IdPanel;
 
@@ -171,7 +180,8 @@ public class PostProcessingWindow extends ImageWindow implements
 	private void initializeGUIItems(ImagePlus raw_img) {
 
 		// Init attributes.
-		cellsROIs = new Hashtable<Integer, ArrayList<Roi>>();
+		newCell = new PolygonalRoi();
+		
 		processingFrame = new JFrame("PostProcessingGland");
 		upRightPanel = new JPanel();
 		middlePanel = new JPanel();
@@ -185,6 +195,8 @@ public class PostProcessingWindow extends ImageWindow implements
 		checkOverlay.addActionListener(this);
 
 		btnSave = new JButton("Save Cell");
+		btnSave.addActionListener(this);
+		
 		btnInsert = new JButton("Modify Cell");
 		btnLumen = new JButton("Add Lumen");
 
@@ -225,7 +237,14 @@ public class PostProcessingWindow extends ImageWindow implements
 				canvas.setImageOverlay(overlayResult);
 			}
 		}
-
+		
+		if (e.getSource() == btnSave) {
+			this.addROI();
+			Polygon poly = polyRoi.getPolygon();
+			dotsRoi = new PointRoi(poly);
+			newCell.selectZRegionToSmooth(15, all3dCells.get(((Integer) cellSpinner.getValue() - 1)));
+		}
+		
 	}
 	
 	ChangeListener listener = new ChangeListener() {
@@ -272,5 +291,16 @@ public class PostProcessingWindow extends ImageWindow implements
 		btnSave.setEnabled(true);
 		btnInsert.setEnabled(true);
 	}
-
+	
+	/**
+	 * Add the painted Roi to the roiManager
+	 */
+	public void addROI() {
+		Roi r = this.getImagePlus().getRoi();
+		if (r != null) {
+			polyRoi = (PolygonRoi) r;
+		}
+		this.getImagePlus().deleteRoi();
+	}
+	
 }
