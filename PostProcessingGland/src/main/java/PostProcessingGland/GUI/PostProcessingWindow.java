@@ -242,7 +242,7 @@ public class PostProcessingWindow extends ImageWindow implements
 			this.addROI();
 			Polygon poly = polyRoi.getPolygon();
 			dotsRoi = new PointRoi(poly);
-			newCell.selectZRegionToSmooth(15, all3dCells.get(((Integer) cellSpinner.getValue() - 1)));
+			newCell.selectZRegionToSmooth(15, all3dCells.get(((Integer) cellSpinner.getValue() - 1)), dotsRoi);
 		}
 		
 	}
