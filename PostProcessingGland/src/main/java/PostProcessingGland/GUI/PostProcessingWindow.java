@@ -1,6 +1,9 @@
 
 package PostProcessingGland.GUI;
 
+import com.github.quickhull3d.Point3d;
+import com.github.quickhull3d.QuickHull3D;
+
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Polygon;
@@ -94,8 +97,7 @@ public class PostProcessingWindow extends ImageWindow implements
 		LimeSeg.allCells = new ArrayList<Cell>();
 		LimeSegCell = new Cell();
 		all3dCells = new ArrayList<Cell3D>();
-		String directory = this.initialDirectory.toString();
-		File dir = new File(directory + "/OutputLimeSeg");
+		File dir = new File(this.initialDirectory.toString() + "/OutputLimeSeg");
 		File[] files = dir.listFiles(new FilenameFilter() {
 
 			public boolean accept(File dir, String name) {
@@ -243,6 +245,34 @@ public class PostProcessingWindow extends ImageWindow implements
 			Polygon poly = polyRoi.getPolygon();
 			dotsRoi = new PointRoi(poly);
 			newCell.selectZRegionToSmooth(15, all3dCells.get(((Integer) cellSpinner.getValue() - 1)), dotsRoi);
+			ArrayList<Point3d> newPoints = new ArrayList();
+			for (int nDot = 0; nDot < newCell.getNewRegion().size(); nDot++) {
+				Point3d newPoint = new Point3d();
+				newPoint.set(newCell.getCoordinate(nDot,"x"),newCell.getCoordinate(nDot,"y"), newCell.getCoordinate(nDot,"z")); 
+				newPoints.add(newPoint);
+			}
+			QuickHull3D convexHull = new QuickHull3D();
+			convexHull.build(newPoints.toArray(new Point3d[newPoints.size()]));
+			Point3d[] convexPoints = convexHull.getVertices();
+			newCell.convertPointsInDots(convexPoints);
+			ArrayList<DotN> integratedDots = newCell.integrateNewData(newCell.convexHullDots, all3dCells.get(((Integer) cellSpinner.getValue() - 1)).dotsList, 15);
+			String id = "956";
+			Cell3D new3dCell = new Cell3D(id, integratedDots);
+			
+			all3dCells.set((Integer) cellSpinner.getValue() - 1, new3dCell);
+			canvas.clearOverlay();
+			
+			if (checkOverlay.isSelected()) {
+			canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1) , 15, all3dCells, canvas
+				.getImage(), true));
+			} else {
+				canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1 ), 15, all3dCells, canvas
+					.getImage(), false));
+			}
+			overlayResult.setImage(canvas.getImage());
+			canvas.addOverlay(overlayResult);
+			canvas.setImageOverlay(overlayResult);
+			
 		}
 		
 	}
