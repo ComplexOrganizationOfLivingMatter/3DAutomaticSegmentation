@@ -59,12 +59,16 @@ import inra.ijpb.plugins.MorphologicalSegmentation.ResultMode;
 import inra.ijpb.util.ColorMaps;
 import inra.ijpb.util.ColorMaps.CommonLabelMaps;
 import inra.ijpb.watershed.Watershed;
+
 import vib.segment.CustomCanvas;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JScrollBar;
 import javax.swing.JTextArea;
 import java.awt.BorderLayout;
+
+import ij.util.Tools;
+import Utilities.Counter3D;
 
 //import ij.IJ;
 //import ij.ImagePlus;
@@ -195,24 +199,16 @@ public class MainWindow extends JFrame{
 				Strel3D gradient = Strel3D.Shape.CUBE.fromRadius(gradient_radius);
 				
 				//Segmentation
-				
-			
-				
 				ImageStack image = Morphology.gradient(imp.getImageStack(), gradient);
-				//ImagePlus imageP = new ImagePlus("",image);
-				//imageP.show();
+				
 				
 				ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, tol, conn );
-				//imageP = new ImagePlus("",regionalMinima);
-				//imageP.show();
+				
 				ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( image, regionalMinima, conn );
-				//imageP = new ImagePlus("",imposedMinima);
-				//imageP.show();
+				
 				ImageStack labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, 32);
-				//ImagePlus labeled = new ImagePlus("",labeledMinima);
 				
 				
-				//labeled.show();
 				
 			    // apply marker-based watershed using the labeled minima on the minima-imposed gradient image (the true value indicates the use of dams in the output)
 				ImageStack ip_segmented = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, true );
@@ -229,11 +225,24 @@ public class MainWindow extends JFrame{
 				imp_segmented.getProcessor().setColorModel(cm);
 				imp_segmented.getImageStack().setColorModel(cm);
 				imp_segmented.updateAndDraw();
+				
+				//Convert the segmented image to 8-Bit
+				ImageConverter converter2 = new ImageConverter(imp_segmented);
+				converter2.convertToGray8();
 			    
 				imp_segmented.show();
-			    /*ImageStack binarized_Stack = BinaryImages.binarize(imp_segmented.getImageStack());
-			    ImagePlus binarized_Image = new ImagePlus("Binarized", binarized_Stack);
-			    binarized_Image.show();*/
+				
+				/*ResultsTable rt = new ResultsTable(); 
+				
+				int centroids = Measurements.CENTROID;
+				Analyzer analyzer = new Analyzer(imp_segmented, centroids, rt);
+				*/
+				Counter3D counter = new Counter3D(imp_segmented, 10, 80, 92274688, true, false);
+				ImagePlus resultado = counter.getObjMap(true, 30);
+				float[][] centroids = counter.getCentroidList();
+				resultado.show();
+				System.out.println(centroids.toString());
+				
 			}
 		});
 		OpenButton.setBounds(682, 412, 97, 25);
