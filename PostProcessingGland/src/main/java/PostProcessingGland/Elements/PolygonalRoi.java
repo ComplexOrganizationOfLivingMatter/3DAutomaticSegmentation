@@ -20,7 +20,7 @@ public class PolygonalRoi {
 	public ArrayList<DotN> dotsNewRegion;
 	public ArrayList<DotN> convexHullDots;
 	
-	public void selectZRegionToSmooth(int frame, Cell3D newCellRegion, PointRoi newDots) {
+	public void selectZRegionToSmooth(int frame, Cell3D newCellRegion, Polygon poly) {
 		dotsNewRegion = new ArrayList<DotN>();
 		ArrayList<DotN> dots = newCellRegion.dotsList;
 		Iterator<DotN> i = dots.iterator();
@@ -29,11 +29,14 @@ public class PolygonalRoi {
 			int zpos=1+(int)((float) (loadedDots.pos.z/ (float) 4.06)); 
 			if ((frame-1) <= zpos && zpos <= (frame+1)) {
 				 if (zpos == frame) {
-					 DotN newDot = new DotN();
-					 newDot.pos.x = (float) newDots.getFloatWidth();
-					 newDot.pos.y = (float) newDots.getFloatHeight();
-					 newDot.pos.z = (float) (frame * 4.06 - 1);
-					 dotsNewRegion.add(newDot);
+					 for (int nDot=0; nDot < poly.xpoints.length; nDot++) {
+						 DotN newDot = new DotN();
+						 newDot.pos.x = (float) poly.xpoints[nDot];
+						 newDot.pos.y = (float) poly.ypoints[nDot];
+						 newDot.pos.z = (float) (frame * 4.06 - 1);
+						 dotsNewRegion.add(newDot);
+					 }
+
 				 } else {
 					 dotsNewRegion.add(loadedDots);
 			}
@@ -55,10 +58,11 @@ public class PolygonalRoi {
 	
 	public ArrayList<DotN> integrateNewData (ArrayList <DotN> newDots, ArrayList<DotN> oldDots, int frame) {
 		ArrayList<DotN> currentDots = new ArrayList<DotN>();
+		int pepe = oldDots.size();
 		for (int i= 0; i < oldDots.size(); i++) {
 			DotN dot = oldDots.get(i);
 			int zpos=1+(int)((float) (dot.pos.z/ (float) 4.06)); 
-			if ((frame-1) > zpos && zpos > (frame+1)) {
+			if ((frame-1) > zpos | zpos > (frame+1)) {
 				currentDots.add(dot);
 			}
 		}

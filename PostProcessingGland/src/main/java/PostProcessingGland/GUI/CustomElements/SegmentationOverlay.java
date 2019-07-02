@@ -6,6 +6,7 @@ import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -20,6 +21,7 @@ import eu.kiaru.limeseg.struct.DotN;
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.process.ImageProcessor;
@@ -54,6 +56,7 @@ public class SegmentationOverlay extends
 // Used for IJ1 interaction (ROI, and JOGLCellRenderer synchronization)        
 	static public int currentFrame = 1;
 	private static PointRoi roi;
+	public Polygon polygonOverlay;
 
 //----------------- 2D View  
 	/**
@@ -143,6 +146,7 @@ public class SegmentationOverlay extends
 						colorCurrentCell = new Color(255, 0, 0);
 						roi.setStrokeColor(colorCurrentCell);
 					}
+					
 					ov.addElement(roi);
 				}	
 			}
@@ -155,7 +159,9 @@ public class SegmentationOverlay extends
 					roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);
 					Color colorCurrentCell = new Color(255, 0, 0);
 					roi.setColor(colorCurrentCell);
-					ov.addElement(roi);
+					polygonOverlay.addPoint((int) roi.getFloatWidth(), (int) roi.getFloatHeight());
+					PolygonRoi polyRoi = new PolygonRoi(polygonOverlay, Roi.POLYGON);
+					ov.addElement(polyRoi);
 				}
 			}
 		}

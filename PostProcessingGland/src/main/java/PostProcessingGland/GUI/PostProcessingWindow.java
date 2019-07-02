@@ -242,9 +242,9 @@ public class PostProcessingWindow extends ImageWindow implements
 		
 		if (e.getSource() == btnSave) {
 			this.addROI();
+			
 			Polygon poly = polyRoi.getPolygon();
-			dotsRoi = new PointRoi(poly);
-			newCell.selectZRegionToSmooth(15, all3dCells.get(((Integer) cellSpinner.getValue() - 1)), dotsRoi);
+			newCell.selectZRegionToSmooth(15, all3dCells.get(((Integer) cellSpinner.getValue() - 1)), poly);
 			ArrayList<Point3d> newPoints = new ArrayList();
 			for (int nDot = 0; nDot < newCell.getNewRegion().size(); nDot++) {
 				Point3d newPoint = new Point3d();
