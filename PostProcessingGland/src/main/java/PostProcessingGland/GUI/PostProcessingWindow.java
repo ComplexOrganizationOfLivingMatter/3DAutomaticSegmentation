@@ -74,6 +74,7 @@ public class PostProcessingWindow extends ImageWindow implements
 	private JButton btnSave;
 	private JButton btnInsert;
 	private JButton btnLumen;
+	private JCheckBox checkAllOverlay;
 	private JCheckBox checkOverlay;
 	private JSpinner cellSpinner;
 	
@@ -155,6 +156,7 @@ public class PostProcessingWindow extends ImageWindow implements
 		upRightPanel.setLayout(new MigLayout());
 		upRightPanel.setBorder(BorderFactory.createTitledBorder("ID Cell"));
 		upRightPanel.add(cellSpinner, "wrap");
+		upRightPanel.add(checkAllOverlay, "wrap");
 		upRightPanel.add(checkOverlay);
 
 		middlePanel.setLayout(new MigLayout());
@@ -193,7 +195,10 @@ public class PostProcessingWindow extends ImageWindow implements
 		cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
 		cellSpinner.addChangeListener(listener);
 		
-		checkOverlay = new JCheckBox("Get all overlays");
+		checkAllOverlay = new JCheckBox("Get all overlays");
+		checkAllOverlay.addActionListener(this);
+		
+		checkOverlay = new JCheckBox("Get a overlay");
 		checkOverlay.addActionListener(this);
 
 		btnSave = new JButton("Save Cell");
@@ -221,8 +226,8 @@ public class PostProcessingWindow extends ImageWindow implements
 	@Override
 	public void actionPerformed(ActionEvent e) {
 
-		if (e.getSource() == checkOverlay) {
-			if (checkOverlay.isSelected()) {
+		if (e.getSource() == checkAllOverlay) {
+			if (checkAllOverlay.isSelected()) {
 				canvas.clearOverlay();
 				canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells, canvas
 					.getImage(), true));
@@ -261,7 +266,7 @@ public class PostProcessingWindow extends ImageWindow implements
 			all3dCells.set((Integer) cellSpinner.getValue() - 1, new3dCell);
 			canvas.clearOverlay();
 			
-			if (checkOverlay.isSelected()) {
+			if (checkAllOverlay.isSelected()) {
 			canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1) , canvas.getImage().getCurrentSlice(), all3dCells, canvas
 				.getImage(), true));
 			} else {
@@ -282,16 +287,18 @@ public class PostProcessingWindow extends ImageWindow implements
 		// TODO Auto-generated method stub
 		canvas.clearOverlay();
 		
-		if (checkOverlay.isSelected()) {
+		if (checkAllOverlay.isSelected()) {
 		canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1) , canvas.getImage().getCurrentSlice(), all3dCells, canvas
 			.getImage(), true));
-		} else {
+		} else if (checkOverlay.isSelected()) {
 			canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1 ), canvas.getImage().getCurrentSlice(), all3dCells, canvas
 				.getImage(), false));
 		}
 		overlayResult.setImage(canvas.getImage());
 		canvas.addOverlay(overlayResult);
 		canvas.setImageOverlay(overlayResult);
+		canvas.setImageUpdated();
+		
 	}
 	};
 
