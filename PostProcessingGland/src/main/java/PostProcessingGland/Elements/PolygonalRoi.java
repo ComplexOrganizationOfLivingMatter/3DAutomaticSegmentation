@@ -44,14 +44,14 @@ public class PolygonalRoi {
 	}
 }
 	
-	public void convertPointsInDots(Point3d[] points) {
-		ArrayList<Point3d> convexPoints = new ArrayList<Point3d>(Arrays.asList(points));
+	public void convertPointsInDots(ArrayList<Point3d> points) {
+		//ArrayList<Point3d> convexPoints = new ArrayList<Point3d>(Arrays.asList(points));
 		convexHullDots = new ArrayList<DotN>();
-		for (int nPoint = 0; nPoint < convexPoints.size(); nPoint++) {
+		for (int nPoint = 0; nPoint < points.size(); nPoint++) {
 			DotN dot = new DotN();
-			dot.pos.x = (float) convexPoints.get(nPoint).x;
-			dot.pos.y =	(float) convexPoints.get(nPoint).y;
-			dot.pos.z =	(float) convexPoints.get(nPoint).z;
+			dot.pos.x = (float) points.get(nPoint).x;
+			dot.pos.y =	(float) points.get(nPoint).y;
+			dot.pos.z =	(float) points.get(nPoint).z;
 			convexHullDots.add(dot);
 		}
 	}

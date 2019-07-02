@@ -242,7 +242,6 @@ public class PostProcessingWindow extends ImageWindow implements
 		
 		if (e.getSource() == btnSave) {
 			this.addROI();
-			
 			Polygon poly = polyRoi.getPolygon();
 			newCell.selectZRegionToSmooth(15, all3dCells.get(((Integer) cellSpinner.getValue() - 1)), poly);
 			ArrayList<Point3d> newPoints = new ArrayList();
@@ -251,10 +250,10 @@ public class PostProcessingWindow extends ImageWindow implements
 				newPoint.set(newCell.getCoordinate(nDot,"x"),newCell.getCoordinate(nDot,"y"), newCell.getCoordinate(nDot,"z")); 
 				newPoints.add(newPoint);
 			}
-			QuickHull3D convexHull = new QuickHull3D();
-			convexHull.build(newPoints.toArray(new Point3d[newPoints.size()]));
-			Point3d[] convexPoints = convexHull.getVertices();
-			newCell.convertPointsInDots(convexPoints);
+			//QuickHull3D convexHull = new QuickHull3D();
+			//convexHull.build(newPoints.toArray(new Point3d[newPoints.size()]));
+			//Point3d[] convexPoints = convexHull.getVertices();
+			newCell.convertPointsInDots(newPoints);
 			ArrayList<DotN> integratedDots = newCell.integrateNewData(newCell.convexHullDots, all3dCells.get(((Integer) cellSpinner.getValue() - 1)).dotsList, 15);
 			String id = "956";
 			Cell3D new3dCell = new Cell3D(id, integratedDots);
