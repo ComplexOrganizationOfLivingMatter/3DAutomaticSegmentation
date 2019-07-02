@@ -31,6 +31,7 @@ import javax.swing.border.LineBorder;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.Prefs;
 import ij.gui.ImageWindow;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
@@ -221,7 +222,7 @@ public class MainWindow extends JFrame{
 				Images3D.optimizeDisplayRange( imp_segmented );
 
 				byte[][] colorMap = CommonLabelMaps.fromLabel( CommonLabelMaps.GOLDEN_ANGLE.getLabel() ).computeLut( 255, false );
-				ColorModel cm = ColorMaps.createColorModel(colorMap, Color.BLACK);
+				ColorModel cm = ColorMaps.createColorModel(colorMap, Color.BLACK);//Border color
 				imp_segmented.getProcessor().setColorModel(cm);
 				imp_segmented.getImageStack().setColorModel(cm);
 				imp_segmented.updateAndDraw();
@@ -229,19 +230,42 @@ public class MainWindow extends JFrame{
 				//Convert the segmented image to 8-Bit
 				ImageConverter converter2 = new ImageConverter(imp_segmented);
 				converter2.convertToGray8();
-			    
+			    System.out.println("Profundidad imagen segmentada: "+ imp_segmented.getBitDepth());
 				imp_segmented.show();
 				
-				/*ResultsTable rt = new ResultsTable(); 
+				//3D-OC options settings
+				Prefs.set("3D-OC-Options_volume.boolean", false);
+	            Prefs.set("3D-OC-Options_objVox.boolean", false);
+	            Prefs.set("3D-OC-Options_surfVox.boolean", false);
+	            Prefs.set("3D-OC-Options_IntDens.boolean", false);
+	            Prefs.set("3D-OC-Options_mean.boolean", false); 
+	            Prefs.set("3D-OC-Options_stdDev.boolean", false);
+	            Prefs.set("3D-OC-Options_median.boolean", false);
+	            Prefs.set("3D-OC-Options_min.boolean", false);
+	            Prefs.set("3D-OC-Options_max.boolean", false);
+	            Prefs.set("3D-OC-Options_meanDist2Surf.boolean", false);
+	            Prefs.set("3D-OC-Options_SDDist2Surf.boolean", false);
+	            Prefs.set("3D-OC-Options_medDist2Surf.boolean", false);
+	            Prefs.set("3D-OC-Options_COM.boolean", false);
+	            Prefs.set("3D-OC-Options_BB.boolean", false);
+	            
+	            
+	            
+				Prefs.set("3D-OC-Options_surface.boolean", true);
+	            Prefs.set("3D-OC-Options_centroid.boolean", true);
 				
-				int centroids = Measurements.CENTROID;
-				Analyzer analyzer = new Analyzer(imp_segmented, centroids, rt);
-				*/
-				Counter3D counter = new Counter3D(imp_segmented, 10, 80, 92274688, true, false);
+				
+				
+				
+				Counter3D counter = new Counter3D(imp_segmented, 8, 80, 92274688, false, false);
 				ImagePlus resultado = counter.getObjMap(true, 30);
-				float[][] centroids = counter.getCentroidList();
+				
+				
+				//float[][] centroidList = counter.getCentroidList();
+				
 				resultado.show();
-				System.out.println(centroids.toString());
+				counter.showStatistics(true);
+				counter.showSummary();
 				
 			}
 		});
