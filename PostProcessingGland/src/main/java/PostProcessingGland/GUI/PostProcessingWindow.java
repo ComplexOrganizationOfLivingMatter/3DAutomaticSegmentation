@@ -133,7 +133,7 @@ public class PostProcessingWindow extends ImageWindow implements
 			
 			if (canvas.getImageOverlay() == null) {
 				canvas.clearOverlay();
-				raw_img.setOverlay(overlayResult.getOverlay(0,15,all3dCells, raw_img,false));
+				raw_img.setOverlay(overlayResult.getOverlay(0,canvas.getImage().getCurrentSlice(),all3dCells, raw_img,false));
 				overlayResult.setImage(raw_img);
 				canvas.addOverlay(overlayResult);
 				canvas.setImageOverlay(overlayResult);
@@ -224,7 +224,7 @@ public class PostProcessingWindow extends ImageWindow implements
 		if (e.getSource() == checkOverlay) {
 			if (checkOverlay.isSelected()) {
 				canvas.clearOverlay();
-				canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1), 15, all3dCells, canvas
+				canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells, canvas
 					.getImage(), true));
 				overlayResult.setImage(canvas.getImage());
 				canvas.addOverlay(overlayResult);
@@ -232,7 +232,7 @@ public class PostProcessingWindow extends ImageWindow implements
 			}
 			else {
 				canvas.clearOverlay();
-				canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1), 15, all3dCells, canvas
+				canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells, canvas
 					.getImage(), false));
 				overlayResult.setImage(canvas.getImage());
 				canvas.addOverlay(overlayResult);
@@ -243,7 +243,7 @@ public class PostProcessingWindow extends ImageWindow implements
 		if (e.getSource() == btnSave) {
 			this.addROI();
 			Polygon poly = polyRoi.getPolygon();
-			newCell.selectZRegionToSmooth(15, all3dCells.get(((Integer) cellSpinner.getValue() - 1)), poly);
+			newCell.selectZRegionToSmooth(canvas.getImage().getCurrentSlice(), all3dCells.get(((Integer) cellSpinner.getValue() - 1)), poly);
 			ArrayList<Point3d> newPoints = new ArrayList();
 			for (int nDot = 0; nDot < newCell.getNewRegion().size(); nDot++) {
 				Point3d newPoint = new Point3d();
@@ -254,7 +254,7 @@ public class PostProcessingWindow extends ImageWindow implements
 			//convexHull.build(newPoints.toArray(new Point3d[newPoints.size()]));
 			//Point3d[] convexPoints = convexHull.getVertices();
 			newCell.convertPointsInDots(newPoints);
-			ArrayList<DotN> integratedDots = newCell.integrateNewData(newCell.convexHullDots, all3dCells.get(((Integer) cellSpinner.getValue() - 1)).dotsList, 15);
+			ArrayList<DotN> integratedDots = newCell.integrateNewData(newCell.convexHullDots, all3dCells.get(((Integer) cellSpinner.getValue() - 1)).dotsList, canvas.getImage().getCurrentSlice());
 			String id = "956";
 			Cell3D new3dCell = new Cell3D(id, integratedDots);
 			
@@ -262,10 +262,10 @@ public class PostProcessingWindow extends ImageWindow implements
 			canvas.clearOverlay();
 			
 			if (checkOverlay.isSelected()) {
-			canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1) , 15, all3dCells, canvas
+			canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1) , canvas.getImage().getCurrentSlice(), all3dCells, canvas
 				.getImage(), true));
 			} else {
-				canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1 ), 15, all3dCells, canvas
+				canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1 ), canvas.getImage().getCurrentSlice(), all3dCells, canvas
 					.getImage(), false));
 			}
 			overlayResult.setImage(canvas.getImage());
@@ -283,10 +283,10 @@ public class PostProcessingWindow extends ImageWindow implements
 		canvas.clearOverlay();
 		
 		if (checkOverlay.isSelected()) {
-		canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1) , 15, all3dCells, canvas
+		canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1) , canvas.getImage().getCurrentSlice(), all3dCells, canvas
 			.getImage(), true));
 		} else {
-			canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1 ), 15, all3dCells, canvas
+			canvas.setOverlay(overlayResult.getOverlay( ((Integer) cellSpinner.getValue() - 1 ), canvas.getImage().getCurrentSlice(), all3dCells, canvas
 				.getImage(), false));
 		}
 		overlayResult.setImage(canvas.getImage());
