@@ -272,11 +272,12 @@ public class MainWindow extends JFrame{
 					double x = centroidList[i][0];
 					//Get the cordinate y
 					double y = centroidList[i][1];
-					
+					//Get the slice to create the ROI
 					int z = (int)centroidList[i][2];
-					//Get the area of the index i nuclei
+					//Get the area and radius of the index i nuclei
 					int a = counter.getObject(i).surf_size;
 					int r = Math.round((float)Math.sqrt(a/Math.PI));
+					
 					imp_segmented.setSlice(z);
 					//ImageProcessor processor3 = imp_segmented.getImageStack().getProcessor(z);
 					Roi roi = new OvalRoi(x-r/2,y-r/2,r,r);
