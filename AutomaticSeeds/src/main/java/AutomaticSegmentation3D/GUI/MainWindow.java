@@ -230,6 +230,7 @@ public class MainWindow extends JFrame{
 				//Convert the segmented image to 8-Bit
 				ImageConverter converter2 = new ImageConverter(imp_segmented);
 				converter2.convertToGray8();
+				//Test
 			    System.out.println("Profundidad imagen segmentada: "+ imp_segmented.getBitDepth());
 				imp_segmented.show();
 				
@@ -248,22 +249,43 @@ public class MainWindow extends JFrame{
 	            Prefs.set("3D-OC-Options_medDist2Surf.boolean", false);
 	            Prefs.set("3D-OC-Options_COM.boolean", false);
 	            Prefs.set("3D-OC-Options_BB.boolean", false);
-	            
-	            
-	            
+	            	            
 				Prefs.set("3D-OC-Options_surface.boolean", true);
 	            Prefs.set("3D-OC-Options_centroid.boolean", true);
 				
+					
+				Counter3D counter = new Counter3D(imp_segmented, 10, 80, 92274688, false, false);
+				ImagePlus result = counter.getObjMap(true, 30);
 				
+				float[][] centroidList = counter.getCentroidList();
+				//              0  0 1 2
+				//              |  | | |
+				//centroid -> [id][x,y,z]
 				
-				
-				Counter3D counter = new Counter3D(imp_segmented, 8, 80, 92274688, false, false);
-				ImagePlus resultado = counter.getObjMap(true, 30);
-				
-				
-				//float[][] centroidList = counter.getCentroidList();
-				
-				resultado.show();
+				//Creating the ROI manager
+				RoiManager rm = new RoiManager();
+				//Reset to 0 the RoiManager
+				rm.reset();
+				//Adding ROI to ROI Manager
+				for(int i = 0; i<centroidList.length;i++) {
+					//Get the coordinate x
+					double x = centroidList[i][0];
+					//Get the cordinate y
+					double y = centroidList[i][1];
+					
+					int z = (int)centroidList[i][2];
+					//Get the area of the index i nuclei
+					int a = counter.getObject(i).surf_size;
+					int r = Math.round((float)Math.sqrt(a/Math.PI));
+					imp_segmented.setSlice(z);
+					//ImageProcessor processor3 = imp_segmented.getImageStack().getProcessor(z);
+					Roi roi = new OvalRoi(x-r/2,y-r/2,r,r);
+					rm.addRoi(roi);
+					
+					//imp_segmented.getImageStack().setProcessor(processor3, z);
+					
+				}
+				result.show();
 				counter.showStatistics(true);
 				counter.showSummary();
 				
