@@ -24,6 +24,7 @@ import java.util.Hashtable;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -74,8 +75,7 @@ public class PostProcessingWindow extends ImageWindow implements
 	private JButton btnSave;
 	private JButton btnInsert;
 	private JButton btnLumen;
-	private JCheckBox checkAllOverlay;
-	private JCheckBox checkOverlay;
+	private JComboBox checkOverlay;
 	private JSpinner cellSpinner;
 
 	private PointRoi dotsRoi;
@@ -157,7 +157,6 @@ public class PostProcessingWindow extends ImageWindow implements
 		upRightPanel.setLayout(new MigLayout());
 		upRightPanel.setBorder(BorderFactory.createTitledBorder("ID Cell"));
 		upRightPanel.add(cellSpinner, "wrap");
-		upRightPanel.add(checkAllOverlay, "wrap");
 		upRightPanel.add(checkOverlay);
 
 		middlePanel.setLayout(new MigLayout());
@@ -196,10 +195,10 @@ public class PostProcessingWindow extends ImageWindow implements
 		cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
 		cellSpinner.addChangeListener(listener);
 
-		checkAllOverlay = new JCheckBox("Get all overlays");
-		checkAllOverlay.addActionListener(this);
-
-		checkOverlay = new JCheckBox("Get a overlay");
+		checkOverlay = new JComboBox();
+		checkOverlay.addItem("None overlay");
+		checkOverlay.addItem("Cell overlay");
+		checkOverlay.addItem("All overlays");
 		checkOverlay.addActionListener(this);
 
 		btnSave = new JButton("Save Cell");
@@ -227,9 +226,9 @@ public class PostProcessingWindow extends ImageWindow implements
 	@Override
 	public void actionPerformed(ActionEvent e) {
 
-		if (e.getSource() == checkAllOverlay | e.getSource() == checkOverlay) {
+		if (e.getSource() == checkOverlay) {
 
-			if (checkAllOverlay.isSelected()) {
+			if (checkOverlay.getSelectedItem() == "All overlays") {
 				canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
 					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
 					canvas.getImage(), true));
@@ -243,7 +242,7 @@ public class PostProcessingWindow extends ImageWindow implements
 				overlayResult.ov.clear();
 				overlayResult.workingImP.setHideOverlay(true);
 
-				if (checkOverlay.isSelected()) {
+				if (checkOverlay.getSelectedItem() == "Cell overlay") {
 					canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
 						.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
 						canvas.getImage(), false));
@@ -272,6 +271,7 @@ public class PostProcessingWindow extends ImageWindow implements
 			// convexHull.build(newPoints.toArray(new Point3d[newPoints.size()]));
 			// Point3d[] convexPoints = convexHull.getVertices();
 			newCell.convertPointsInDots(newPoints);
+			addPoints(newCell.convexHullDots); 
 			ArrayList<DotN> integratedDots = newCell.integrateNewData(
 				newCell.convexHullDots, all3dCells.get(((Integer) cellSpinner
 					.getValue() - 1)).dotsList, canvas.getImage().getCurrentSlice());
@@ -281,7 +281,7 @@ public class PostProcessingWindow extends ImageWindow implements
 			all3dCells.set((Integer) cellSpinner.getValue() - 1, new3dCell);
 			canvas.clearOverlay();
 
-			if (checkAllOverlay.isSelected()) {
+			if ((checkOverlay.getSelectedItem() == "All overlays")) {
 				canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
 					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
 					canvas.getImage(), true));
@@ -306,14 +306,14 @@ public class PostProcessingWindow extends ImageWindow implements
 			// TODO Auto-generated method stub
 			canvas.clearOverlay();
 
-			if (checkAllOverlay.isSelected()) {
+			if (checkOverlay.getSelectedItem() == "All overlays") {
 				canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
 					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
 					canvas.getImage(), true));
 			}
 			else {
 
-				if (checkOverlay.isSelected()) {
+				if (checkOverlay.getSelectedItem() == "Cell overlay") {
 					canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
 						.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
 						canvas.getImage(), false));
@@ -367,6 +367,24 @@ public class PostProcessingWindow extends ImageWindow implements
 			polyRoi = (PolygonRoi) r;
 		}
 		this.getImagePlus().deleteRoi();
+	}
+	
+	public void addPoints(ArrayList <DotN> newDots) {
+		int yinc = 10; 						//the increment in the y axis between each point's y coordinate
+		int xinc = 10; 
+		for (int nSides=0; nSides < newDots.size(); nSides++) {
+			float ylength = newDots.get(nSides).pos.y - newDots.get(nSides+1).pos.y; 						//finds the length of the line in the y axis by taking the first y coordinate from the second
+			float xlength = newDots.get(nSides).pos.x - newDots.get(nSides+1).pos.x;						//finds the length in the x axis	the same way
+			for (int j=0; j<= xlength/xinc; j++) { 						//a for loop to plot points, repeats for the total number of segments + 1 (as 0 is counted)
+				float xcoord = newDots.get(nSides).pos.x - (xinc*j); 				//calculates the x coordinate of the point to be plotted by subtracting the increment value (multiplied by the current segment number defined by 'j') from the first x coord of the line
+				float ycoord = newDots.get(nSides).pos.y - (yinc*j); 				//calculates the y coordinate as above from the top-most point on the line
+				DotN dot = new DotN();
+				dot.pos.x = xcoord; 				
+				dot.pos.y = ycoord;
+				newDots.add(dot);
+			}
+		}
+		
 	}
 
 }
