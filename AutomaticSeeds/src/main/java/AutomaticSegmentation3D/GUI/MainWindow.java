@@ -156,24 +156,24 @@ public class MainWindow extends JFrame{
 				
 				//Open the image
 				ImagePlus imp= IJ.openImage();
-				
+				//imp.show();
 				//Test
 				System.out.println("Sin convertir: "+imp.getBitDepth());
 				//Convert the image to 8-Bit
-				ImageConverter converter = new ImageConverter(imp);
-				converter.convertToGray8();
+				if(imp.getBitDepth() != 8) {
+					ImageConverter converter = new ImageConverter(imp);
+					converter.convertToGray8();
+				}
 				//Test
 				System.out.println("Convertida: "+imp.getBitDepth());
-				
+		
 				//Create threshold and binarize the image
 				
 				//IJ.run(imp,"Make Binary","");
 				
-				ImageProcessor processor = imp.getStack().getProcessor(30);
-				
-				
-				int thresh = processor.getAutoThreshold()+3;
-
+				ImageProcessor processor = imp.getStack().getProcessor((int)imp.getStackSize()/2);
+				int thresh = processor.getAutoThreshold()+5;
+				//int thresh = 25;
 				System.out.println("thresh: "+thresh);
 				for(int i=1;i<=imp.getStackSize();i++) {
 					processor = imp.getStack().getProcessor(i);
@@ -195,7 +195,7 @@ public class MainWindow extends JFrame{
 				int gradient_radius = 5;
 				int tol = 5;
 				int conn = 26;
-				boolean dams = true;
+				
 				
 				Strel3D gradient = Strel3D.Shape.CUBE.fromRadius(gradient_radius);
 				
@@ -254,7 +254,7 @@ public class MainWindow extends JFrame{
 	            Prefs.set("3D-OC-Options_centroid.boolean", true);
 				
 					
-				Counter3D counter = new Counter3D(imp_segmented, 10, 80, 92274688, false, false);
+				Counter3D counter = new Counter3D(imp_segmented, 10, 650, 92274688, false, false);
 				ImagePlus result = counter.getObjMap(true, 30);
 				
 				float[][] centroidList = counter.getCentroidList();
@@ -279,11 +279,8 @@ public class MainWindow extends JFrame{
 					int r = Math.round((float)Math.sqrt(a/Math.PI));
 					
 					imp_segmented.setSlice(z);
-					//ImageProcessor processor3 = imp_segmented.getImageStack().getProcessor(z);
 					Roi roi = new OvalRoi(x-r/2,y-r/2,r,r);
 					rm.addRoi(roi);
-					
-					//imp_segmented.getImageStack().setProcessor(processor3, z);
 					
 				}
 				result.show();
