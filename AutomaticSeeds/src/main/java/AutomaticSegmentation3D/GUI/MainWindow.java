@@ -43,6 +43,7 @@ import ij.measure.ResultsTable;
 import ij.plugin.Thresholder;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.filter.ParticleAnalyzer;
+import ij.plugin.frame.ContrastAdjuster;
 import ij.plugin.frame.RoiManager;
 import ij.process.ByteProcessor;
 import ij.process.ImageConverter;
@@ -157,6 +158,7 @@ public class MainWindow extends JFrame{
 				//Open the image
 				ImagePlus imp= IJ.openImage();
 				//imp.show();
+				//ContrastAdjuster adjuster = new ContrastAdjuster();
 				//Test
 				System.out.println("Sin convertir: "+imp.getBitDepth());
 				//Convert the image to 8-Bit
@@ -190,11 +192,12 @@ public class MainWindow extends JFrame{
 				//Test
 				System.out.println("Esta binarizada: "+imp.getStack().getProcessor(5).isBinary());
 				
-				//Morphological segmentation
+				//Morphological segmentation 
 				//Settings
 				int gradient_radius = 5;
 				int tol = 5;
 				int conn = 26;
+				
 				
 				
 				Strel3D gradient = Strel3D.Shape.CUBE.fromRadius(gradient_radius);
