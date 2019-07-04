@@ -50,11 +50,13 @@ public class SegmentationOverlay extends
 	static public ArrayList<DotN> currentDots;
 
 //Current working image in IJ1 format 
-	private ImagePlus workingImP;
+	public ImagePlus workingImP;
 
 // Used for IJ1 interaction (ROI, and JOGLCellRenderer synchronization)        
 	static public int currentFrame = 1;
 	private static PointRoi roi;
+	
+	public Overlay ov;
 
 //----------------- 2D View  
 	/**
@@ -103,31 +105,23 @@ public class SegmentationOverlay extends
 	/**
 	 * Clears image overlay (requires updateOverlay to be effective)
 	 */
-	static public void clearOverlay() {
-		if (dots_to_overlay != null) dots_to_overlay.clear();
-	}
-
-	/**
-	 * Adds all cells into image overlay (requires updateOverlay to be effective)
-	 */
-
-	static public void addAllCellsToOverlay() {
-		for (int i = 0; i < allCells.size(); i++) {
-			Cell c = allCells.get(i);
-			// addToOverlay(c);
+	public void removeOverlay() {
+		if (this.workingImP.getOverlay() != null) {
+			workingImP.getOverlay().clear();
 		}
 	}
+
 
 	/**
 	 * updates Overlay of the working image with registeres dots to be overlayed
 	 * 
-	 * @return
+	 * @return the updated Overlay
 	 */
 
 	public Overlay getOverlay(Integer id, Integer frame,
 		ArrayList<Cell3D> cells, ImagePlus workingImP, boolean allOverlays)
 	{
-		Overlay ov = new Overlay();
+		ov = new Overlay();
 		if (workingImP != null) {
 			workingImP.setOverlay(ov);
 			if (allOverlays) {
