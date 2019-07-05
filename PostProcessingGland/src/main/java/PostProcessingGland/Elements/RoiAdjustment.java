@@ -4,6 +4,7 @@ package PostProcessingGland.Elements;
 import com.github.quickhull3d.Point3d;
 
 import java.awt.Color;
+import java.awt.Point;
 import java.awt.Polygon;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,6 +89,23 @@ public class RoiAdjustment {
 			return this.dotsNewRegion.get(iteration).pos.z;
 		}
 	}
-		
+	
+	public void removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame) {
+		for (Cell3D cell : allCells) {
+			Point[] cellPoints = cell.getPoints(frame);
+			int pepe = 0;
+			for (int nPoint = 0 ; nPoint < cellPoints.length; nPoint++) {
+				if (newPolygon.contains(cellPoints[nPoint].x, cellPoints[nPoint].y)) {
+					pepe++;
+				}
+			}
+			if (pepe != 0 ) {
+				System.out.println(pepe);
+			}
+			
+		}
+	}
+	
+	
 }
 

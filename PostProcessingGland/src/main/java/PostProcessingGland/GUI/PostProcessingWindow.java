@@ -7,6 +7,7 @@ import com.github.quickhull3d.QuickHull3D;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Scrollbar;
@@ -259,32 +260,34 @@ public class PostProcessingWindow extends ImageWindow implements
 		if (e.getSource() == btnInsert) {
 			this.addROI();
 			Polygon poly = polyRoi.getPolygon();
+			Point[] polyPoints = polyRoi.getContainedPoints();
+			
 			newCell.selectNewZRegion(canvas.getImage().getCurrentSlice(),
 				all3dCells.get(((Integer) cellSpinner.getValue() - 1)), poly);
+			
 			ArrayList<Point3d> newPoints = new ArrayList();
+			
 			for (int nDot = 0; nDot < newCell.getNewRegion().size(); nDot++) {
 				Point3d newPoint = new Point3d();
 				newPoint.set(newCell.getCoordinate(nDot, "x"), newCell.getCoordinate(
 					nDot, "y"), newCell.getCoordinate(nDot, "z"));
 				newPoints.add(newPoint);
 			}
-			// QuickHull3D convexHull = new QuickHull3D();
-			// convexHull.build(newPoints.toArray(new Point3d[newPoints.size()]));
-			// Point3d[] convexPoints = convexHull.getVertices();
+			
 			newCell.convertPointsInDots(newPoints);
-			//addPoints(newCell.convexHullDots); 
+
 			ArrayList<DotN> integratedDots = newCell.integrateNewRegion(
 				newCell.convexHullDots, all3dCells.get(((Integer) cellSpinner
 					.getValue() - 1)).dotsList, canvas.getImage().getCurrentSlice());
-			String id = "956";
-			Cell3D new3dCell = new Cell3D(id, integratedDots);
 			
+			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice());
+			
+			String id = all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell;
+			Cell3D new3dCell = new Cell3D(id, integratedDots);
+	
 			all3dCells.set((Integer) cellSpinner.getValue() - 1, new3dCell);
 			canvas.clearOverlay();
 			
-
-			
-
 			if ((checkOverlay.getSelectedItem() == "All overlays")) {
 				canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
 					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
@@ -299,6 +302,11 @@ public class PostProcessingWindow extends ImageWindow implements
 			canvas.addOverlay(overlayResult);
 			canvas.setImageOverlay(overlayResult);
 
+		}
+		
+		if (e.getSource() == btnSave) {
+			
+			
 		}
 
 	}
