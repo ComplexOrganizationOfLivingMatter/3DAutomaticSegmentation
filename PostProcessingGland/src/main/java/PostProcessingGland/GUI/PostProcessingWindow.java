@@ -6,6 +6,7 @@ import com.github.quickhull3d.QuickHull3D;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Scrollbar;
@@ -37,7 +38,7 @@ import javax.swing.event.ChangeListener;
 import net.miginfocom.swing.MigLayout;
 
 import PostProcessingGland.Elements.Cell3D;
-import PostProcessingGland.Elements.PolygonalRoi;
+import PostProcessingGland.Elements.RoiAdjustment;
 // import JTableModel;
 import PostProcessingGland.GUI.CustomElements.CustomCanvas;
 import PostProcessingGland.GUI.CustomElements.SegmentationOverlay;
@@ -66,7 +67,7 @@ public class PostProcessingWindow extends ImageWindow implements
 	private Cell LimeSegCell;
 	private LimeSeg limeSeg;
 	public ArrayList<Cell> allCells;
-	public PolygonalRoi newCell;
+	public RoiAdjustment newCell;
 
 	private JFrame processingFrame;
 	private JPanel upRightPanel;
@@ -161,8 +162,8 @@ public class PostProcessingWindow extends ImageWindow implements
 
 		middlePanel.setLayout(new MigLayout());
 		middlePanel.setBorder(BorderFactory.createTitledBorder("Cell Correction"));
-		middlePanel.add(btnSave, "wrap");
 		middlePanel.add(btnInsert, "wrap");
+		middlePanel.add(btnSave, "wrap");
 
 		bottomRightPanel.setLayout(new MigLayout());
 		bottomRightPanel.setBorder(BorderFactory.createTitledBorder(
@@ -184,7 +185,7 @@ public class PostProcessingWindow extends ImageWindow implements
 	private void initializeGUIItems(ImagePlus raw_img) {
 
 		// Init attributes.
-		newCell = new PolygonalRoi();
+		newCell = new RoiAdjustment();
 
 		processingFrame = new JFrame("PostProcessingGland");
 		upRightPanel = new JPanel();
@@ -201,10 +202,10 @@ public class PostProcessingWindow extends ImageWindow implements
 		checkOverlay.addItem("All overlays");
 		checkOverlay.addActionListener(this);
 
-		btnSave = new JButton("Save Cell");
-		btnSave.addActionListener(this);
-
 		btnInsert = new JButton("Modify Cell");
+		btnInsert.addActionListener(this);
+		
+		btnSave = new JButton("Save Results");
 		btnLumen = new JButton("Add Lumen");
 
 		canvas.addComponentListener(new ComponentAdapter() {
@@ -255,10 +256,10 @@ public class PostProcessingWindow extends ImageWindow implements
 
 		}
 
-		if (e.getSource() == btnSave) {
+		if (e.getSource() == btnInsert) {
 			this.addROI();
 			Polygon poly = polyRoi.getPolygon();
-			newCell.selectZRegionToSmooth(canvas.getImage().getCurrentSlice(),
+			newCell.selectNewZRegion(canvas.getImage().getCurrentSlice(),
 				all3dCells.get(((Integer) cellSpinner.getValue() - 1)), poly);
 			ArrayList<Point3d> newPoints = new ArrayList();
 			for (int nDot = 0; nDot < newCell.getNewRegion().size(); nDot++) {
@@ -271,15 +272,18 @@ public class PostProcessingWindow extends ImageWindow implements
 			// convexHull.build(newPoints.toArray(new Point3d[newPoints.size()]));
 			// Point3d[] convexPoints = convexHull.getVertices();
 			newCell.convertPointsInDots(newPoints);
-			addPoints(newCell.convexHullDots); 
-			ArrayList<DotN> integratedDots = newCell.integrateNewData(
+			//addPoints(newCell.convexHullDots); 
+			ArrayList<DotN> integratedDots = newCell.integrateNewRegion(
 				newCell.convexHullDots, all3dCells.get(((Integer) cellSpinner
 					.getValue() - 1)).dotsList, canvas.getImage().getCurrentSlice());
 			String id = "956";
 			Cell3D new3dCell = new Cell3D(id, integratedDots);
-
+			
 			all3dCells.set((Integer) cellSpinner.getValue() - 1, new3dCell);
 			canvas.clearOverlay();
+			
+
+			
 
 			if ((checkOverlay.getSelectedItem() == "All overlays")) {
 				canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner

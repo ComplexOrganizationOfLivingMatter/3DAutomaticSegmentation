@@ -15,12 +15,12 @@ import ij.gui.PolygonRoi;
 import ij.plugin.frame.RoiManager;
 import eu.kiaru.limeseg.struct.DotN;
 
-public class PolygonalRoi {
+public class RoiAdjustment {
 	
 	public ArrayList<DotN> dotsNewRegion;
 	public ArrayList<DotN> convexHullDots;
 	
-	public void selectZRegionToSmooth(int frame, Cell3D newCellRegion, Polygon poly) {
+	public void selectNewZRegion(int frame, Cell3D newCellRegion, Polygon poly) {
 		dotsNewRegion = new ArrayList<DotN>();
 		ArrayList<DotN> dots = newCellRegion.dotsList;
 		Iterator<DotN> i = dots.iterator();
@@ -56,7 +56,7 @@ public class PolygonalRoi {
 		}
 	}
 	
-	public ArrayList<DotN> integrateNewData (ArrayList <DotN> newDots, ArrayList<DotN> oldDots, int frame) {
+	public ArrayList<DotN> integrateNewRegion (ArrayList <DotN> newDots, ArrayList<DotN> oldDots, int frame) {
 		ArrayList<DotN> currentDots = new ArrayList<DotN>();
 		int pepe = oldDots.size();
 		for (int i= 0; i < oldDots.size(); i++) {
