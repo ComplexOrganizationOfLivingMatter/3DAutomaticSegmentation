@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.stream.IntStream;
+
+import net.imglib2.roi.geom.real.DefaultWritablePolygon2D;
 
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
@@ -93,15 +96,45 @@ public class RoiAdjustment {
 	public void removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame) {
 		for (Cell3D cell : allCells) {
 			Point[] cellPoints = cell.getPoints(frame);
-			int pepe = 0;
 			for (int nPoint = 0 ; nPoint < cellPoints.length; nPoint++) {
 				if (newPolygon.contains(cellPoints[nPoint].x, cellPoints[nPoint].y)) {
-					pepe++;
+					float[] zCell = cell.getCoordinate("x", cell.getCell3DAt(frame));
+					double[] xCoordinate = IntStream.range(0, zCell.length).mapToDouble(i -> zCell[i]).toArray();
+					float[] zCell2 = cell.getCoordinate("y", cell.getCell3DAt(frame));
+					double[] yCoordinate= IntStream.range(0, zCell2.length).mapToDouble(i -> zCell2[i]).toArray();
+					DefaultWritablePolygon2D overlappingCell = new DefaultWritablePolygon2D(xCoordinate,yCoordinate);
+					
+					Point[] p = newPolygon.getContainedPoints();
+					double[] doubleXCell = new double[p.length];
+					double[] doubleYCell = new double[p.length];
+					for (int j = 0; j < p.length; j++) {
+						doubleYCell[j] = p[j].getY();
+						doubleXCell[j] = p[j].getX();
+					}
+					
+					DefaultWritablePolygon2D newPolygonCell = new DefaultWritablePolygon2D(doubleXCell,doubleYCell);
+					
+					
+					overlappingCell = (DefaultWritablePolygon2D) overlappingCell.minus(newPolygonCell);
+					
+					
+					
+					/* PolygonalRoi overlappingCell = new PolygonalRoi(cell.getCoordinate("x", cell.getCell3DAt(frame)), cell.getCoordinate("y", cell.getCell3DAt(frame), cell.dotsList.size());
+					 * for (Point p : overlappingCell.getContainedPoints()) {
+						if (newPolygon.contains(p.x, p.y)) {
+							// Delete overlapping zone
+						}
+					}
+						*/
+					
 				}
 			}
-			if (pepe != 0 ) {
-				System.out.println(pepe);
-			}
+			
+		}
+	}
+	
+	public void comparePolygons(PolygonRoi poly1, PolygonRoi poly2) {
+		for (Point p : poly2) {
 			
 		}
 	}
