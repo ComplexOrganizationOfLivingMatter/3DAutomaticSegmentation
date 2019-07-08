@@ -280,12 +280,15 @@ public class PostProcessingWindow extends ImageWindow implements
 				newCell.convexHullDots, all3dCells.get(((Integer) cellSpinner
 					.getValue() - 1)).dotsList, canvas.getImage().getCurrentSlice());
 			
+
 			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice());
 			
+			/*
 			String id = all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell;
 			Cell3D new3dCell = new Cell3D(id, integratedDots);
 	
 			all3dCells.set((Integer) cellSpinner.getValue() - 1, new3dCell);
+			*/
 			canvas.clearOverlay();
 			
 			if ((checkOverlay.getSelectedItem() == "All overlays")) {

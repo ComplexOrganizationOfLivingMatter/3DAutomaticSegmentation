@@ -10,6 +10,7 @@ import PostProcessingGland.GUI.PostProcessingWindow;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
 import ij.gui.PointRoi;
+import ij.gui.Roi;
 
 public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 
@@ -48,15 +49,15 @@ public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 		return allDots;
 	}
 	
-	public void setCell3D(ArrayList<Point> dots, int frame) {
+	public void setCell3D(ArrayList<Roi> dots, int frame) {
 		ArrayList<DotN> allDots = new ArrayList<DotN>();
 		for (int i = 0; i < dotsList.size(); i++) {
 			int zpos = 1 + (int) ((float) (dotsList.get(i).pos.z / (float) 4.06));
 			if (zpos == frame) {
-				for (Point p : dots) {
+				for (Roi r : dots) {
 					DotN dot = new DotN();
-					dot.pos.x = p.x;
-					dot.pos.y = p.y;
+					dot.pos.x = (float) r.getFloatWidth();
+					dot.pos.y = (float) r.getFloatHeight();
 					dot.pos.z = (float) ((zpos - 1) * 4.06);
 					allDots.add(dot);
 				}

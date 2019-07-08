@@ -18,6 +18,9 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
+import ij.gui.Roi;
+import ij.gui.ShapeRoi;
+import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
 import eu.kiaru.limeseg.struct.DotN;
 
@@ -96,54 +99,33 @@ public class RoiAdjustment {
 	}
 	
 	public void removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame) {
-		for (Cell3D cell : allCells) {
-			Point[] cellPoints = cell.getPoints(frame);
+		for (int nCell=0; nCell < allCells.size() ; nCell++) {
+			Point[] cellPoints = allCells.get(nCell).getPoints(frame);
 			for (int nPoint = 0 ; nPoint < cellPoints.length; nPoint++) {
 				if (newPolygon.contains(cellPoints[nPoint].x, cellPoints[nPoint].y)) {
 					
-					float[] zCell = cell.getCoordinate("x", cell.getCell3DAt(frame));
-					// double[] xCoordinate = IntStream.range(0, zCell.length).mapToDouble(i -> zCell[i]).toArray();
-					float[] zCell2 = cell.getCoordinate("y", cell.getCell3DAt(frame));
-					// double[] yCoordinate= IntStream.range(0, zCell2.length).mapToDouble(i -> zCell2[i]).toArray();
-					/*
-					DefaultWritablePolygon2D overlappingCell = new DefaultWritablePolygon2D(xCoordinate,yCoordinate);
-					
-					Point[] p = newPolygon.getContainedPoints();
-					double[] doubleXCell = new double[p.length];
-					double[] doubleYCell = new double[p.length];
-					for (int j = 0; j < p.length; j++) {
-						doubleYCell[j] = p[j].getY();
-						doubleXCell[j] = p[j].getX();
-					}
-					
-					DefaultWritablePolygon2D newPolygonCell = new DefaultWritablePolygon2D(doubleXCell,doubleYCell);
-					
-					
-					overlappingCell = (DefaultWritablePolygon2D) overlappingCell.minus(newPolygonCell);
-					
-					*/
-					
+					float[] zCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).getCell3DAt(frame));
+					float[] zCell2 = allCells.get(nCell).getCoordinate("y",allCells.get(nCell).getCell3DAt(frame));
+
 					PolygonRoi overlappingCell = new PolygonRoi(zCell, zCell2, 2);
-					Point[] pointsCell = overlappingCell.getContainedPoints();
-					for (int i = 0; i < pointsCell.length; i++) {
-						if (newPolygon.contains(pointsCell[i].x, pointsCell[i].y)) {
-							// Delete overlapping zone
-							pointsCell = ArrayUtils.removeElement(pointsCell, i);
-						}
-					} 
-					ArrayList<Point> pointsArrayList = new ArrayList<Point>(Arrays.asList(pointsCell));
-					cell.setCell3D(pointsArrayList, frame);
-					allCells.set(frame-1, cell);
+				
+					ShapeRoi overCell = this.notOverlappingROI(newPolygon, overlappingCell);
+					Roi[] overRois = overCell.getRois();
+					ArrayList<Roi> roiArrayList = new ArrayList<Roi>(Arrays.asList(overRois));
+					allCells.get(nCell).setCell3D(roiArrayList, frame);
 				}
 			}
 			
 		}
 	}
 	
-	public void comparePolygons(PolygonRoi poly1, PolygonRoi poly2) {
-		for (Point p : poly2) {
-			
-		}
+	public ShapeRoi notOverlappingROI(PolygonRoi newCell, PolygonRoi overlappingCell) {
+	
+		ShapeRoi s1 = new ShapeRoi(newCell);
+		ShapeRoi s2 = new ShapeRoi(overlappingCell);
+		s1.and(s2);
+		s2.xor(s1);
+		return s2;
 	}
 	
 	
