@@ -14,6 +14,8 @@ import java.util.stream.IntStream;
 
 import net.imglib2.roi.geom.real.DefaultWritablePolygon2D;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.plugin.frame.RoiManager;
@@ -98,10 +100,12 @@ public class RoiAdjustment {
 			Point[] cellPoints = cell.getPoints(frame);
 			for (int nPoint = 0 ; nPoint < cellPoints.length; nPoint++) {
 				if (newPolygon.contains(cellPoints[nPoint].x, cellPoints[nPoint].y)) {
+					
 					float[] zCell = cell.getCoordinate("x", cell.getCell3DAt(frame));
-					double[] xCoordinate = IntStream.range(0, zCell.length).mapToDouble(i -> zCell[i]).toArray();
+					// double[] xCoordinate = IntStream.range(0, zCell.length).mapToDouble(i -> zCell[i]).toArray();
 					float[] zCell2 = cell.getCoordinate("y", cell.getCell3DAt(frame));
-					double[] yCoordinate= IntStream.range(0, zCell2.length).mapToDouble(i -> zCell2[i]).toArray();
+					// double[] yCoordinate= IntStream.range(0, zCell2.length).mapToDouble(i -> zCell2[i]).toArray();
+					/*
 					DefaultWritablePolygon2D overlappingCell = new DefaultWritablePolygon2D(xCoordinate,yCoordinate);
 					
 					Point[] p = newPolygon.getContainedPoints();
@@ -117,16 +121,19 @@ public class RoiAdjustment {
 					
 					overlappingCell = (DefaultWritablePolygon2D) overlappingCell.minus(newPolygonCell);
 					
+					*/
 					
-					
-					/* PolygonalRoi overlappingCell = new PolygonalRoi(cell.getCoordinate("x", cell.getCell3DAt(frame)), cell.getCoordinate("y", cell.getCell3DAt(frame), cell.dotsList.size());
-					 * for (Point p : overlappingCell.getContainedPoints()) {
-						if (newPolygon.contains(p.x, p.y)) {
+					PolygonRoi overlappingCell = new PolygonRoi(zCell, zCell2, 2);
+					Point[] pointsCell = overlappingCell.getContainedPoints();
+					for (int i = 0; i < pointsCell.length; i++) {
+						if (newPolygon.contains(pointsCell[i].x, pointsCell[i].y)) {
 							// Delete overlapping zone
+							pointsCell = ArrayUtils.removeElement(pointsCell, i);
 						}
-					}
-						*/
-					
+					} 
+					ArrayList<Point> pointsArrayList = new ArrayList<Point>(Arrays.asList(pointsCell));
+					cell.setCell3D(pointsArrayList, frame);
+					allCells.set(frame-1, cell);
 				}
 			}
 			
