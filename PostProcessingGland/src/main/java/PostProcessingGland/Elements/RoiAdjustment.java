@@ -25,68 +25,72 @@ import ij.plugin.frame.RoiManager;
 import eu.kiaru.limeseg.struct.DotN;
 
 public class RoiAdjustment {
-	
+
 	public ArrayList<DotN> dotsNewRegion;
 	public ArrayList<DotN> convexHullDots;
-	
+
 	public void selectNewZRegion(int frame, Cell3D newCellRegion, Polygon poly) {
 		dotsNewRegion = new ArrayList<DotN>();
 		ArrayList<DotN> dots = newCellRegion.dotsList;
 		Iterator<DotN> i = dots.iterator();
 		while (i.hasNext()) {
 			DotN loadedDots = i.next();
-			int zpos=1+(int)((float) (loadedDots.pos.z/ (float) 4.06)); 
-			if ((frame-1) <= zpos && zpos <= (frame+1)) {
-				 if (zpos == frame) {
-					 for (int nDot=0; nDot < poly.xpoints.length; nDot++) {
-						 DotN newDot = new DotN();
-						 newDot.pos.x = (float) poly.xpoints[nDot];
-						 newDot.pos.y = (float) poly.ypoints[nDot];
-						 newDot.pos.z = (float) (frame * 4.06 - 1);
-						 dotsNewRegion.add(newDot);
-					 }
+			int zpos = 1 + (int) ((float) (loadedDots.pos.z / (float) 4.06));
+			if ((frame - 1) <= zpos && zpos <= (frame + 1)) {
+				if (zpos == frame) {
+					for (int nDot = 0; nDot < poly.xpoints.length; nDot++) {
+						DotN newDot = new DotN();
+						newDot.pos.x = (float) poly.xpoints[nDot];
+						newDot.pos.y = (float) poly.ypoints[nDot];
+						newDot.pos.z = (float) (frame * 4.06 - 1);
+						dotsNewRegion.add(newDot);
+					}
 
-				 } else {
-					 dotsNewRegion.add(loadedDots);
+				}
+				else {
+					dotsNewRegion.add(loadedDots);
+				}
 			}
-			}
+		}
 	}
-}
-	
+
 	public void convertPointsInDots(ArrayList<Point3d> points) {
-		//ArrayList<Point3d> convexPoints = new ArrayList<Point3d>(Arrays.asList(points));
+		// ArrayList<Point3d> convexPoints = new
+		// ArrayList<Point3d>(Arrays.asList(points));
 		convexHullDots = new ArrayList<DotN>();
 		for (int nPoint = 0; nPoint < points.size(); nPoint++) {
 			DotN dot = new DotN();
 			dot.pos.x = (float) points.get(nPoint).x;
-			dot.pos.y =	(float) points.get(nPoint).y;
-			dot.pos.z =	(float) points.get(nPoint).z;
+			dot.pos.y = (float) points.get(nPoint).y;
+			dot.pos.z = (float) points.get(nPoint).z;
 			convexHullDots.add(dot);
 		}
 	}
-	
-	public ArrayList<DotN> integrateNewRegion (ArrayList <DotN> newDots, ArrayList<DotN> oldDots, int frame) {
+
+	public ArrayList<DotN> integrateNewRegion(ArrayList<DotN> newDots,
+		ArrayList<DotN> oldDots, int frame)
+	{
 		ArrayList<DotN> currentDots = new ArrayList<DotN>();
 		int pepe = oldDots.size();
-		for (int i= 0; i < oldDots.size(); i++) {
+		for (int i = 0; i < oldDots.size(); i++) {
 			DotN dot = oldDots.get(i);
-			int zpos=1+(int)((float) (dot.pos.z/ (float) 4.06)); 
-			if ((frame-1) > zpos | zpos > (frame+1)) {
+			int zpos = 1 + (int) ((float) (dot.pos.z / (float) 4.06));
+			if ((frame - 1) > zpos | zpos > (frame + 1)) {
 				currentDots.add(dot);
 			}
 		}
-		for (int j= 0; j < newDots.size(); j++) {
-			currentDots.add(newDots.get(j)); 
+		for (int j = 0; j < newDots.size(); j++) {
+			currentDots.add(newDots.get(j));
 		}
-			return currentDots;
-		
+		return currentDots;
+
 	}
-	
-	public ArrayList<DotN> getNewRegion(){
+
+	public ArrayList<DotN> getNewRegion() {
 		return this.dotsNewRegion;
 	}
-	
-	public double getCoordinate(int iteration,String type) {
+
+	public double getCoordinate(int iteration, String type) {
 		if (type == "x") {
 			return this.dotsNewRegion.get(iteration).pos.x;
 		}
@@ -97,37 +101,34 @@ public class RoiAdjustment {
 			return this.dotsNewRegion.get(iteration).pos.z;
 		}
 	}
-	
-	public void removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame) {
-		for (int nCell=0; nCell < allCells.size() ; nCell++) {
-			Point[] cellPoints = allCells.get(nCell).getPoints(frame);
-			for (int nPoint = 0 ; nPoint < cellPoints.length; nPoint++) {
-				if (newPolygon.contains(cellPoints[nPoint].x, cellPoints[nPoint].y)) {
-					
-					float[] zCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).getCell3DAt(frame));
-					float[] zCell2 = allCells.get(nCell).getCoordinate("y",allCells.get(nCell).getCell3DAt(frame));
 
-					PolygonRoi overlappingCell = new PolygonRoi(zCell, zCell2, 2);
-				
-					ShapeRoi overCell = this.notOverlappingROI(newPolygon, overlappingCell);
-					Roi[] overRois = overCell.getRois();
-					ArrayList<Roi> roiArrayList = new ArrayList<Roi>(Arrays.asList(overRois));
-					allCells.get(nCell).setCell3D(roiArrayList, frame);
-				}
+	public void removeOverlappingRegions(ArrayList<Cell3D> allCells,
+		PolygonRoi newPolygon, int frame)
+	{
+		for (int nCell = 0; nCell < allCells.size(); nCell++) {
+			float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell)
+				.getCell3DAt(frame));
+			float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell)
+				.getCell3DAt(frame));
+
+			PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 2);
+			ShapeRoi s1 = new ShapeRoi(newPolygon);
+			ShapeRoi s2 = new ShapeRoi(overlappingCell);
+
+			if (s1.and(s2) != null) {
+				s2.xor(s1);
+				Roi[] overRois = s2.getRois();
+				ArrayList<Roi> roiArrayList = new ArrayList<Roi>(Arrays.asList(
+					overRois));
+				Cell3D newCell = allCells.get(nCell);
+				newCell.setCell3D(roiArrayList, frame);
+				ArrayList<DotN> integratedDots = this.integrateNewRegion(
+					newCell.dotsList, allCells.get(nCell).dotsList, frame);
+				newCell = new Cell3D(allCells.get(nCell).id_Cell, integratedDots);
+				allCells.set(nCell, newCell);
 			}
-			
 		}
-	}
-	
-	public ShapeRoi notOverlappingROI(PolygonRoi newCell, PolygonRoi overlappingCell) {
-	
-		ShapeRoi s1 = new ShapeRoi(newCell);
-		ShapeRoi s2 = new ShapeRoi(overlappingCell);
-		s1.and(s2);
-		s2.xor(s1);
-		return s2;
-	}
-	
-	
-}
 
+	}
+
+}

@@ -260,6 +260,10 @@ public class PostProcessingWindow extends ImageWindow implements
 		if (e.getSource() == btnInsert) {
 			this.addROI();
 			Polygon poly = polyRoi.getPolygon();
+			
+			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice());
+			
+			/*
 			Point[] polyPoints = polyRoi.getContainedPoints();
 			
 			newCell.selectNewZRegion(canvas.getImage().getCurrentSlice(),
@@ -280,8 +284,8 @@ public class PostProcessingWindow extends ImageWindow implements
 				newCell.convexHullDots, all3dCells.get(((Integer) cellSpinner
 					.getValue() - 1)).dotsList, canvas.getImage().getCurrentSlice());
 			
-
-			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice());
+			*/
+			
 			
 			/*
 			String id = all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell;
