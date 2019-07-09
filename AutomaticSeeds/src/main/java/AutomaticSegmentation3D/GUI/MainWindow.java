@@ -51,13 +51,16 @@ import ij.process.ImageProcessor;
 import ij.process.StackProcessor;
 import inra.ijpb.binary.BinaryImages;
 import inra.ijpb.data.image.Images3D;
+import inra.ijpb.morphology.GeodesicReconstruction3D;
 import inra.ijpb.morphology.MinimaAndMaxima;
 import inra.ijpb.morphology.MinimaAndMaxima3D;
 import inra.ijpb.morphology.Morphology;
 import inra.ijpb.morphology.Strel;
 import inra.ijpb.morphology.Strel3D;
+import inra.ijpb.plugins.FillHolesPlugin;
 import inra.ijpb.plugins.MorphologicalSegmentation;
 import inra.ijpb.plugins.MorphologicalSegmentation.ResultMode;
+import inra.ijpb.plugins.Watershed3DPlugin;
 import inra.ijpb.util.ColorMaps;
 import inra.ijpb.util.ColorMaps.CommonLabelMaps;
 import inra.ijpb.watershed.Watershed;
@@ -157,7 +160,10 @@ public class MainWindow extends JFrame{
 				
 				//Open the image
 				ImagePlus imp= IJ.openImage();
+				
+				
 				//imp.show();
+						
 				//ContrastAdjuster adjuster = new ContrastAdjuster();
 				//Test
 				System.out.println("Sin convertir: "+imp.getBitDepth());
@@ -168,14 +174,20 @@ public class MainWindow extends JFrame{
 				}
 				//Test
 				System.out.println("Convertida: "+imp.getBitDepth());
-		
+				Strel3D gradient = Strel3D.Shape.CUBE.fromRadius(2);
+			
+				
+				ImageStack filter1 = Morphology.externalGradient(imp.getImageStack(), gradient);
+				ImageStack filled = GeodesicReconstruction3D.fillHoles(filter1);
+				//imp.show();
+				imp.setStack(filled);
 				//Create threshold and binarize the image
 				
 				//IJ.run(imp,"Make Binary","");
 				
 				ImageProcessor processor = imp.getStack().getProcessor((int)imp.getStackSize()/2);
-				int thresh = processor.getAutoThreshold()+5;
-				//int thresh = 25;
+				int thresh = processor.getAutoThreshold();
+				
 				System.out.println("thresh: "+thresh);
 				for(int i=1;i<=imp.getStackSize();i++) {
 					processor = imp.getStack().getProcessor(i);
@@ -185,25 +197,24 @@ public class MainWindow extends JFrame{
 					
 					imp.getStack().setProcessor(processor, i);
 				}
-				
-				imp.show();
-				
-				
+				ImageStack filter2 = Morphology.erosion(imp.getImageStack(), gradient);
+				ImagePlus filteredImage = new ImagePlus("Filtered Image",filter2);
+				filteredImage.show();
 				//Test
 				System.out.println("Esta binarizada: "+imp.getStack().getProcessor(5).isBinary());
 				
 				//Morphological segmentation 
 				//Settings
-				int gradient_radius = 5;
-				int tol = 5;
+				int gradient_radius = 3;
+				int tol = 4;
 				int conn = 26;
 				
 				
 				
-				Strel3D gradient = Strel3D.Shape.CUBE.fromRadius(gradient_radius);
+				Strel3D gradient2 = Strel3D.Shape.CUBE.fromRadius(gradient_radius);
 				
 				//Segmentation
-				ImageStack image = Morphology.gradient(imp.getImageStack(), gradient);
+				ImageStack image = Morphology.gradient(filter2, gradient2);
 				
 				
 				ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, tol, conn );
@@ -289,7 +300,7 @@ public class MainWindow extends JFrame{
 				result.show();
 				counter.showStatistics(true);
 				counter.showSummary();
-				
+			
 			}
 		});
 		OpenButton.setBounds(682, 412, 97, 25);
