@@ -6,6 +6,8 @@ import com.github.quickhull3d.Point3d;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.Shape;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -22,6 +24,7 @@ import ij.gui.Roi;
 import ij.gui.ShapeRoi;
 import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
+import ij.process.FloatPolygon;
 import eu.kiaru.limeseg.struct.DotN;
 
 public class RoiAdjustment {
@@ -114,14 +117,12 @@ public class RoiAdjustment {
 			PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 2);
 			ShapeRoi s1 = new ShapeRoi(newPolygon);
 			ShapeRoi s2 = new ShapeRoi(overlappingCell);
-
-			if (s1.and(s2) != null) {
-				s2.xor(s1);
-				Roi[] overRois = s2.getRois();
-				ArrayList<Roi> roiArrayList = new ArrayList<Roi>(Arrays.asList(
-					overRois));
-				Cell3D newCell = allCells.get(nCell);
-				newCell.setCell3D(roiArrayList, frame);
+			ShapeRoi overlappingZone = s1.and(s2);
+			if (overlappingZone.getFloatWidth() != 0 | overlappingZone.getFloatHeight() != 0) {
+				s2.xor(overlappingZone); 
+				
+				Cell3D newCell = new Cell3D(allCells.get(nCell).id_Cell,allCells.get(nCell).dotsList) ;
+				//newCell.setCell3D(overRois, frame);
 				ArrayList<DotN> integratedDots = this.integrateNewRegion(
 					newCell.dotsList, allCells.get(nCell).dotsList, frame);
 				newCell = new Cell3D(allCells.get(nCell).id_Cell, integratedDots);

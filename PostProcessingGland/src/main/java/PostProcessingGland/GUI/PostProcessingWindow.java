@@ -69,7 +69,8 @@ public class PostProcessingWindow extends ImageWindow implements
 	private LimeSeg limeSeg;
 	public ArrayList<Cell> allCells;
 	public RoiAdjustment newCell;
-
+	public PolygonRoi polyRoi2;
+	
 	private JFrame processingFrame;
 	private JPanel upRightPanel;
 	private JPanel middlePanel;
@@ -384,8 +385,18 @@ public class PostProcessingWindow extends ImageWindow implements
 		Roi r = this.getImagePlus().getRoi();
 		if (r != null) {
 			polyRoi = (PolygonRoi) r;
+			
+			int[] xPoly = polyRoi.getXCoordinates();
+			int[] yPoly = polyRoi.getYCoordinates();
+			int i = 0;
+				while (xPoly[i] != 0  | xPoly[i+1] != 0) {
+					i++;
+				}
+				polyRoi2 = new PolygonRoi(Arrays.copyOfRange(xPoly, 0, i-1), Arrays.copyOfRange(yPoly, 0, i-1), i-1, 2);
+				polyRoi2.setLocation(polyRoi.getXBase(), polyRoi.getYBase());
 		}
 		this.getImagePlus().deleteRoi();
+		
 	}
 	
 	public void addPoints(ArrayList <DotN> newDots) {
