@@ -260,40 +260,8 @@ public class PostProcessingWindow extends ImageWindow implements
 
 		if (e.getSource() == btnInsert) {
 			this.addROI();
-			Polygon poly = polyRoi.getPolygon();
-			
-			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice());
-			
-			/*
-			Point[] polyPoints = polyRoi.getContainedPoints();
-			
-			newCell.selectNewZRegion(canvas.getImage().getCurrentSlice(),
-				all3dCells.get(((Integer) cellSpinner.getValue() - 1)), poly);
-			
-			ArrayList<Point3d> newPoints = new ArrayList();
-			
-			for (int nDot = 0; nDot < newCell.getNewRegion().size(); nDot++) {
-				Point3d newPoint = new Point3d();
-				newPoint.set(newCell.getCoordinate(nDot, "x"), newCell.getCoordinate(
-					nDot, "y"), newCell.getCoordinate(nDot, "z"));
-				newPoints.add(newPoint);
-			}
-			
-			newCell.convertPointsInDots(newPoints);
+			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(), all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell);
 
-			ArrayList<DotN> integratedDots = newCell.integrateNewRegion(
-				newCell.convexHullDots, all3dCells.get(((Integer) cellSpinner
-					.getValue() - 1)).dotsList, canvas.getImage().getCurrentSlice());
-			
-			*/
-			
-			
-			/*
-			String id = all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell;
-			Cell3D new3dCell = new Cell3D(id, integratedDots);
-	
-			all3dCells.set((Integer) cellSpinner.getValue() - 1, new3dCell);
-			*/
 			canvas.clearOverlay();
 			
 			if ((checkOverlay.getSelectedItem() == "All overlays")) {
@@ -384,16 +352,14 @@ public class PostProcessingWindow extends ImageWindow implements
 	public void addROI() {
 		Roi r = this.getImagePlus().getRoi();
 		if (r != null) {
-			polyRoi = (PolygonRoi) r;
-			
-			int[] xPoly = polyRoi.getXCoordinates();
-			int[] yPoly = polyRoi.getYCoordinates();
+			int[] xPoly = ((PolygonRoi) r).getXCoordinates();
+			int[] yPoly = ((PolygonRoi) r).getYCoordinates();
 			int i = 0;
 				while (xPoly[i] != 0  | xPoly[i+1] != 0) {
 					i++;
 				}
-				polyRoi2 = new PolygonRoi(Arrays.copyOfRange(xPoly, 0, i-1), Arrays.copyOfRange(yPoly, 0, i-1), i-1, 2);
-				polyRoi2.setLocation(polyRoi.getXBase(), polyRoi.getYBase());
+				polyRoi = new PolygonRoi(Arrays.copyOfRange(xPoly, 0, i-1), Arrays.copyOfRange(yPoly, 0, i-1), i-1, 2);
+				polyRoi.setLocation(r.getXBase(), r.getYBase());
 		}
 		this.getImagePlus().deleteRoi();
 		

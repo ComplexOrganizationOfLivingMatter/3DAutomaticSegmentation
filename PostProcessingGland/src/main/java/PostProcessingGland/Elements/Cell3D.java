@@ -49,34 +49,6 @@ public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 		return allDots;
 	}
 	
-	/*public void setCell3D(Polygon poly, int frame) {
-		ArrayList<DotN> allDots = new ArrayList<DotN>();
-		for (int i = 0; i < dotsList.size(); i++) {
-			int zpos = 1 + (int) ((float) (dotsList.get(i).pos.z / (float) 4.06));
-			if (zpos == frame) {
-				for (int p = 0; p < poly.; p++) {
-					
-					DotN dot = new DotN();
-					dot.pos.x = (float) r.getFloatWidth();
-					dot.pos.y = (float) r.getFloatHeight();
-					dot.pos.z = (float) ((zpos - 1) * 4.06);
-					allDots.add(dot);
-				}
-			}
-				else {
-					allDots.add(dotsList.get(i));
-				}
-			}
-		this.clearCell();
-		this.dotsList = allDots;
-		}
-
-	public void clearCell() {
-		if (this.dotsList != null) {
-			this.dotsList.clear();
-		}
-	}
-
 	/**
 	 * @return the label of the cell
 	 */
@@ -111,6 +83,18 @@ public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 		}
 		
 		return cellPoints;
+	}
+	
+	// Setter
+	
+	public void setCell3D(ArrayList<DotN> dots) {
+		this.dotsList = dots;
+		}
+
+	public void clearCell() {
+		if (this.dotsList != null) {
+			this.dotsList.clear();
+		}
 	}
 
 }
