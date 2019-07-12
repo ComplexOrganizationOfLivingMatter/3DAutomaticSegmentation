@@ -72,14 +72,28 @@ public class RoiAdjustment {
 
 			PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 2);
 			
-			ShapeRoi s1 = new ShapeRoi(newPolygon);
-			ShapeRoi s2 = new ShapeRoi(overlappingCell);
-			ShapeRoi overlappingZone = s1.and(s2);
+			ShapeRoi sNewPolygon = new ShapeRoi(newPolygon);
+			ShapeRoi sNewPolygonBackUp = new ShapeRoi(sNewPolygon);
+			ShapeRoi sOverlappingCell = new ShapeRoi(overlappingCell);		
+			ShapeRoi overlappingZone = new ShapeRoi(sNewPolygon.and(sOverlappingCell));
 			if ((overlappingZone.getFloatWidth() != 0 | overlappingZone.getFloatHeight() != 0) & allCells.get(nCell).id_Cell != id ) {
-				s2.xor(overlappingZone); 
-				PolygonRoi[] overRoi = (PolygonRoi[]) s2.getRois();
+				ShapeRoi sNotOverlappingCell = new ShapeRoi(sOverlappingCell.not(sNewPolygonBackUp));
 				
-				this.setOverlapRegion(frame, overRoi);
+				// Convert the ShapeRoi in PolygonRoi (Non-overlappin part of the cells)
+				Roi[] overRoi =  sNotOverlappingCell.getRois();
+				int[] xPoints = new int[overRoi.length];
+				int[] yPoints = new int[overRoi.length];
+				
+				for (int p = 0; p < overRoi.length; p++) {
+					xPoints[p] = (int) overRoi[p].getXBase();
+					yPoints[p] = (int) overRoi[p].getYBase();
+				}
+				PolygonRoi poly = new PolygonRoi(xPoints, yPoints, overRoi.length, 2);
+				poly.setLocation(sNotOverlappingCell.getXBase(), sNotOverlappingCell.getYBase());
+				
+				// Convert the PolygonRoi in Dots and integrate with the dots of the other frames. 
+				// Later, replace the selected cell by the cell with the new region 
+				this.setOverlapRegion(frame, poly,sNotOverlappingCell);
 				ArrayList<DotN> integratedDots = new ArrayList<DotN>(this.integrateNewRegion(
 					this.dotsNewRegion, allCells.get(nCell).dotsList, frame));
 
@@ -87,31 +101,18 @@ public class RoiAdjustment {
 				allCells.set(nCell, newCell);
 			}
 			else if (allCells.get(nCell).id_Cell == id) {
-				selectedCell = nCell;
+				selectedCell = nCell; 
 			}
 		}
+		
+		// Replace the cell with the mistaken overlay by the new cell.
 		this.setNewRegion(frame, newPolygon);
 		ArrayList<DotN> integratedDots = new ArrayList<DotN>(this.integrateNewRegion(
 			this.dotsNewRegion, allCells.get(selectedCell).dotsList, frame));
 		Cell3D newCell = new Cell3D(id, integratedDots);
 		allCells.set(selectedCell, newCell);
+		
 	}
-
-	
-	
-	 /* public void convertPointsInDots(ArrayList<Point3d> points) {
-		// ArrayList<Point3d> convexPoints = new
-		// ArrayList<Point3d>(Arrays.asList(points));
-		convexHullDots = new ArrayList<DotN>();
-		for (int nPoint = 0; nPoint < points.size(); nPoint++) {
-			DotN dot = new DotN();
-			dot.pos.x = (float) points.get(nPoint).x;
-			dot.pos.y = (float) points.get(nPoint).y;
-			dot.pos.z = (float) points.get(nPoint).z;
-			convexHullDots.add(dot);
-		}
-	}
-	*/
 	
 	// Getter method.
 	
@@ -134,20 +135,22 @@ public class RoiAdjustment {
 		int[] yPolygon = poly.getYCoordinates();
 					for (int nDot = 0; nDot < xPolygon.length; nDot++) {
 						DotN newDot = new DotN();
-						newDot.pos.x = (float) xPolygon[nDot];
-						newDot.pos.y = (float) yPolygon[nDot];
+						newDot.pos.x = (float) (xPolygon[nDot] + poly.getXBase());
+						newDot.pos.y = (float) (yPolygon[nDot] + poly.getYBase());
 						newDot.pos.z = (float) (frame * zScale - 1);
 						dotsNewRegion.add(newDot);
 					}
 			}
 	
-	public void setOverlapRegion(int frame, PolygonRoi[] poly) {
+	public void setOverlapRegion(int frame, PolygonRoi poly, ShapeRoi shape) {
 		dotsNewRegion = new ArrayList<DotN>();
 		zScale = (float) 4.06;
-					for (int nDot = 0; nDot < poly.length; nDot++) {
+		int[] xPolygon = poly.getXCoordinates();
+		int[] yPolygon = poly.getYCoordinates();
+					for (int nDot = 0; nDot < xPolygon.length; nDot++) {
 						DotN newDot = new DotN();
-						newDot.pos.x = (float) poly[nDot].getXBase();
-						newDot.pos.y = (float) poly[nDot].getYBase();
+						newDot.pos.x = (float) (xPolygon[nDot] + shape.getXBase());
+						newDot.pos.y = (float) (yPolygon[nDot] + shape.getYBase());
 						newDot.pos.z = (float) (frame * zScale - 1);
 						dotsNewRegion.add(newDot);
 					}
