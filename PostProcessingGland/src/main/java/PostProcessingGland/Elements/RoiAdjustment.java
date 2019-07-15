@@ -78,17 +78,27 @@ public class RoiAdjustment {
 			ShapeRoi overlappingZone = new ShapeRoi(sNewPolygon.and(sOverlappingCell));
 			if ((overlappingZone.getFloatWidth() != 0 | overlappingZone.getFloatHeight() != 0) & allCells.get(nCell).id_Cell != id ) {
 				ShapeRoi sNotOverlappingCell = new ShapeRoi(sOverlappingCell.not(sNewPolygonBackUp));
+				ConcaveHull shapepe = new ConcaveHull();
+				ArrayList<Roi> overRoi= new ArrayList<Roi>(Arrays.asList(sNotOverlappingCell.getRois()));
+				ArrayList<PostProcessingGland.Elements.ConcaveHull.Point> pepe = new ArrayList<PostProcessingGland.Elements.ConcaveHull.Point>();
+				for (int i = 0; i < overRoi.size(); i++) {
+					PostProcessingGland.Elements.ConcaveHull.Point point = new PostProcessingGland.Elements.ConcaveHull.Point(overRoi.get(i).getFloatHeight(), overRoi.get(i).getFloatWidth());
+					pepe.add(point);
+				}
+				
+				
+				ArrayList<PostProcessingGland.Elements.ConcaveHull.Point> allPoints = shapepe.calculateConcaveHull(pepe, 10);
 				
 				// Convert the ShapeRoi in PolygonRoi (Non-overlappin part of the cells)
-				Roi[] overRoi =  sNotOverlappingCell.getRois();
-				int[] xPoints = new int[overRoi.length];
-				int[] yPoints = new int[overRoi.length];
+				//Roi[] overRoi =  sNotOverlappingCell.getRois();
+				int[] xPoints = new int[overRoi.size()];
+				int[] yPoints = new int[overRoi.size()];
 				
-				for (int p = 0; p < overRoi.length; p++) {
-					xPoints[p] = (int) overRoi[p].getXBase();
-					yPoints[p] = (int) overRoi[p].getYBase();
+				for (int p = 0; p < allPoints.size(); p++) {
+					xPoints[p] = allPoints.get(p).getX().intValue();
+					yPoints[p] = allPoints.get(p).getX().intValue();
 				}
-				PolygonRoi poly = new PolygonRoi(xPoints, yPoints, overRoi.length, 2);
+				PolygonRoi poly = new PolygonRoi(xPoints, yPoints, allPoints.size(), 2);
 				poly.setLocation(sNotOverlappingCell.getXBase(), sNotOverlappingCell.getYBase());
 				
 				// Convert the PolygonRoi in Dots and integrate with the dots of the other frames. 
