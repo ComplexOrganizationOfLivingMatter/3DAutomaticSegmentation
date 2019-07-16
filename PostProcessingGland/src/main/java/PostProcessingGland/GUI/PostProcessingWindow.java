@@ -1,8 +1,6 @@
 
 package PostProcessingGland.GUI;
 
-import com.github.quickhull3d.Point3d;
-import com.github.quickhull3d.QuickHull3D;
 
 import java.awt.Component;
 import java.awt.Dimension;
