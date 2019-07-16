@@ -2,6 +2,7 @@
 package PostProcessingGland.Elements;
 
 
+import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -13,6 +14,7 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -86,16 +88,30 @@ public class RoiAdjustment {
 				ShapeRoi sNotOverlappingCell = new ShapeRoi(sOverlappingCell.not(sNewPolygonBackUp));
 				
 				// Convert the ShapeRoi in PolygonRoi (Non-overlappin part of the cells)
-				ArrayList<Roi> overRoi= new ArrayList<Roi>(Arrays.asList(sNotOverlappingCell.getRois()));
+				Roi[] overRoi= sNotOverlappingCell.getRois();
+				
+				
+				
 				int[] xPoints = new int[overRoi.size()];
 				int[] yPoints = new int[overRoi.size()];
+				
 				
 				PolygonRoi poly = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
 				poly.setLocation(sNotOverlappingCell.getXBase(), sNotOverlappingCell.getYBase());
 				
 				GeometryFactory geoF = new GeometryFactory();
-				Geometry geo = geoF.buildGeometry(overRoi);
-				ConcaveHull ch = new ConcaveHull(geo, 1000);
+				Polygon polG = new Polygon(xPoints, yPoints, xPoints.length);
+				com.vividsolutions.jts.geom.Polygon[] geo = geoF.toPolygonArray((Collection) polG);
+				
+				for (int i = 0; i < overRoi.length; i++) {
+					Coordinate coordinate = new Coordinate(overRoi[i].getFloatWidth() + sNotOverlappingCell.getXBase(), overRoi[i].getFloatHeight() + sNotOverlappingCell.getYBase());
+					com.vividsolutions.jts.geom.Point p = new com.vividsolutions.jts.geom.Point(coordinate, null, i);
+					p = geoF.createPoint(coordinate);
+					
+				}
+				
+				
+				ConcaveHull ch = new ConcaveHull(geometry, threshold);
 				// Convert the PolygonRoi in Dots and integrate with the dots of the other frames. 
 				// Later, replace the selected cell by the cell with the new region 
 				this.setOverlapRegion(frame, poly,sNotOverlappingCell);
