@@ -1,7 +1,10 @@
 
 package PostProcessingGland.Elements;
 
-import com.github.quickhull3d.Point3d;
+
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryCollection;
+import com.vividsolutions.jts.geom.GeometryFactory;
 
 import java.awt.Color;
 import java.awt.Point;
@@ -17,6 +20,7 @@ import java.util.stream.IntStream;
 import net.imglib2.roi.geom.real.DefaultWritablePolygon2D;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.opensphere.geometry.algorithm.ConcaveHull;
 
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
@@ -61,6 +65,7 @@ public class RoiAdjustment {
 
 	}
 
+	// Main function
 	public void removeOverlappingRegions(ArrayList<Cell3D> allCells,
 		PolygonRoi newPolygon, int frame, String id)
 	{
@@ -76,31 +81,21 @@ public class RoiAdjustment {
 			ShapeRoi sNewPolygonBackUp = new ShapeRoi(sNewPolygon);
 			ShapeRoi sOverlappingCell = new ShapeRoi(overlappingCell);		
 			ShapeRoi overlappingZone = new ShapeRoi(sNewPolygon.and(sOverlappingCell));
+			
 			if ((overlappingZone.getFloatWidth() != 0 | overlappingZone.getFloatHeight() != 0) & allCells.get(nCell).id_Cell != id ) {
 				ShapeRoi sNotOverlappingCell = new ShapeRoi(sOverlappingCell.not(sNewPolygonBackUp));
-				ConcaveHull shapepe = new ConcaveHull();
-				ArrayList<Roi> overRoi= new ArrayList<Roi>(Arrays.asList(sNotOverlappingCell.getRois()));
-				ArrayList<PostProcessingGland.Elements.ConcaveHull.Point> pepe = new ArrayList<PostProcessingGland.Elements.ConcaveHull.Point>();
-				for (int i = 0; i < overRoi.size(); i++) {
-					PostProcessingGland.Elements.ConcaveHull.Point point = new PostProcessingGland.Elements.ConcaveHull.Point(overRoi.get(i).getFloatHeight(), overRoi.get(i).getFloatWidth());
-					pepe.add(point);
-				}
-				
-				
-				ArrayList<PostProcessingGland.Elements.ConcaveHull.Point> allPoints = shapepe.calculateConcaveHull(pepe, 10);
 				
 				// Convert the ShapeRoi in PolygonRoi (Non-overlappin part of the cells)
-				//Roi[] overRoi =  sNotOverlappingCell.getRois();
+				ArrayList<Roi> overRoi= new ArrayList<Roi>(Arrays.asList(sNotOverlappingCell.getRois()));
 				int[] xPoints = new int[overRoi.size()];
 				int[] yPoints = new int[overRoi.size()];
 				
-				for (int p = 0; p < allPoints.size(); p++) {
-					xPoints[p] = allPoints.get(p).getX().intValue();
-					yPoints[p] = allPoints.get(p).getX().intValue();
-				}
-				PolygonRoi poly = new PolygonRoi(xPoints, yPoints, allPoints.size(), 2);
+				PolygonRoi poly = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
 				poly.setLocation(sNotOverlappingCell.getXBase(), sNotOverlappingCell.getYBase());
 				
+				GeometryFactory geoF = new GeometryFactory();
+				Geometry geo = geoF.buildGeometry(overRoi);
+				ConcaveHull ch = new ConcaveHull(geo, 1000);
 				// Convert the PolygonRoi in Dots and integrate with the dots of the other frames. 
 				// Later, replace the selected cell by the cell with the new region 
 				this.setOverlapRegion(frame, poly,sNotOverlappingCell);
