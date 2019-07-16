@@ -131,12 +131,14 @@
 			<version>0.4.2</version>
 		</dependency>
 
-	<!-- https://mvnrepository.com/artifact/com.github.quickhull3d/quickhull3d -->
-	<dependency>
-		<groupId>com.github.quickhull3d</groupId>
-		<artifactId>quickhull3d</artifactId>
-		<version>1.0.0</version>
-	</dependency>
+		<!-- https://github.com/atolcd/pentaho-gis-plugins -->
+		<dependency>
+			<groupId>concave-hull</groupId>
+			<artifactId>core</artifactId>
+			<version>20170808</version>
+		</dependency>
+
+
 
 	</dependencies>
 	<build>
@@ -199,6 +201,11 @@
 		<repository>
 			<id>swt-repo</id>
 			<url>https://raw.githubusercontent.com/maven-eclipse/swt-repo/master/</url>
+		</repository>
+
+		<repository>
+			<id>magsilva</id>
+			<url>dav:http://magsilva.pro.br/repo/maven2</url>
 		</repository>
 	</repositories>
 	<profiles>
