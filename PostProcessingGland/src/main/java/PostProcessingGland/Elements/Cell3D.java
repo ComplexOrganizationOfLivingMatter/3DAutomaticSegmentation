@@ -1,8 +1,6 @@
 
 package PostProcessingGland.Elements;
 
-import com.github.quickhull3d.Point3d;
-
 import java.awt.Point;
 import java.util.ArrayList;
 
