@@ -1,0 +1,43 @@
+Manifest-Version: 1.0
+Implementation-Title: plugins/AutomaticSegmentation3D_
+Automatic-Module-Name: 
+Implementation-Version: 0.0.1-SNAPSHOT
+Built-By: Luisma
+Specification-Vendor: SciJava
+Specification-Title: plugins/AutomaticSegmentation3D_
+Implementation-Vendor-Id: sc.fiji
+Class-Path: Fiji_Plugins-3.1.1.jar VIB-lib-2.2.0.jar pal-optimization-
+ 2.0.1.jar jama-1.0.3.jar fiji-lib-2.1.2.jar ij1-patcher-0.12.9.jar ja
+ vassist-3.24.0-GA.jar legacy-imglib1-1.1.9.jar imglib2-5.6.3.jar form
+ ats-api-6.0.0.jar ome-codecs-0.2.3.jar ome-jai-0.1.0.jar slf4j-api-1.
+ 7.25.jar formats-bsd-6.0.0.jar specification-6.0.0.jar turbojpeg-6.0.
+ 0.jar native-lib-loader-2.3.2.jar jgoodies-forms-1.7.2.jar jgoodies-c
+ ommon-1.7.0.jar kryo-2.24.0.jar minlog-1.2.jar objenesis-2.1.jar perf
+ 4j-0.9.13.jar guava-21.0.jar metadata-extractor-2.6.2.jar xmpcore-5.1
+ .2.jar xercesImpl-2.8.1.jar ome-common-6.0.0.jar minio-5.0.2.jar goog
+ le-http-client-xml-1.20.0.jar google-http-client-1.20.0.jar httpclien
+ t-4.0.1.jar httpcore-4.0.1.jar commons-logging-1.2.jar xpp3-1.1.4c.ja
+ r okhttp-3.7.0.jar okio-1.12.0.jar jackson-annotations-2.9.6.jar jack
+ son-core-2.9.6.jar jackson-databind-2.9.6.jar jsr305-3.0.1.jar joda-t
+ ime-2.10.1.jar logback-core-1.2.3.jar ome-xml-6.0.0.jar mines-jtk-201
+ 51125.jar mpicbg-1.2.0.jar jfreechart-1.5.0.jar ij-1.52i.jar imglib2-
+ ij-2.0.0-beta-44.jar imglib2-cache-1.0.0-beta-11.jar caffeine-2.4.0.j
+ ar imagej-common-0.28.2.jar imglib2-roi-0.7.0.jar imglib2-realtransfo
+ rm-2.1.0.jar jitk-tps-3.0.0.jar ejml-0.24.jar log4j-1.2.17.jar trove4
+ j-3.0.3.jar scijava-common-2.77.0.jar parsington-1.0.4.jar eventbus-1
+ .4.jar scijava-table-0.4.0.jar udunits-4.3.18.jar poi-3.8.jar commons
+ -codec-1.11.jar org.eclipse.swt.win32.win32.x86_64-4.4.jar MorphoLibJ
+ _-1.4.0.jar commons-math3-3.6.1.jar 3D_Objects_Counter-2.0.1.jar migl
+ ayout-3.7.4.jar 3D_Viewer-4.0.2.jar j3dcore-1.6.0-scijava-2.jar glueg
+ en-rt-2.3.2.jar jogl-all-2.3.2.jar j3dutils-1.6.0-scijava-2.jar vecma
+ th-1.6.0-scijava-2.jar
+Implementation-Date: 2019-07-16T15:14:04+0000
+Implementation-Vendor: SciJava
+Main-Class: AutomaticSegmentation
+Premain-Class: 
+Implementation-Build: 26dd63a00f73055090ab24f0bf5126abae37bb30
+Build-Jdk: 1.8.0_111
+Specification-Version: 0.0
+Implementation-URL: https://scijava.org/AutomaticSegmentation3D_/
+Created-By: Maven Integration for Eclipse
+
