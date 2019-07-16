@@ -38,6 +38,7 @@ import inra.ijpb.morphology.Strel3D;
 import inra.ijpb.util.ColorMaps;
 import inra.ijpb.util.ColorMaps.CommonLabelMaps;
 import inra.ijpb.watershed.Watershed;
+import net.miginfocom.swing.MigLayout;
 
 
 public class MainWindow extends JFrame{
@@ -45,9 +46,6 @@ public class MainWindow extends JFrame{
 	private JPanel panel;
 	private JButton OpenButton;
 	private JButton CurrentImageButton;
-	private RoiManager roiManager;
-	private ImagePlus imp;
-	private ImagePlus imp_segmented;
 	
 	public MainWindow() {
 		String name = UIManager.getInstalledLookAndFeels()[3].getClassName();
@@ -60,7 +58,7 @@ public class MainWindow extends JFrame{
 		}
 		UIManager.put("Panel.background", Color.WHITE);
 		UIManager.put("Slider.background", Color.WHITE);
-		setMinimumSize(new Dimension(1200, 600));
+		setMinimumSize(new Dimension(300, 300));
 		setTitle("AutomaticSegmentation3D");
 		// Not close Fiji when AutomaticSegmentation is closed
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -110,20 +108,21 @@ public class MainWindow extends JFrame{
 			}
 		});
 		
+		
 		// Main panel
-		panel = new JPanel();
-		panel.setBorder(new LineBorder(new Color(0, 0, 0)));
-		panel.setLayout(null);
+		JPanel panel = new JPanel();
+        panel.setLayout(new MigLayout());
+				
+		// Create 'open' button
+		OpenButton = new JButton("Open new image");
 		
-		// Create 'open' button and add to the panel
-		OpenButton = new JButton("Open");
-		OpenButton.setBounds(682, 412, 97, 25);
-		panel.add(OpenButton);
-		
-		// Create 'Select Current Image' button and add to the panel
+		// Create 'Select Current Image' button
 		CurrentImageButton = new JButton("Select current image");
-		CurrentImageButton.setBounds(682, 412, 200, 25);
+		
+		// Add components
+		panel.add(OpenButton, "wrap"); 
 		panel.add(CurrentImageButton);
+
 		
 		// Associate this panel to the window
 		getContentPane().add(panel);

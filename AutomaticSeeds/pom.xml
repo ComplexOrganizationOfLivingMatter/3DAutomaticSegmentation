@@ -100,7 +100,7 @@
 		<dependency>
 			<groupId>fr.inra.ijpb</groupId>
 			<artifactId>MorphoLibJ_</artifactId>
-			<version>1.3.2</version>
+			<version>1.4.0</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math3 -->
@@ -113,6 +113,13 @@
 			<artifactId>3D_Objects_Counter</artifactId>
 			<version>2.0.1</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.miglayout/miglayout -->
+		<dependency>
+		    <groupId>com.miglayout</groupId>
+		    <artifactId>miglayout</artifactId>
+		    <version>3.7.4</version>
+		</dependency>
+
 	</dependencies>
 	<build>
 		<plugins>
