@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.ColorModel;
+import java.util.Arrays;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -180,21 +181,50 @@ public class MainWindow extends JFrame{
 		}
 		//Test
 		System.out.println("Convertida: "+imp.getBitDepth());
-		imp.show();
 			
-		ImageStack image = null;
 		
 		int radius = 2;
 		int tolerance = 20;
 		int conn = 26;
 		int BitD = imp.getBitDepth();
 		
+		
+		/*****Enhace Stack contrast with median threshold******/
+		
+		int[] thresh = new int[imp.getStackSize()+1];
+		for(int i=1;i<=imp.getStackSize();i++) {
+			ImageProcessor processor = imp.getStack().getProcessor(i);
+			processor.setAutoThreshold("Huang");
+			thresh[i-1] = processor.getAutoThreshold();
+		}
+		Arrays.sort(thresh);
+		double medianThresh = 0;
+		if (thresh.length % 2 == 0){
+			medianThresh = ((double)thresh[thresh.length/2] + (double)thresh[thresh.length/2 - 1])/2;
+		}else{
+			medianThresh = (double) thresh[thresh.length/2];
+		}
+		int intMedianThresh = (int) Math.round(medianThresh);
+		System.out.println("thresh: "+medianThresh);
+		
+		
+		ImagePlus imp_segmented = new ImagePlus();
+		imp_segmented = (ImagePlus) imp.clone();
+		for(int i=1;i<=imp.getStackSize();i++) {
+			ImageProcessor processor = imp.getStack().getProcessor(i);
+			processor.threshold(intMedianThresh);
+			imp_segmented.getStack().setProcessor((ImageProcessor) processor.clone(), i);
+		}
+		
+		 System.out.println("Profundidad imagen segmentada: "+ imp_segmented.getBitDepth());
+	
+		
 		// create structuring element (cube of radius 'radius')
 		Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(radius);
 		// apply morphological gradient to input image
-		image = Morphology.gradient( imp.getImageStack(), shape3D );
+		ImageStack image = new ImageStack();	
+		image = Morphology.gradient( imp_segmented.getImageStack(), shape3D );
 
-		image = imp.getImageStack();
 		// find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity
 		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, tolerance, conn );
 		// impose minima on gradient image
@@ -206,47 +236,16 @@ public class MainWindow extends JFrame{
 		boolean dams = false;
 		ImageStack resultStack = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, dams );
 
+				
 		// create image with watershed result
-		ImagePlus imp_segmented = new ImagePlus( "watershed", resultStack );
+		ImagePlus imp_segmented2 = new ImagePlus( "watershed", resultStack );
 		// assign right calibration
-		imp_segmented.setCalibration( imp.getCalibration() );
+		imp_segmented2.setCalibration( imp.getCalibration() );
 		// optimize display range
-		Images3D.optimizeDisplayRange( imp_segmented );
+		Images3D.optimizeDisplayRange( imp_segmented2 );
 		
-		
-		
-//		ImagePlus imp_segmented = (ImagePlus) imp.clone();
-//		ImageProcessor processor1 = imp.getStack().getProcessor((int)imp.getStackSize()/2);
-//		ImageProcessor processor2 = imp.getStack().getProcessor((int)imp.getStackSize() + 2);
-//		ImageProcessor processor3 = imp.getStack().getProcessor((int)imp.getStackSize() - 2);
-//		
-//		int thresh1 = processor1.getAutoThreshold();
-//		int thresh2 = processor2.getAutoThreshold();
-//		int thresh3 = processor3.getAutoThreshold();
-//
-//		
-//		processor.setAutoThreshold("Huang");
-//		int thresh = processor.getAutoThreshold();
-//		System.out.println("thresh: "+thresh);
-//		for(int i=1;i<=imp.getStackSize();i++) {
-//			ImageProcessor processor = imp_segmented.getStack().getProcessor(i);
-//			processor.blurGaussian(2);
-////			processor.setAutoThreshold("Huang dark");
-////			int thresh =processor.getAutoThreshold();
-////			processor.setAutoThreshold("Triangle", true, 1);
-////			processor.threshold(thresh);
-//			processor.setAutoThreshold("Huang");
-//			int thresh = processor.getAutoThreshold();
-//			processor.threshold(thresh);
-//			imp_segmented.getStack().setProcessor((ImageProcessor) processor.clone(), i);
-//		}
-//		
-		
-		
-		
-		/*Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(2);
-	
-		
+			
+		/*
 		
 		ImageStack imgTopHat = Morphology.whiteTopHat(imp.getImageStack(), shape3D);
 		ImageStack imgFilled = Reconstruction3D.fillHoles(imgTopHat);
@@ -260,45 +259,8 @@ public class MainWindow extends JFrame{
 		
 		//IJ.run(imp,"Make Binary","");
 		
-		ImageProcessor processor = imp.getStack().getProcessor((int)imp.getStackSize()/2);
-		int thresh = processor.getAutoThreshold();
+		*/
 		
-		System.out.println("thresh: "+thresh);
-		for(int i=1;i<=imp.getStackSize();i++) {
-			processor = imp.getStack().getProcessor(i);
-
-			//processor.setAutoThreshold("Triangle", true, 1);
-			processor.threshold(thresh);
-			
-			imp.getStack().setProcessor(processor, i);
-		}
-		ImageStack filter2 = Morphology.erosion(imp.getImageStack(), gradient);
-		ImagePlus filteredImage = new ImagePlus("Filtered Image",filter2);
-		filteredImage.show();
-		//Test
-		System.out.println("Esta binarizada: "+imp.getStack().getProcessor(5).isBinary());
-		
-		//Morphological segmentation 
-		//Settings
-		int gradient_radius = 3;
-		int tol = 4;
-		int conn = 26;
-		
-		
-		Strel3D gradient2 = Strel3D.Shape.CUBE.fromRadius(gradient_radius);
-		
-		//Segmentation
-		ImageStack image = Morphology.gradient(filter2, gradient2);
-		
-		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, tol, conn );
-		
-		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( image, regionalMinima, conn );
-		
-		ImageStack labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, 32);*/
-		
-		
-	    // apply marker-based watershed using the labeled minima on the minima-imposed gradient image (the true value indicates the use of dams in the output)
-	//	ImageStack ip_segmented = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, true );
 		
 	//    ImagePlus imp_segmented = new ImagePlus("MorphSegmented",ip_segmented);
 	//    imp_segmented.setCalibration(imp.getCalibration());
@@ -306,7 +268,8 @@ public class MainWindow extends JFrame{
 	    
 //	    // Adjust min and max values to display
 //		Images3D.optimizeDisplayRange( imp_segmented );
-//
+
+		
 //		byte[][] colorMap = CommonLabelMaps.fromLabel( CommonLabelMaps.GOLDEN_ANGLE.getLabel() ).computeLut( 255, false );
 //		ColorModel cm = ColorMaps.createColorModel(colorMap, Color.BLACK);//Border color
 //		imp_segmented.getProcessor().setColorModel(cm);
@@ -314,12 +277,12 @@ public class MainWindow extends JFrame{
 //		imp_segmented.updateAndDraw();
 //		
 //		//Convert the segmented image to 8-Bit
-		ImageConverter converter2 = new ImageConverter(imp_segmented);
+		ImageConverter converter2 = new ImageConverter(imp_segmented2);
 		converter2.convertToGray8();
 		//Test
-	    System.out.println("Profundidad imagen segmentada: "+ imp_segmented.getBitDepth());
+	    System.out.println("Profundidad imagen segmentada: "+ imp_segmented2.getBitDepth());
 		
-		return imp_segmented;
+		return imp_segmented2;
 	}
 	
 	
