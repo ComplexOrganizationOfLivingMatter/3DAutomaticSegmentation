@@ -41,6 +41,7 @@ import inra.ijpb.watershed.Watershed;
 import net.miginfocom.swing.MigLayout;
 
 import inra.ijpb.label.LabelImages;
+import inra.ijpb.measure.IntrinsicVolumes3D;
 import ij3d.Image3DUniverse;
 import ij3d.ContentConstants;
 import org.scijava.vecmath.Color3f;
@@ -141,7 +142,8 @@ public class MainWindow extends JFrame{
 				imp.show();*/
 
 
-				ImagePlus imp_segmented = NucleiSegmentation((ImagePlus) imp.clone());
+				ImagePlus input = (ImagePlus) imp.clone();					
+				ImagePlus imp_segmented = NucleiSegmentation(input);
 				imp_segmented.show();
 				//RoiManager rm = getNucleiROIs(imp_segmented);
 				//visualization3D (imp_segmented);
@@ -154,9 +156,11 @@ public class MainWindow extends JFrame{
 			public void actionPerformed(ActionEvent e) {
 				//Get image from the workspace (ADD any exception)
 				ImagePlus imp= IJ.getImage();
-				ImagePlus imp_segmented = NucleiSegmentation(imp);
-				
-				visualization3D (imp_segmented);
+				ImagePlus input = (ImagePlus) imp.clone();					
+				ImagePlus imp_segmented = NucleiSegmentation(input);
+				imp_segmented.show();
+
+				//visualization3D (imp_segmented);
 				
 				//RoiManager rm = getNucleiROIs(imp_segmented);
 				
@@ -173,24 +177,24 @@ public class MainWindow extends JFrame{
 		
 		//ContrastAdjuster adjuster = new ContrastAdjuster();
 		//Test
-		System.out.println("Sin convertir: "+imp.getBitDepth());
+		System.out.println("Input image: "+imp.getBitDepth()+" bits");
 		//Convert the image to 8-Bit
 		if(imp.getBitDepth() != 8) {
 			ImageConverter converter = new ImageConverter(imp);
 			converter.convertToGray8();
 		}
 		//Test
-		System.out.println("Convertida: "+imp.getBitDepth());
+		System.out.println("Conversión a "+imp.getBitDepth()+" bits");
 			
 		
 		int radius = 2;
-		int tolerance = 20;
-		int conn = 26;
+		int tolerance = 0; //modify??
+		int conn = 6;
 		int BitD = imp.getBitDepth();
 		
 		
-		/*****Enhace Stack contrast with median threshold******/
-		
+		/*****Enhance Stack contrast with median threshold******/
+		System.out.println("Apply median automatic threshold");
 		int[] thresh = new int[imp.getStackSize()+1];
 		for(int i=1;i<=imp.getStackSize();i++) {
 			ImageProcessor processor = imp.getStack().getProcessor(i);
@@ -215,74 +219,79 @@ public class MainWindow extends JFrame{
 			processor.threshold(intMedianThresh);
 			imp_segmented.getStack().setProcessor((ImageProcessor) processor.clone(), i);
 		}
-		
-		 System.out.println("Profundidad imagen segmentada: "+ imp_segmented.getBitDepth());
-	
-		
+			
 		// create structuring element (cube of radius 'radius')
 		Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(radius);
+		 
+		System.out.println("1 - Fill 3D particles");
+		// fill 3D particles
+		ImageStack imgFilled = Reconstruction3D.fillHoles(imp_segmented.getImageStack());
+		
+		System.out.println("2 - Gradient");
 		// apply morphological gradient to input image
-		ImageStack image = new ImageStack();	
-		image = Morphology.gradient( imp_segmented.getImageStack(), shape3D );
-
+		ImageStack image = Morphology.gradient(imgFilled, shape3D );
+		
+		System.out.println("3 - Extended Minima");
 		// find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity
 		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, tolerance, conn );
+		
+		System.out.println("4 - Impose Minima");
 		// impose minima on gradient image
 		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( image, regionalMinima, conn );
+
+		System.out.println("5 - Labelling");
 		// label minima using connected components (32-bit output)
 		ImageStack labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, BitD );
+		
+		System.out.println("6 - Watershed");
 		// apply marker-based watershed using the labeled minima on the minima-imposed 
 		// gradient image (the last value indicates the use of dams in the output)
 		boolean dams = false;
+		//ImageStack resultStack = Watershed.computeWatershed(image,labeledMinima,imgFilled, conn, dams );
 		ImageStack resultStack = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, dams );
+		
 
-				
+		
+		/******get array of volumes******/
+		System.out.println("7 - Get Volumes");
+		
+		int[] labels = LabelImages.findAllLabels(resultStack);
+		int nbLabels = labels.length;
+		
+		double[] volumes = IntrinsicVolumes3D.volumes(resultStack, labels, imp.getCalibration());
+		Arrays.sort(volumes);
+		double thresholdVolume = (volumes[nbLabels/2]/10);
+		
+		int[] labels2 = {0};
+		for(int i = 0; i < nbLabels; i++)
+		   {
+			labels2[0] = i+1;
+			LabelImages.replaceLabels(resultStack,labels2, i);
+		   }			
+		
+		
+		System.out.println("8 - Volume Opening");
+		ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
+		
 		// create image with watershed result
-		ImagePlus imp_segmented2 = new ImagePlus( "watershed", resultStack );
+		ImagePlus imp_segmentedFinal = new ImagePlus( "filtered size", imgFilterSize);
 		// assign right calibration
-		imp_segmented2.setCalibration( imp.getCalibration() );
+		imp_segmentedFinal.setCalibration( imp.getCalibration() );
 		// optimize display range
-		Images3D.optimizeDisplayRange( imp_segmented2 );
-		
+		Images3D.optimizeDisplayRange( imp_segmentedFinal );
 			
-		/*
+		// Convert the segmented image to 8-Bit
+		ImageConverter converterFinal = new ImageConverter(imp_segmentedFinal);
+		converterFinal.convertToGray8();
 		
-		ImageStack imgTopHat = Morphology.whiteTopHat(imp.getImageStack(), shape3D);
-		ImageStack imgFilled = Reconstruction3D.fillHoles(imgTopHat);
+		// Color image
+		byte[][] colorMap = CommonLabelMaps.fromLabel( CommonLabelMaps.GOLDEN_ANGLE.getLabel() ).computeLut( 255, false );
+		ColorModel cm = ColorMaps.createColorModel(colorMap, Color.BLACK);//Border color
+		imp_segmentedFinal.getProcessor().setColorModel(cm);
+		imp_segmentedFinal.getImageStack().setColorModel(cm);
+		imp_segmentedFinal.updateAndDraw();
 		
-		ImageStack imgFilterSize = volumeOpening(imgFilled, int minVolume)
-		
-		
-		//imp.show();
-		imp.setStack(imgFilled);
-		//Create threshold and binarize the image
-		
-		//IJ.run(imp,"Make Binary","");
-		
-		*/
-		
-		
-	//    ImagePlus imp_segmented = new ImagePlus("MorphSegmented",ip_segmented);
-	//    imp_segmented.setCalibration(imp.getCalibration());
-	    //ImagePlus binarized = BinaryImages.binarize(imp_segmented);
-	    
-//	    // Adjust min and max values to display
-//		Images3D.optimizeDisplayRange( imp_segmented );
-
-		
-//		byte[][] colorMap = CommonLabelMaps.fromLabel( CommonLabelMaps.GOLDEN_ANGLE.getLabel() ).computeLut( 255, false );
-//		ColorModel cm = ColorMaps.createColorModel(colorMap, Color.BLACK);//Border color
-//		imp_segmented.getProcessor().setColorModel(cm);
-//		imp_segmented.getImageStack().setColorModel(cm);
-//		imp_segmented.updateAndDraw();
-//		
-//		//Convert the segmented image to 8-Bit
-		ImageConverter converter2 = new ImageConverter(imp_segmented2);
-		converter2.convertToGray8();
-		//Test
-	    System.out.println("Profundidad imagen segmentada: "+ imp_segmented2.getBitDepth());
-		
-		return imp_segmented2;
+		return imp_segmentedFinal;
 	}
 	
 	
