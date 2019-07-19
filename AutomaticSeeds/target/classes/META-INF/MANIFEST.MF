@@ -31,11 +31,11 @@ Class-Path: Fiji_Plugins-3.1.1.jar VIB-lib-2.2.0.jar pal-optimization-
  ayout-3.7.4.jar 3D_Viewer-4.0.2.jar j3dcore-1.6.0-scijava-2.jar glueg
  en-rt-2.3.2.jar jogl-all-2.3.2.jar j3dutils-1.6.0-scijava-2.jar vecma
  th-1.6.0-scijava-2.jar
-Implementation-Date: 2019-07-18T08:00:23+0000
+Implementation-Date: 2019-07-19T07:18:31+0000
 Implementation-Vendor: SciJava
 Main-Class: AutomaticSegmentation
 Premain-Class: 
-Implementation-Build: df54600f28f2b94640041b3c3a5d397caf2bd4e8
+Implementation-Build: 990fa80fcd707e8d9218f273347d6f8a8114333b
 Build-Jdk: 1.8.0_111
 Specification-Version: 0.0
 Implementation-URL: https://scijava.org/AutomaticSegmentation3D_/

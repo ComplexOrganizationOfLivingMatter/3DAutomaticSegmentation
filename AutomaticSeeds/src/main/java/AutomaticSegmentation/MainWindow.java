@@ -146,7 +146,7 @@ public class MainWindow extends JFrame{
 				ImagePlus imp_segmented = NucleiSegmentation(input);
 				imp_segmented.show();
 				//RoiManager rm = getNucleiROIs(imp_segmented);
-				//visualization3D (imp_segmented);
+				visualization3D (imp_segmented);
 
 			}
 		});
@@ -160,7 +160,7 @@ public class MainWindow extends JFrame{
 				ImagePlus imp_segmented = NucleiSegmentation(input);
 				imp_segmented.show();
 
-				//visualization3D (imp_segmented);
+				visualization3D (imp_segmented);
 				
 				//RoiManager rm = getNucleiROIs(imp_segmented);
 				
@@ -177,14 +177,13 @@ public class MainWindow extends JFrame{
 		
 		//ContrastAdjuster adjuster = new ContrastAdjuster();
 		//Test
-		System.out.println("Input image: "+imp.getBitDepth()+" bits");
 		//Convert the image to 8-Bit
 		if(imp.getBitDepth() != 8) {
 			ImageConverter converter = new ImageConverter(imp);
 			converter.convertToGray8();
 		}
 		//Test
-		System.out.println("Conversión a "+imp.getBitDepth()+" bits");
+		IJ.log(imp.getBitDepth()+"-bits convertion");
 			
 		
 		int radius = 2;
@@ -194,7 +193,7 @@ public class MainWindow extends JFrame{
 		
 		
 		/*****Enhance Stack contrast with median threshold******/
-		System.out.println("Apply median automatic threshold");
+		IJ.log("Applying Huang filter and automatic threshold");
 		int[] thresh = new int[imp.getStackSize()+1];
 		for(int i=1;i<=imp.getStackSize();i++) {
 			ImageProcessor processor = imp.getStack().getProcessor(i);
@@ -223,27 +222,27 @@ public class MainWindow extends JFrame{
 		// create structuring element (cube of radius 'radius')
 		Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(radius);
 		 
-		System.out.println("1 - Fill 3D particles");
+		IJ.log("1 - Fill 3D particles");
 		// fill 3D particles
 		ImageStack imgFilled = Reconstruction3D.fillHoles(imp_segmented.getImageStack());
 		
-		System.out.println("2 - Gradient");
+		IJ.log("2 - Gradient");
 		// apply morphological gradient to input image
 		ImageStack image = Morphology.gradient(imgFilled, shape3D );
 		
-		System.out.println("3 - Extended Minima");
+		IJ.log("3 - Extended Minima");
 		// find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity
 		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, tolerance, conn );
 		
-		System.out.println("4 - Impose Minima");
+		IJ.log("4 - Impose Minima");
 		// impose minima on gradient image
 		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( image, regionalMinima, conn );
 
-		System.out.println("5 - Labelling");
+		IJ.log("5 - Labelling");
 		// label minima using connected components (32-bit output)
 		ImageStack labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, BitD );
 		
-		System.out.println("6 - Watershed");
+		IJ.log("6 - Watershed");
 		// apply marker-based watershed using the labeled minima on the minima-imposed 
 		// gradient image (the last value indicates the use of dams in the output)
 		boolean dams = false;
@@ -253,14 +252,15 @@ public class MainWindow extends JFrame{
 
 		
 		/******get array of volumes******/
-		System.out.println("7 - Get Volumes");
+		IJ.log("7 - Get Volumes");
 		
 		int[] labels = LabelImages.findAllLabels(resultStack);
 		int nbLabels = labels.length;
 		
+		//Filter using volumes 5 times smallen than the median
 		double[] volumes = IntrinsicVolumes3D.volumes(resultStack, labels, imp.getCalibration());
 		Arrays.sort(volumes);
-		double thresholdVolume = (volumes[nbLabels/2]/10);
+		double thresholdVolume = (volumes[nbLabels/2]/5);
 		
 		int[] labels2 = {0};
 		for(int i = 0; i < nbLabels; i++)
@@ -270,7 +270,7 @@ public class MainWindow extends JFrame{
 		   }			
 		
 		
-		System.out.println("8 - Volume Opening");
+		IJ.log("8 - Volume Opening");
 		ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
 		
 		// create image with watershed result
@@ -339,22 +339,23 @@ public class MainWindow extends JFrame{
 	
 	public void visualization3D (ImagePlus imp){
 		
-		// set to true to display messages in log window
-		boolean verbose = false;
+		/*// set to true to display messages in log window
+		boolean verbose = false;*/
 		
 		// set display range to 0-255 so the displayed colors
 		// correspond to the LUT values
 		imp.setDisplayRange( 0, 255 );
 		imp.updateAndDraw();
 
-		// calculate array of all labels in image
-		int[] labels = LabelImages.findAllLabels( imp );
+		/*// calculate array of all labels in image
+		int[] labels = LabelImages.findAllLabels( imp );*/
 
 		// create 3d universe
 		Image3DUniverse univ = new Image3DUniverse();
+		univ.addContent(imp, ContentConstants.VOLUME);
 		univ.show();
 
-		// read LUT from input image
+		/*// read LUT from input image
 		LUT lut = imp.getLuts()[0];
  
 		// add all labels different from zero (background)
@@ -387,12 +388,13 @@ public class MainWindow extends JFrame{
 				channels[ 2 ] = false;
 		
 				// add label image with corresponding color as an isosurface
+
 				univ.addContent( labelImp, color, "label-"+labels[i], 0, channels, 2, ContentConstants.SURFACE);
 			}
 		}
 		
 		// launch smooth control
-		SmoothControl sc = new SmoothControl( univ );
+		SmoothControl sc = new SmoothControl( univ );*/
 		
 	}
 	
