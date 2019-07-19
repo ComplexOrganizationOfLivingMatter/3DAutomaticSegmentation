@@ -25,10 +25,11 @@ import ij.ImageStack;
 import ij.Prefs;
 import ij.WindowManager;
 import ij.gui.OvalRoi;
+import ij.gui.ProgressBar;
 import ij.gui.Roi;
+import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.frame.RoiManager;
-//import ij.IJ;
-//import ij.ImagePlus;
+
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 import ij.process.LUT;
@@ -41,7 +42,7 @@ import inra.ijpb.watershed.Watershed;
 import net.miginfocom.swing.MigLayout;
 
 import inra.ijpb.label.LabelImages;
-import inra.ijpb.measure.IntrinsicVolumes3D;
+import inra.ijpb.measure.*;
 import ij3d.Image3DUniverse;
 import ij3d.ContentConstants;
 import org.scijava.vecmath.Color3f;
@@ -53,6 +54,7 @@ public class MainWindow extends JFrame{
 	private JPanel panel;
 	private JButton OpenButton;
 	private JButton CurrentImageButton;
+	private ProgressBar progressBar;
 	
 	public MainWindow() {
 		String name = UIManager.getInstalledLookAndFeels()[3].getClassName();
@@ -126,10 +128,14 @@ public class MainWindow extends JFrame{
 		// Create 'Select Current Image' button
 		CurrentImageButton = new JButton("Select current image");
 		
+		//Create ProgressBar
+		progressBar = new ProgressBar(100,25);
+		
 		// Add components
 		panel.add(OpenButton, "wrap"); 
-		panel.add(CurrentImageButton);
-
+		panel.add(CurrentImageButton, "wrap");
+		panel.add(progressBar);
+		
 		// Associate this panel to the window
 		getContentPane().add(panel);
 		
@@ -142,11 +148,12 @@ public class MainWindow extends JFrame{
 				imp.show();*/
 
 
-				ImagePlus input = (ImagePlus) imp.clone();					
-				ImagePlus imp_segmented = NucleiSegmentation(input);
+				ImagePlus input = (ImagePlus) imp.clone();				
+				ImagePlus imp_segmented = new ImagePlus(); 
+				imp_segmented = NucleiSegmentation(input);
 				imp_segmented.show();
-				//RoiManager rm = getNucleiROIs(imp_segmented);
-				visualization3D (imp_segmented);
+				RoiManager rm = getNucleiROIs(imp_segmented);
+				//visualization3D (imp_segmented);
 
 			}
 		});
@@ -159,8 +166,7 @@ public class MainWindow extends JFrame{
 				ImagePlus input = (ImagePlus) imp.clone();					
 				ImagePlus imp_segmented = NucleiSegmentation(input);
 				imp_segmented.show();
-
-				visualization3D (imp_segmented);
+				//visualization3D (imp_segmented);
 				
 				//RoiManager rm = getNucleiROIs(imp_segmented);
 				
@@ -225,22 +231,28 @@ public class MainWindow extends JFrame{
 		IJ.log("1 - Fill 3D particles");
 		// fill 3D particles
 		ImageStack imgFilled = Reconstruction3D.fillHoles(imp_segmented.getImageStack());
-		
+		progressBar.show(0.1);
 		IJ.log("2 - Gradient");
 		// apply morphological gradient to input image
 		ImageStack image = Morphology.gradient(imgFilled, shape3D );
-		
+		progressBar.show(0.25);
+
 		IJ.log("3 - Extended Minima");
 		// find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity
 		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, tolerance, conn );
-		
+		progressBar.show(0.4);
+
 		IJ.log("4 - Impose Minima");
 		// impose minima on gradient image
 		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( image, regionalMinima, conn );
+		progressBar.show(0.5);
 
+		
 		IJ.log("5 - Labelling");
 		// label minima using connected components (32-bit output)
 		ImageStack labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, BitD );
+		progressBar.show(0.6);
+
 		
 		IJ.log("6 - Watershed");
 		// apply marker-based watershed using the labeled minima on the minima-imposed 
@@ -248,7 +260,8 @@ public class MainWindow extends JFrame{
 		boolean dams = false;
 		//ImageStack resultStack = Watershed.computeWatershed(image,labeledMinima,imgFilled, conn, dams );
 		ImageStack resultStack = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, dams );
-		
+		progressBar.show(0.85);
+
 
 		
 		/******get array of volumes******/
@@ -269,12 +282,18 @@ public class MainWindow extends JFrame{
 			LabelImages.replaceLabels(resultStack,labels2, i);
 		   }			
 		
-		
+		progressBar.show(0.9);
 		IJ.log("8 - Volume Opening");
 		ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
 		
+		
+		
 		// create image with watershed result
 		ImagePlus imp_segmentedFinal = new ImagePlus( "filtered size", imgFilterSize);
+		
+		new ParticleAnalyzer().analyze(imp_segmentedFinal);
+		
+				
 		// assign right calibration
 		imp_segmentedFinal.setCalibration( imp.getCalibration() );
 		// optimize display range
@@ -291,6 +310,9 @@ public class MainWindow extends JFrame{
 		imp_segmentedFinal.getImageStack().setColorModel(cm);
 		imp_segmentedFinal.updateAndDraw();
 		
+		progressBar.show(1);
+
+		
 		return imp_segmentedFinal;
 	}
 	
@@ -298,12 +320,19 @@ public class MainWindow extends JFrame{
 	public RoiManager getNucleiROIs(ImagePlus imp_segmented){
 		//3D-OC options settings
         Prefs.set("3D-OC-Options_centroid.boolean", true);
+        
+		int[] labels = LabelImages.findAllLabels(imp_segmented.getImageStack());
+		double[] resol = new double[]{1, 1, 1};
+		// deprecatedGeometricMeasures3D - investigate about the new region3D
+		double[][] centroidList = GeometricMeasures3D.centroids(imp_segmented.getImageStack(),labels);
+		double[][] ellipsoids = GeometricMeasures3D.inertiaEllipsoid(imp_segmented.getImageStack(),labels, resol);
+		//double[][] elongations = GeometricMeasures3D.computeEllipsoidElongations(ellipsoids);
 		
-			
-		Counter3D counter = new Counter3D(imp_segmented, 10, 650, 92274688, false, false);
-		ImagePlus result = counter.getObjMap(true, 30);
 		
-		float[][] centroidList = counter.getCentroidList();
+		
+		
+		/*Counter3D counter = new Counter3D(imp_segmented);//, 10, 650, 92274688, false, false);
+		float[][] centroidList = counter.getCentroidList();*/
 		//              0  0 1 2
 		//              |  | | |
 		//centroid -> [id][x,y,z]
@@ -313,25 +342,17 @@ public class MainWindow extends JFrame{
 		//Reset to 0 the RoiManager
 		rm.reset();
 		//Adding ROI to ROI Manager
-		for(int i = 0; i<centroidList.length;i++) {
-			//Get the coordinate x
-			double x = centroidList[i][0];
-			//Get the cordinate y
-			double y = centroidList[i][1];
+		for(int i = 0; i<ellipsoids.length;i++) {
 			//Get the slice to create the ROI
-			int z = (int)centroidList[i][2];
+			int z = (int) Math.round(centroidList[i][2]);
 			//Get the area and radius of the index i nuclei
-			int a = counter.getObject(i).surf_size;
-			int r = Math.round((float)Math.sqrt(a/Math.PI));
+			int r = (int) Math.round(ellipsoids[i][2]);
 			
 			imp_segmented.setSlice(z);
-			Roi roi = new OvalRoi(x-r/2,y-r/2,r,r);
+			Roi roi = new OvalRoi(centroidList[i][0]-r/2,centroidList[i][1]-r/2,r,r);
 			rm.addRoi(roi);
 			
 		}
-		result.show();
-		counter.showStatistics(true);
-		counter.showSummary();
 		
 		return rm;
 	};
