@@ -9,11 +9,16 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.ColorModel;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -27,6 +32,8 @@ import ij.WindowManager;
 import ij.gui.OvalRoi;
 import ij.gui.ProgressBar;
 import ij.gui.Roi;
+import ij.plugin.Filters3D;
+import ij.plugin.Resizer;
 import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.frame.RoiManager;
 
@@ -146,13 +153,13 @@ public class MainWindow extends JFrame{
 				ImagePlus imp= IJ.openImage();	
 				/*WindowManager.addWindow(imp.getWindow());
 				imp.show();*/
-
-
-				ImagePlus input = (ImagePlus) imp.clone();				
+				imp.show();
+				ImagePlus input = imp.duplicate();				
 				ImagePlus imp_segmented = new ImagePlus(); 
 				imp_segmented = NucleiSegmentation(input);
-				imp_segmented.show();
-				RoiManager rm = getNucleiROIs(imp_segmented);
+		    	RoiManager rm = getNucleiROIs(imp_segmented);
+		    	imp_segmented.show();
+				
 				//visualization3D (imp_segmented);
 
 			}
@@ -163,9 +170,8 @@ public class MainWindow extends JFrame{
 			public void actionPerformed(ActionEvent e) {
 				//Get image from the workspace (ADD any exception)
 				ImagePlus imp= IJ.getImage();
-				ImagePlus input = (ImagePlus) imp.clone();					
+				ImagePlus input = (ImagePlus) imp.duplicate();					
 				ImagePlus imp_segmented = NucleiSegmentation(input);
-				imp_segmented.show();
 				//visualization3D (imp_segmented);
 				
 				//RoiManager rm = getNucleiROIs(imp_segmented);
@@ -199,21 +205,28 @@ public class MainWindow extends JFrame{
 		
 		
 		/*****Enhance Stack contrast with median threshold******/
+		// Retrieve filtered stack 
+		Filters3D.filter(imp.getStack(),Filters3D.MEAN, 3, 3, 3); 	
+		
 		IJ.log("Applying Huang filter and automatic threshold");
 		int[] thresh = new int[imp.getStackSize()+1];
+		ArrayList<Integer> thresholds = new ArrayList<Integer>();
 		for(int i=1;i<=imp.getStackSize();i++) {
 			ImageProcessor processor = imp.getStack().getProcessor(i);
 			processor.setAutoThreshold("Huang");
 			thresh[i-1] = processor.getAutoThreshold();
+			if (thresh[i-1]>5){
+				thresholds.add((Integer) thresh[i-1]);
+			};
 		}
-		Arrays.sort(thresh);
-		double medianThresh = 0;
-		if (thresh.length % 2 == 0){
-			medianThresh = ((double)thresh[thresh.length/2] + (double)thresh[thresh.length/2 - 1])/2;
-		}else{
-			medianThresh = (double) thresh[thresh.length/2];
-		}
-		int intMedianThresh = (int) Math.round(medianThresh);
+		Collections.sort(thresholds);
+		int medianThresh = 0;
+		if (thresholds.size()%2 == 1) {
+			medianThresh = (int) (thresholds.get(thresholds.size()/2)+ thresholds.get(thresholds.size()/2 -1))/2;
+	        } else {
+	        	medianThresh = (int) thresholds.get(thresholds.size()/2);
+	        }
+		int intMedianThresh = (int) Math.round(medianThresh/2);
 		System.out.println("thresh: "+medianThresh);
 		
 		
@@ -227,32 +240,70 @@ public class MainWindow extends JFrame{
 			
 		// create structuring element (cube of radius 'radius')
 		Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(radius);
-		 
+
 		IJ.log("1 - Fill 3D particles");
 		// fill 3D particles
-		ImageStack imgFilled = Reconstruction3D.fillHoles(imp_segmented.getImageStack());
-		progressBar.show(0.1);
+		//ImageStack imgFilled = Reconstruction3D.fillHoles(impClosed);
+		
+		//loop for to close hole in 2D. Dilatation + erosion + fill holes
+		Strel shape2D = Strel.Shape.DISK.fromRadius(radius);
+		
+		int newDepth = (int) Math.round(imp.getStackSize()*4.16);
+		Resizer resizer = new Resizer();
+		resizer.setAverageWhenDownsizing(true);
+		ImagePlus imgResized = resizer.zScale(imp_segmented.duplicate(),newDepth,ImageProcessor.BILINEAR);
+		System.out.println("Resizing");
+		
+		ImageStack imgFilled = imgResized.getStack().duplicate();
+		
+		for(int i=1;i<=imgResized.getStackSize();i++) {
+			ImageProcessor processor = imgResized.getStack().getProcessor(i);
+			processor = Morphology.closing(processor, shape2D);
+			processor = BinaryImages.binarize(processor);
+			processor = Reconstruction.fillHoles(processor);
+			imgFilled.setProcessor((ImageProcessor) processor.duplicate(), i);
+		}
+		progressBar.show(0.1);	
+		
+		System.out.println("Closing and Filling");
+
+		
+		ImageStack imgFilterSmall = LabelImages.volumeOpening(imgFilled, 50);
+		System.out.println("Small volume opening");
+
 		IJ.log("2 - Gradient");
 		// apply morphological gradient to input image
-		ImageStack image = Morphology.gradient(imgFilled, shape3D );
+		ImageStack image = Morphology.gradient(imgResized.getImageStack(), shape3D);
 		progressBar.show(0.25);
+		System.out.println("Gradient");
 
+		
 		IJ.log("3 - Extended Minima");
 		// find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity
 		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( image, tolerance, conn );
 		progressBar.show(0.4);
-
+		System.out.println("Extended minima");
+		
 		IJ.log("4 - Impose Minima");
 		// impose minima on gradient image
 		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( image, regionalMinima, conn );
 		progressBar.show(0.5);
+		System.out.println("impose minima");
 
-		
 		IJ.log("5 - Labelling");
 		// label minima using connected components (32-bit output)
-		ImageStack labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, BitD );
+		//convert image to 16 bits to enable more labels???
+		ImageStack labeledMinima;
+		try {
+			labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, BitD );
+		} catch (Exception e) {
+			ImagePlus regMinip = new ImagePlus("",regionalMinima);
+			ImageConverter converter = new ImageConverter(regMinip);
+			converter.convertToGray16();
+			labeledMinima = BinaryImages.componentsLabeling( regMinip.getImageStack(), conn, regMinip.getBitDepth());
+		}
 		progressBar.show(0.6);
-
+		System.out.println("labelling");
 		
 		IJ.log("6 - Watershed");
 		// apply marker-based watershed using the labeled minima on the minima-imposed 
@@ -261,6 +312,7 @@ public class MainWindow extends JFrame{
 		//ImageStack resultStack = Watershed.computeWatershed(image,labeledMinima,imgFilled, conn, dams );
 		ImageStack resultStack = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, dams );
 		progressBar.show(0.85);
+		System.out.println("watershed");
 
 
 		
@@ -270,10 +322,10 @@ public class MainWindow extends JFrame{
 		int[] labels = LabelImages.findAllLabels(resultStack);
 		int nbLabels = labels.length;
 		
-		//Filter using volumes 5 times smallen than the median
+		//Filter using volumes 3 times smallen than the median
 		double[] volumes = IntrinsicVolumes3D.volumes(resultStack, labels, imp.getCalibration());
 		Arrays.sort(volumes);
-		double thresholdVolume = (volumes[nbLabels/2]/5);
+		double thresholdVolume = (volumes[nbLabels/2]/3);
 		
 		int[] labels2 = {0};
 		for(int i = 0; i < nbLabels; i++)
@@ -285,14 +337,12 @@ public class MainWindow extends JFrame{
 		progressBar.show(0.9);
 		IJ.log("8 - Volume Opening");
 		ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
-		
-		
+		System.out.println("opening using the median of sizes");
+	
 		
 		// create image with watershed result
 		ImagePlus imp_segmentedFinal = new ImagePlus( "filtered size", imgFilterSize);
-		
-		new ParticleAnalyzer().analyze(imp_segmentedFinal);
-		
+	
 				
 		// assign right calibration
 		imp_segmentedFinal.setCalibration( imp.getCalibration() );
@@ -325,12 +375,10 @@ public class MainWindow extends JFrame{
 		double[] resol = new double[]{1, 1, 1};
 		// deprecatedGeometricMeasures3D - investigate about the new region3D
 		double[][] centroidList = GeometricMeasures3D.centroids(imp_segmented.getImageStack(),labels);
-		double[][] ellipsoids = GeometricMeasures3D.inertiaEllipsoid(imp_segmented.getImageStack(),labels, resol);
-		//double[][] elongations = GeometricMeasures3D.computeEllipsoidElongations(ellipsoids);
-		
-		
-		
-		
+		//double[][] ellipsoids = GeometricMeasures3D.inertiaEllipsoid(imp_segmented.getImageStack(),labels, resol);
+		double[][] radiiSphere = GeometricMeasures3D.maximumInscribedSphere(imp_segmented.getImageStack(),labels,resol);
+		//double[][] elongations = GeometricMeasures3D.computeEllipsoidElongations(ellipsoids);	
+				
 		/*Counter3D counter = new Counter3D(imp_segmented);//, 10, 650, 92274688, false, false);
 		float[][] centroidList = counter.getCentroidList();*/
 		//              0  0 1 2
@@ -342,18 +390,19 @@ public class MainWindow extends JFrame{
 		//Reset to 0 the RoiManager
 		rm.reset();
 		//Adding ROI to ROI Manager
-		for(int i = 0; i<ellipsoids.length;i++) {
+		ImagePlus impOpen= IJ.getImage();
+		
+		for(int i = 0; i<radiiSphere.length;i++) {
 			//Get the slice to create the ROI
 			int z = (int) Math.round(centroidList[i][2]);
 			//Get the area and radius of the index i nuclei
-			int r = (int) Math.round(ellipsoids[i][2]);
+			int r = (int) Math.round(radiiSphere[i][2]);
 			
-			imp_segmented.setSlice(z);
+			impOpen.setSlice(z);
 			Roi roi = new OvalRoi(centroidList[i][0]-r/2,centroidList[i][1]-r/2,r,r);
 			rm.addRoi(roi);
 			
 		}
-		
 		return rm;
 	};
 	
@@ -418,5 +467,8 @@ public class MainWindow extends JFrame{
 		SmoothControl sc = new SmoothControl( univ );*/
 		
 	}
+	
+	
+	
 	
 }
