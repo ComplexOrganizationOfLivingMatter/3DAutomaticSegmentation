@@ -42,6 +42,8 @@ import ij.process.ImageProcessor;
 import ij.process.LUT;
 import inra.ijpb.binary.BinaryImages;
 import inra.ijpb.data.image.Images3D;
+import inra.ijpb.geometry.Ellipsoid;
+import inra.ijpb.geometry.PointPair3D;
 import inra.ijpb.morphology.*;
 import inra.ijpb.util.ColorMaps;
 import inra.ijpb.util.ColorMaps.CommonLabelMaps;
@@ -50,6 +52,9 @@ import net.miginfocom.swing.MigLayout;
 
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.*;
+import inra.ijpb.measure.region3d.Centroid3D;
+import inra.ijpb.measure.region3d.InertiaEllipsoid;
+import inra.ijpb.measure.region3d.MaxFeretDiameter3D;
 import ij3d.Image3DUniverse;
 import ij3d.ContentConstants;
 import org.scijava.vecmath.Color3f;
@@ -382,18 +387,15 @@ public class MainWindow extends JFrame{
         Prefs.set("3D-OC-Options_centroid.boolean", true);
         
 		int[] labels = LabelImages.findAllLabels(imp_segmented.getImageStack());
-		double[] resol = new double[]{1, 1, 1};
 		// deprecatedGeometricMeasures3D - investigate about the new region3D
-		double[][] centroidList = GeometricMeasures3D.centroids(imp_segmented.getImageStack(),labels);
-		double[][] ellipsoids = GeometricMeasures3D.inertiaEllipsoid(imp_segmented.getImageStack(),labels, resol);
-		//double[][] radiiSphere = GeometricMeasures3D.maximumInscribedSphere(imp_segmented.getImageStack(),labels,resol);
-		//double[][] elongations = GeometricMeasures3D.computeEllipsoidElongations(ellipsoids);	
+		double[][] centroidList = Centroid3D.centroids(imp_segmented.getImageStack(),labels);
 				
-		/*Counter3D counter = new Counter3D(imp_segmented);//, 10, 650, 92274688, false, false);
-		float[][] centroidList = counter.getCentroidList();*/
-		//              0  0 1 2
-		//              |  | | |
-		//centroid -> [id][x,y,z]
+		//double[][] centroidList = Centroid3D.centroids();
+				//              0  0 1 2
+				//              |  | | |
+				//centroid -> [id][x,y,z]
+		
+		Ellipsoid[] ellipsoid = InertiaEllipsoid.inertiaEllipsoids(imp_segmented.getImageStack(),labels, imp_segmented.getCalibration());	
 		
 		//Creating the ROI manager
 		RoiManager rm = new RoiManager();
@@ -402,16 +404,15 @@ public class MainWindow extends JFrame{
 		//Adding ROI to ROI Manager
 		ImagePlus impOpen= IJ.getImage();
 		
-		for(int i = 0; i<ellipsoids.length;i++) {
+		for(int i = 0; i<centroidList.length;i++) {
 			//Get the slice to create the ROI
 			int z = (int) Math.round(centroidList[i][2]);
 			//Get the area and radius of the index i nuclei
-			int r = (int) Math.round(ellipsoids[i][3]);
-			
+			double majorRadius = 1.5*(ellipsoid[i].radius1())/(imp_segmented.getCalibration().pixelHeight);
+			int r = (int) Math.round(majorRadius);
 			impOpen.setSlice(z);
 			Roi roi = new OvalRoi(centroidList[i][0]-r/2,centroidList[i][1]-r/2,r,r);
 			rm.addRoi(roi);
-			
 		}
 		return rm;
 	};
