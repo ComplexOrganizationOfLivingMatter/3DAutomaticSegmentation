@@ -12,38 +12,32 @@ import java.awt.image.ColorModel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
+
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 
-import Utilities.Counter3D;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
-import ij.WindowManager;
 import ij.gui.OvalRoi;
 import ij.gui.ProgressBar;
 import ij.gui.Roi;
 import ij.plugin.Filters3D;
 import ij.plugin.Resizer;
-import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.frame.RoiManager;
 
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
-import ij.process.LUT;
 import inra.ijpb.binary.BinaryImages;
 import inra.ijpb.data.image.Images3D;
 import inra.ijpb.geometry.Ellipsoid;
-import inra.ijpb.geometry.PointPair3D;
 import inra.ijpb.morphology.*;
 import inra.ijpb.util.ColorMaps;
 import inra.ijpb.util.ColorMaps.CommonLabelMaps;
@@ -54,17 +48,21 @@ import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.*;
 import inra.ijpb.measure.region3d.Centroid3D;
 import inra.ijpb.measure.region3d.InertiaEllipsoid;
-import inra.ijpb.measure.region3d.MaxFeretDiameter3D;
 import ij3d.Image3DUniverse;
 import ij3d.ContentConstants;
-import org.scijava.vecmath.Color3f;
-import isosurface.SmoothControl;
+
 
 
 public class MainWindow extends JFrame{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private JPanel panel;
 	private JButton OpenButton;
+	private JComboBox<String> ComboBox;
+
 	private JButton CurrentImageButton;
 	private ProgressBar progressBar;
 	
@@ -131,7 +129,7 @@ public class MainWindow extends JFrame{
 		
 		
 		// Main panel
-		JPanel panel = new JPanel();
+		panel = new JPanel();
         panel.setLayout(new MigLayout());
 				
 		// Create 'open' button
@@ -143,9 +141,17 @@ public class MainWindow extends JFrame{
 		//Create ProgressBar
 		progressBar = new ProgressBar(100,25);
 		
+		//Create ComboBox
+		ComboBox = new JComboBox<String>();
+		ComboBox.addItem("Select a type of DAPI segmentation");
+		ComboBox.addItem("Salivary glands (cylinder monolayer)");
+		ComboBox.addItem("Zebrafish multilayer");
+		
 		// Add components
 		panel.add(OpenButton, "wrap"); 
 		panel.add(CurrentImageButton, "wrap");
+		panel.add(ComboBox,"wrap");
+		ComboBox.setSelectedIndex(0);
 		panel.add(progressBar);
 		
 		// Associate this panel to the window
@@ -153,34 +159,58 @@ public class MainWindow extends JFrame{
 		
 		OpenButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-								
-				//Open the image (ADD any exception)
-				ImagePlus imp= IJ.openImage();	
-				/*WindowManager.addWindow(imp.getWindow());
-				imp.show();*/
-				imp.show();
-				ImagePlus input = imp.duplicate();				
-				ImagePlus imp_segmented = new ImagePlus(); 
-				imp_segmented = NucleiSegmentation(input);
-		    	RoiManager rm = getNucleiROIs(imp_segmented);
-		    	imp_segmented.show();
-				
-				//visualization3D (imp_segmented);
-
-			}
+			
+				switch (ComboBox.getSelectedIndex()) {
+				case 1:				
+					ComboBox.setEnabled(false);
+					//Open the image (ADD any exception)
+					ImagePlus imp= IJ.openImage();	
+					/*WindowManager.addWindow(imp.getWindow());
+					imp.show();*/
+					imp.show();
+					ImagePlus input = imp.duplicate();				
+					ImagePlus imp_segmented = new ImagePlus();
+					imp_segmented = SalivaryGNucleiSegmentation(input);
+					RoiManager rm = getNucleiROIs(imp_segmented);
+			    	imp_segmented.show();
+					break;
+					
+				case 2:
+					
+					break;
+	
+				default:
+					break;
+				}		    	
+				ComboBox.setEnabled(true);
+					//visualization3D (imp_segmented);
+	
+				}
 		});
 		
 		
 		CurrentImageButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//Get image from the workspace (ADD any exception)
-				ImagePlus imp= IJ.getImage();
-				ImagePlus input = imp.duplicate();				
-				ImagePlus imp_segmented = new ImagePlus(); 
-				imp_segmented = NucleiSegmentation(input);
-		    	RoiManager rm = getNucleiROIs(imp_segmented);
-		    	imp_segmented.show();
-				
+				switch (ComboBox.getSelectedIndex()) {
+				case 1:
+					ComboBox.setEnabled(false);
+					//Get image from the workspace (ADD any exception)
+					ImagePlus imp= IJ.getImage();
+					ImagePlus input = imp.duplicate();				
+					ImagePlus imp_segmented = new ImagePlus();
+					imp_segmented = SalivaryGNucleiSegmentation(input);
+					RoiManager rm = getNucleiROIs(imp_segmented);
+			    	imp_segmented.show();
+					break;
+					
+				case 2:
+					
+					break;
+
+				default:
+					break;
+				}		    	
+				ComboBox.setEnabled(true);
 				//visualization3D (imp_segmented);
 				
 				
@@ -192,7 +222,7 @@ public class MainWindow extends JFrame{
 	
 	
 	
-	public ImagePlus NucleiSegmentation(ImagePlus imp) {
+	public ImagePlus SalivaryGNucleiSegmentation(ImagePlus imp) {
 		
 		//ContrastAdjuster adjuster = new ContrastAdjuster();
 		//Test
