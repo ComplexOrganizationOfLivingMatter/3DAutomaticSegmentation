@@ -1,11 +1,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+	
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
 		<version>26.0.0</version>
 	</parent>
+	
 	<groupId>sc.fiji</groupId>
 	<artifactId>AutomaticSegmentation3D_</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -87,8 +89,7 @@
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
-			<version>3.8</version>
-		</dependency>
+			</dependency>
 
 		<dependency>
 			<groupId>org.eclipse.swt</groupId>
@@ -109,8 +110,7 @@
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>3D_Objects_Counter</artifactId>
-			<version>2.0.1</version>
-		</dependency>
+			</dependency>
 		<!-- https://mvnrepository.com/artifact/com.miglayout/miglayout -->
 		<dependency>
 			<groupId>com.miglayout</groupId>
