@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
@@ -114,16 +113,16 @@
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/com.miglayout/miglayout -->
 		<dependency>
-		    <groupId>com.miglayout</groupId>
-		    <artifactId>miglayout</artifactId>
-		    <version>3.7.4</version>
+			<groupId>com.miglayout</groupId>
+			<artifactId>miglayout</artifactId>
+			<version>3.7.4</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>3D_Viewer</artifactId>
 		</dependency>
-		
+
 		<!-- Java 3D dependencies -->
 		<dependency>
 			<groupId>org.scijava</groupId>
@@ -138,6 +137,11 @@
 			<artifactId>vecmath</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>net.haesleinhuepf</groupId>
+			<artifactId>clij_</artifactId>
+			<version>1.0.7</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
@@ -199,6 +203,11 @@
 		<repository>
 			<id>swt-repo</id>
 			<url>https://raw.githubusercontent.com/maven-eclipse/swt-repo/master/</url>
+		</repository>
+
+		<repository>
+			<id>clij</id>
+			<url>http://dl.bintray.com/haesleinhuepf/clij</url>
 		</repository>
 	</repositories>
 	<profiles>
