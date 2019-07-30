@@ -29,7 +29,7 @@
 			<id>pgomez</id>
 			<name>Pedro Gomez-Galvez</name>
 			<email>pgomez-ibis@us.es</email>
-			<url>http://lmescudero.blogspot.com.es/</url>
+			<url>http://scutoids.es/</url>
 			<organization>University of Seville - IBiS</organization>
 			<organizationUrl>http://www.us.es</organizationUrl>
 			<roles>
@@ -41,7 +41,7 @@
 			<id>prodriguez</id>
 			<name>Pedro Rodriguez Hiruela</name>
 			<email>pedrodhir@gmail.com</email>
-			<url>http://lmescudero.blogspot.com.es/</url>
+			<url>http://scutoids.es/</url>
 			<organization>University of Seville - IBiS</organization>
 			<organizationUrl>http://www.us.es</organizationUrl>
 			<roles>
@@ -100,7 +100,6 @@
 		<dependency>
 			<groupId>fr.inra.ijpb</groupId>
 			<artifactId>MorphoLibJ_</artifactId>
-			<version>1.4.1-SNAPSHOT</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math3 -->
