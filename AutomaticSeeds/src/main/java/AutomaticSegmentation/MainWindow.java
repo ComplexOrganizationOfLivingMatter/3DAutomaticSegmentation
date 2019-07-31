@@ -160,23 +160,36 @@ public class MainWindow extends JFrame{
 		OpenButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 			
+				ImagePlus imp = new ImagePlus();
+				ImagePlus input = new ImagePlus();
+				ImagePlus imp_segmented = new ImagePlus();
+				RoiManager rm = null;
+				
 				switch (ComboBox.getSelectedIndex()) {
 				case 1:				
 					ComboBox.setEnabled(false);
 					//Open the image (ADD any exception)
-					ImagePlus imp= IJ.openImage();	
+					imp= IJ.openImage();	
 					/*WindowManager.addWindow(imp.getWindow());
 					imp.show();*/
 					imp.show();
-					ImagePlus input = imp.duplicate();				
-					ImagePlus imp_segmented = new ImagePlus();
+					input = imp.duplicate();				
 					imp_segmented = SalivaryGNucleiSegmentation(input);
-					RoiManager rm = getNucleiROIs(imp_segmented);
+					rm = getNucleiROIs(imp_segmented);
 			    	imp_segmented.show();
 					break;
 					
 				case 2:
-					
+					ComboBox.setEnabled(false);
+					//Open the image (ADD any exception)
+					imp= IJ.openImage();	
+					/*WindowManager.addWindow(imp.getWindow());
+					imp.show();*/
+					imp.show();
+					input = imp.duplicate();				
+					imp_segmented = ZebrafishNucleiSegmentation(input);
+					rm = getNucleiROIs(imp_segmented);
+			    	imp_segmented.show();
 					break;
 	
 				default:
@@ -191,20 +204,30 @@ public class MainWindow extends JFrame{
 		
 		CurrentImageButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				ImagePlus imp = new ImagePlus();
+				ImagePlus input = new ImagePlus();
+				ImagePlus imp_segmented = new ImagePlus();
+				RoiManager rm = null;
+				
 				switch (ComboBox.getSelectedIndex()) {
 				case 1:
 					ComboBox.setEnabled(false);
 					//Get image from the workspace (ADD any exception)
-					ImagePlus imp= IJ.getImage();
-					ImagePlus input = imp.duplicate();				
-					ImagePlus imp_segmented = new ImagePlus();
+					imp= IJ.getImage();
+					input = imp.duplicate();				
 					imp_segmented = SalivaryGNucleiSegmentation(input);
-					RoiManager rm = getNucleiROIs(imp_segmented);
+					rm = getNucleiROIs(imp_segmented);
 			    	imp_segmented.show();
 					break;
 					
 				case 2:
-					
+					ComboBox.setEnabled(false);
+					//Get image from the workspace (ADD any exception)
+					imp= IJ.getImage();
+					input = imp.duplicate();				
+					imp_segmented =ZebrafishNucleiSegmentation(input);
+					rm = getNucleiROIs(imp_segmented);
+			    	imp_segmented.show();
 					break;
 
 				default:
@@ -410,6 +433,189 @@ public class MainWindow extends JFrame{
 		//return img2return;
 		
 	}
+	
+	
+	
+public ImagePlus ZebrafishNucleiSegmentation(ImagePlus imp) {
+		
+		//ContrastAdjuster adjuster = new ContrastAdjuster();
+		//Test
+		//Convert the image to 8-Bit
+		if(imp.getBitDepth() != 8) {
+			ImageConverter converter = new ImageConverter(imp);
+			converter.convertToGray8();
+		}
+		//Test
+		IJ.log(imp.getBitDepth()+"-bits convertion");
+			
+		
+		int radius2D = 2;
+		int radius3D = 2;
+
+		// 10 is a good start point for 8-bit images, 2000 for 16-bits. Minor tolerance more divided objects with watershed
+		int tolerance = 0; //modify??
+		int conn = 6;
+		int BitD = imp.getBitDepth();
+		boolean dams = false;
+		double resizeFactor = 1;
+		
+		/*****Enhance Stack contrast with median threshold******/
+		// Retrieve filtered stack 
+		Filters3D.filter(imp.getStack(),Filters3D.MEAN, 1, 1, 1); 	
+		
+		IJ.log("Applying Huang filter and automatic threshold");
+		int[] thresh = new int[imp.getStackSize()+1];
+		ArrayList<Integer> thresholds = new ArrayList<Integer>();
+		for(int i=1;i<=imp.getStackSize();i++) {
+			ImageProcessor processor = imp.getStack().getProcessor(i);
+			processor.setAutoThreshold("Huang");
+			thresh[i-1] = processor.getAutoThreshold();
+			if (thresh[i-1]>5){
+				thresholds.add((Integer) thresh[i-1]);
+			};
+		}
+		Collections.sort(thresholds);
+		int medianThresh = 0;
+		if (thresholds.size()%2 == 1) {
+			medianThresh = (int) (thresholds.get(thresholds.size()/2)+ thresholds.get(thresholds.size()/2 -1))/2;
+	        } else {
+	        	medianThresh = (int) thresholds.get(thresholds.size()/2);
+	        }
+		int intMedianThresh = (int) Math.round(medianThresh/2);
+		System.out.println("thresh: "+medianThresh);
+		
+		
+		ImagePlus imp_segmented = new ImagePlus();
+		imp_segmented = (ImagePlus) imp.clone();
+		for(int i=1;i<=imp.getStackSize();i++) {
+			ImageProcessor processor = imp.getStack().getProcessor(i);
+			processor.threshold(intMedianThresh);
+			imp_segmented.getStack().setProcessor((ImageProcessor) processor.clone(), i);
+		}
+			
+		// create structuring element (cube of radius 'radius')
+		Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(radius3D);
+
+		IJ.log("1 - Fill 3D particles");
+		// fill 3D particles
+		//ImageStack imgFilled = Reconstruction3D.fillHoles(impClosed);
+		
+		//loop for to close hole in 2D. Dilatation + erosion + fill holes
+		Strel shape2D = Strel.Shape.DISK.fromRadius(radius2D);
+		
+		/*int newDepth = (int) Math.round(imp.getStackSize()*resizeFactor);
+		Resizer resizer = new Resizer();
+		resizer.setAverageWhenDownsizing(true);
+		ImagePlus imgResized = resizer.zScale(imp_segmented.duplicate(),newDepth,ImageProcessor.BILINEAR);
+		System.out.println("Resizing");*/
+		
+		ImageStack imgFilled = imp_segmented.getStack().duplicate();
+		for(int i=1;i<=imp_segmented.getStackSize();i++) {
+			ImageProcessor processor = imp_segmented.getStack().getProcessor(i);
+			processor = Morphology.opening(processor, shape2D);
+			processor = Morphology.closing(processor, shape2D);
+			processor = BinaryImages.binarize(processor);
+			processor = Reconstruction.fillHoles(processor);	
+			imgFilled.setProcessor((ImageProcessor) processor.duplicate(), i);
+		}
+		progressBar.show(0.1);	
+		
+		System.out.println("Closing and Filling");
+		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, 20);
+		System.out.println("Small volume opening");
+
+		IJ.log("2 - Gradient");
+		// apply morphological gradient to input image
+		ImageStack imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
+		progressBar.show(0.25);
+		System.out.println("Gradient");
+
+		
+		IJ.log("3 - Extended Minima");
+		// find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity
+		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( imgGradient, tolerance, conn );
+		progressBar.show(0.4);
+		System.out.println("Extended minima");
+		
+		IJ.log("4 - Impose Minima");
+		// impose minima on gradient image
+		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( imgGradient, regionalMinima, conn );
+		progressBar.show(0.5);
+		System.out.println("impose minima");
+
+		IJ.log("5 - Labelling");
+		// label minima using connected components (32-bit output)
+		//convert image to 16 bits to enable more labels???
+		ImageStack labeledMinima;
+		try {
+			labeledMinima = BinaryImages.componentsLabeling( regionalMinima, conn, BitD );
+		} catch (Exception e) {
+			ImagePlus regMinip = new ImagePlus("",regionalMinima);
+			ImageConverter converter = new ImageConverter(regMinip);
+			converter.convertToGray16();
+			labeledMinima = BinaryImages.componentsLabeling( regMinip.getImageStack(), conn, regMinip.getBitDepth());
+			
+			//if we change the bitDepth of labeledMinima, allso the imposed minima
+			ImagePlus impMin = new ImagePlus("",imposedMinima);
+			ImageConverter converter2 = new ImageConverter(impMin);
+			converter2.convertToGray16();
+			imposedMinima = impMin.getImageStack();
+		}
+		progressBar.show(0.6);
+		System.out.println("labelling");
+		
+		IJ.log("6 - Watershed");
+		// apply marker-based watershed using the labeled minima on the minima-imposed 
+		// gradient image (the last value indicates the use of dams in the output)
+		
+		//ImageStack resultStack = Watershed.computeWatershed(image,labeledMinima,imgFilled, conn, dams );
+		ImageStack resultStack = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, dams );
+		progressBar.show(0.85);
+		System.out.println("watershed");
+
+
+		/******get array of volumes******/
+		IJ.log("7 - Get Volumes");
+		
+		LabelImages.removeLargestLabel(resultStack);
+		int[] labels = LabelImages.findAllLabels(resultStack);
+		int nbLabels = labels.length;
+		
+		//Filter using volumes 3 times smallen than the median
+		double[] volumes = IntrinsicVolumes3D.volumes(resultStack, labels, new ImagePlus("",resultStack).getCalibration());
+		Arrays.sort(volumes);
+		double thresholdVolume = (volumes[nbLabels/2]/3);
+		System.out.println("7 - Get volumes and delete background label");
+		
+		progressBar.show(0.9);
+		IJ.log("8 - Volume Opening");
+		ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
+		System.out.println("opening using the median of sizes");
+		
+		// create image with watershed result
+		ImagePlus imp_segmentedFinal = new ImagePlus( "filtered size", imgFilterSize);
+	
+				
+		// assign right calibration
+		imp_segmentedFinal.setCalibration( imp.getCalibration() );
+		// optimize display range
+		Images3D.optimizeDisplayRange( imp_segmentedFinal );
+			
+		/*// Convert the segmented image to 8-Bit
+		ImageConverter converterFinal = new ImageConverter(imp_segmentedFinal);
+		converterFinal.convertToGray8();*/
+		
+		// Color image
+		byte[][] colorMap = CommonLabelMaps.fromLabel( CommonLabelMaps.GOLDEN_ANGLE.getLabel() ).computeLut( 255, false );
+		ColorModel cm = ColorMaps.createColorModel(colorMap, Color.BLACK);//Border color
+		imp_segmentedFinal.getProcessor().setColorModel(cm);
+		imp_segmentedFinal.getImageStack().setColorModel(cm);
+		imp_segmentedFinal.updateAndDraw();
+		
+		progressBar.show(1);
+		return imp_segmentedFinal;
+		
+		}
 	
 	
 	public RoiManager getNucleiROIs(ImagePlus imp_segmented){
