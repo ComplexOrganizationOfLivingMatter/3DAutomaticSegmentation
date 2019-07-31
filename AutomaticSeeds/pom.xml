@@ -1,17 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	
+
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
 		<version>26.0.0</version>
+		<relativePath />
 	</parent>
-	
+
 	<groupId>sc.fiji</groupId>
 	<artifactId>AutomaticSegmentation3D_</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>plugins/AutomaticSegmentation3D_</name>
+	<description>EpiGraph is a Fiji plugin that combines computational geometry and graph theory to measure the degree of arrangement in any tessellation. </description>
+	<url>http://scutoids.es/</url>
+	<inceptionYear>2017</inceptionYear>
+	<organization>
+		<name>University of Seville - IBiS</name>
+		<url>http://www.us.es</url>
+	</organization>
+	<licenses>
+		<license>
+			<name>GNU General Public License v3+</name>
+			<url>https://www.gnu.org/licenses/gpl.html</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
 	<developers>
 		<developer>
 			<id>pvicente1</id>
@@ -50,14 +67,47 @@
 			</roles>
 			<timezone>+1</timezone>
 		</developer>
-
 	</developers>
+	<contributors>
+		<contributor>
+			<name>Luis M. Escudero</name>
+			<url>https://imagej.net/User:LMEscudero</url>
+			<roles>
+				<role>founder</role>
+			</roles>
+		</contributor>
+	</contributors>
+
 	<properties>
-		<main-class>AutomaticSegmentation</main-class>
+		<main-class>MainAutomaticNucleiSegmentation</main-class>
+		<license.licenseName>gpl_v3</license.licenseName>
+		<license.copyrightOwners>Luis M. Escudero</license.copyrightOwners>
 	</properties>
 
-	<dependencies>
+	<mailingLists>
+		<mailingList>
+			<name>Image.sc Forum</name>
+			<archive>https://forum.image.sc/tags/fiji</archive>
+		</mailingList>
+	</mailingLists>
 
+	<scm>
+		<connection>scm:git:git://github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentation</connection>
+		<developerConnection>scm:git:git@github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentationn</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentation</url>
+	</scm>
+
+	<ciManagement>
+		<system>Travis CI</system>
+	</ciManagement>
+
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>https://github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentation/issues</url>
+	</issueManagement>
+
+	<dependencies>
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>Fiji_Plugins</artifactId>
@@ -89,7 +139,7 @@
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
-			</dependency>
+		</dependency>
 
 		<dependency>
 			<groupId>org.eclipse.swt</groupId>
@@ -110,12 +160,6 @@
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>3D_Objects_Counter</artifactId>
-			</dependency>
-		<!-- https://mvnrepository.com/artifact/com.miglayout/miglayout -->
-		<dependency>
-			<groupId>com.miglayout</groupId>
-			<artifactId>miglayout</artifactId>
-			<version>3.7.4</version>
 		</dependency>
 
 		<dependency>
@@ -141,6 +185,16 @@
 			<groupId>net.haesleinhuepf</groupId>
 			<artifactId>clij_</artifactId>
 			<version>1.0.7</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>bridj</artifactId>
+					<groupId>com.nativelibs4java</groupId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.nativelibs4java</groupId>
+					<artifactId>javacl</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 	<build>
@@ -172,9 +226,6 @@
 				<artifactId>maven-shade-plugin</artifactId>
 				<version>3.0.0</version>
 				<configuration>
-					<artifactSet>
-
-					</artifactSet>
 					<archive>
 						<manifest>
 							<mainClass>${main-class}</mainClass>
@@ -256,8 +307,8 @@
 					<name>!java.awt.headless</name>
 				</property>
 			</activation>
-			<dependencies>
-			</dependencies>
+			<dependencies />
+
 		</profile>
 		<profile>
 			<id>only-eclipse</id>
