@@ -42,6 +42,9 @@ import inra.ijpb.morphology.*;
 import inra.ijpb.util.ColorMaps;
 import inra.ijpb.util.ColorMaps.CommonLabelMaps;
 import inra.ijpb.watershed.Watershed;
+import net.haesleinhuepf.clij.CLIJ;
+import net.haesleinhuepf.clij.clearcl.ClearCLBuffer;
+import net.haesleinhuepf.clij.kernels.Kernels;
 import net.miginfocom.swing.MigLayout;
 
 import inra.ijpb.label.LabelImages;
@@ -172,8 +175,33 @@ public class MainWindow extends JFrame{
 					imp= IJ.openImage();	
 					/*WindowManager.addWindow(imp.getWindow());
 					imp.show();*/
-					imp.show();
-					input = imp.duplicate();				
+
+					//imp.show();
+					ImagePlus input = imp.duplicate();				
+					ImagePlus imp_segmented = new ImagePlus();
+					
+					/**
+					CLIJ clij = CLIJ.getInstance();
+			        int radiusFilter = 3;
+			        long startTime = System.nanoTime();
+			        // conversion
+			        ClearCLBuffer inputClij = clij.push(input);
+			        ClearCLBuffer output = clij.create(inputClij);
+			        ClearCLBuffer temp = clij.create(inputClij);
+			        Kernels.meanBox(clij, inputClij, temp, radiusFilter, radiusFilter, radiusFilter);
+			        ImagePlus result = clij.pull(temp);
+			        long endTime = System.nanoTime();
+			        long duration = (endTime - startTime) / 1000000;  //divide by 1000000 to get milliseconds.
+			        System.out.println("CLIJ Mean filter " + duration + " msec");
+
+			        startTime = System.nanoTime();
+			        // Retrieve filtered stack 
+					Filters3D.filter(imp.getStack(),Filters3D.MEAN, 3, 3, 3); 
+			        endTime = System.nanoTime();
+			        duration = (endTime - startTime) / 1000000;  //divide by 1000000 to get milliseconds.
+			        System.out.println("Mean filter " + duration + " msec");
+			        */
+			        
 					imp_segmented = SalivaryGNucleiSegmentation(input);
 					rm = getNucleiROIs(imp_segmented);
 			    	imp_segmented.show();
