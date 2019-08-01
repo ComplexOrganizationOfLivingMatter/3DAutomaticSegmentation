@@ -90,26 +90,40 @@ public class RoiAdjustment {
 				// Convert the ShapeRoi in PolygonRoi (Non-overlappin part of the cells)
 				Roi[] overRoi= sNotOverlappingCell.getRois();
 				
-				int[] xPoints = new int[overRoi.length];
-				int[] yPoints = new int[overRoi.length];
+				// int[] xPoints = new int[overRoi.length];
+				 // int[] yPoints = new int[overRoi.length];
+				//for (int i = 0; i < yPoints.length; i++) {
+				//	Coordinate coordinate = new Coordinate(overRoi[i].getFloatWidth() + sNotOverlappingCell.getXBase(), overRoi[i].getFloatHeight() + sNotOverlappingCell.getYBase());
+				//}
 				
-				PolygonRoi poly = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
-				poly.setLocation(sNotOverlappingCell.getXBase(), sNotOverlappingCell.getYBase());
+				//PolygonRoi poly = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
+				//poly.setLocation(sNotOverlappingCell.getXBase(), sNotOverlappingCell.getYBase());
 				
 				GeometryFactory geoF = new GeometryFactory();
-				Polygon polG = new Polygon(xPoints, yPoints, xPoints.length);
-				com.vividsolutions.jts.geom.Polygon[] geo = geoF.toPolygonArray((Collection) polG);
+				
+				//com.vividsolutions.jts.geom.Polygon[] geo = GeometryFactory.toPolygonArray((Collection) polG);
 				com.vividsolutions.jts.geom.Point[] allPoints = new com.vividsolutions.jts.geom.Point[overRoi.length];
 				
 				for (int i = 0; i < overRoi.length; i++) {
 					Coordinate coordinate = new Coordinate(overRoi[i].getFloatWidth() + sNotOverlappingCell.getXBase(), overRoi[i].getFloatHeight() + sNotOverlappingCell.getYBase());
-					com.vividsolutions.jts.geom.Point p = new com.vividsolutions.jts.geom.Point(coordinate, null, i);
 					allPoints[i] = geoF.createPoint(coordinate);
 				}
+				
 				ArrayList<com.vividsolutions.jts.geom.Point> geoList = new ArrayList<com.vividsolutions.jts.geom.Point>(Arrays.asList(allPoints));
 				Geometry geoP = geoF.buildGeometry(geoList);
 				
-				ConcaveHull ch = new ConcaveHull(geoP, 1000);
+				ConcaveHull ch = new ConcaveHull(geoP, 10000);
+
+				Geometry newGeoP = ch.getConcaveHull();
+				Coordinate[] coords = newGeoP.getCoordinates();
+				int[] xPoints = new int[coords.length];
+				int[] yPoints = new int[coords.length];
+				for (int i = 0; i < yPoints.length; i++) {
+					xPoints[i] = (int) coords[i].x;
+					yPoints[i] = (int) coords[i].y; 
+				}
+				PolygonRoi poly = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
+				
 				// Convert the PolygonRoi in Dots and integrate with the dots of the other frames. 
 				// Later, replace the selected cell by the cell with the new region 
 				this.setOverlapRegion(frame, poly,sNotOverlappingCell);
