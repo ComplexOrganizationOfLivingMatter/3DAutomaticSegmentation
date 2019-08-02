@@ -11,6 +11,8 @@ import java.awt.Rectangle;
 import java.awt.Scrollbar;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.File;
@@ -28,11 +30,14 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import org.eclipse.swt.widgets.ScrollBar;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -78,18 +83,14 @@ public class PostProcessingWindow extends ImageWindow implements
 	private JButton btnLumen;
 	private JComboBox checkOverlay;
 	private JSpinner cellSpinner;
+	private Scrollbar sliceSelector;
 
 	private PointRoi dotsRoi;
 	private PolygonRoi polyRoi;
 
-	// private JPanel IdPanel;
-
 	private String initialDirectory;
 	public Cell3D PostProcessCell;
 	public ArrayList<Cell3D> all3dCells;
-
-	// private JTableModel tableInf;
-	// private Scrollbar sliceSelector;
 
 	public PostProcessingWindow(ImagePlus raw_img) {
 		super(raw_img, new CustomCanvas(raw_img));
@@ -126,10 +127,13 @@ public class PostProcessingWindow extends ImageWindow implements
 
 		canvas = (CustomCanvas) super.getCanvas();
 		PostProcessingGland.callToolbarPolygon();
+		
+		sliceSelector = new Scrollbar(Scrollbar.HORIZONTAL, 1,1,1,(imp.getStackSize()+1));
+	    sliceSelector.setVisible(true);
 
 		initializeGUIItems(raw_img);
 
-		// tableInf = tableInfo;
+		
 		overlayResult = new SegmentationOverlay();
 		if (overlayResult != null) {
 
@@ -171,7 +175,8 @@ public class PostProcessingWindow extends ImageWindow implements
 		bottomRightPanel.add(btnLumen);
 
 		processingFrame.setLayout(new MigLayout());
-		processingFrame.add(canvas, "alignx center, span 1 5");
+		processingFrame.add(canvas, "alignx center, span 1 3, wrap");
+		processingFrame.add(sliceSelector, "span 1 2");
 		processingFrame.add(upRightPanel, "wrap, gapy 10::50, aligny top");
 		processingFrame.add(middlePanel, "aligny center, wrap, gapy 10::50");
 		processingFrame.add(bottomRightPanel);
@@ -216,6 +221,41 @@ public class PostProcessingWindow extends ImageWindow implements
 			}
 
 		});
+		
+		sliceSelector.addAdjustmentListener(new AdjustmentListener() {
+			public void adjustmentValueChanged(AdjustmentEvent e) {
+				int z = sliceSelector.getValue();
+				imp.setSlice(z);
+				
+				canvas.clearOverlay();
+				
+				if (checkOverlay.getSelectedItem() == "All overlays") {
+					canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
+						.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
+						canvas.getImage(), true));
+					overlayResult.setImage(canvas.getImage());
+					canvas.addOverlay(overlayResult);
+					canvas.setImageOverlay(overlayResult);
+				}
+
+				else {
+					canvas.clearOverlay();
+					overlayResult.ov.clear();
+					overlayResult.workingImP.setHideOverlay(true);
+
+					if (checkOverlay.getSelectedItem() == "Cell overlay") {
+						canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
+							.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
+							canvas.getImage(), false));
+						overlayResult.setImage(canvas.getImage());
+					}
+
+					canvas.setImageOverlay(overlayResult);
+
+				}
+				
+			}
+		});
 	}
 
 	/*
@@ -224,6 +264,11 @@ public class PostProcessingWindow extends ImageWindow implements
 	 * @see
 	 * java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
+	
+	
+		
+
+	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 
