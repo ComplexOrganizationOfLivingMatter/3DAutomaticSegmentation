@@ -9,8 +9,6 @@ import java.util.Collections;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
-import ij.plugin.Filters3D;
-import ij.plugin.Resizer;
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 import inra.ijpb.binary.BinaryImages;
@@ -29,23 +27,21 @@ import net.haesleinhuepf.clij.CLIJ;
 import net.haesleinhuepf.clij.clearcl.ClearCLBuffer;
 import net.haesleinhuepf.clij.kernels.Kernels;
 
-
-public class SegmNucleiGlands{
-	
+public class SegmZebrafish {
 	private ImagePlus outputImp;
 	private int	strelRadius2D;
 	private int	strelRadius3D;
 	private int toleranceWatershed;
 	
-	public SegmNucleiGlands(ImagePlus imp) {
-		strelRadius2D = 4;
-		strelRadius3D = 3;
+	public SegmZebrafish(ImagePlus imp) {
+		strelRadius2D = 2;
+		strelRadius3D = 2;
 		// 10 is a good start point for 8-bit images, 2000 for 16-bits. Minor tolerance more divided objects with watershed
 		toleranceWatershed = 0;
 		segmentationProtocol(imp);
 	}
 	
-	public SegmNucleiGlands(ImagePlus imp,int radius2D,int radius3D, int tolerance) {
+	public SegmZebrafish(ImagePlus imp,int radius2D,int radius3D, int tolerance) {
 		strelRadius2D = radius2D;
 		strelRadius3D = radius3D;
 		toleranceWatershed = tolerance;
@@ -87,9 +83,9 @@ public class SegmNucleiGlands{
         Kernels.meanBox(clij, inputClij, temp, strelRadius3D, strelRadius3D, strelRadius3D);
         initImp = clij.pull(temp);
 		
+		//Filters3D.filter(imp.getStack(),Filters3D.MEAN, 1, 1, 1); 	
 		
         /*****Huang automatic threshold, getting the median threshold value for the full stack*****/
-        
 		IJ.log("Applying Huang filter and automatic threshold");
 		System.out.println("Applying Huang filter and automatic threshold");
 		int[] thresh = new int[initImp.getStackSize()+1];
@@ -102,6 +98,7 @@ public class SegmNucleiGlands{
 				thresholds.add((Integer) thresh[i-1]);
 			};
 		}
+		
 		Collections.sort(thresholds);
 		int medianThresh = 0;
 		if (thresholds.size()%2 == 1) {
@@ -110,27 +107,38 @@ public class SegmNucleiGlands{
 	        	medianThresh = (int) thresholds.get(thresholds.size()/2);
 	        }
 		int intMedianThresh = (int) Math.round(medianThresh/2);
-		System.out.println("thresh: "+intMedianThresh);
+		System.out.println("thresh: "+medianThresh);
 		
 		/************Apply the calculated threshold**************/
-		ImagePlus imp_segmented = initImp.duplicate();
+		ImagePlus imp_segmented = new ImagePlus();
+		imp_segmented = (ImagePlus) initImp.clone();
 		for(int i=1;i<=initImp.getStackSize();i++) {
 			ImageProcessor processor = initImp.getStack().getProcessor(i);
 			processor.threshold(intMedianThresh);
 			imp_segmented.getStack().setProcessor((ImageProcessor) processor.clone(), i);
 		}
 			
+		// create structuring element (cube of radius 'radius')
+		Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(strelRadius3D);
+
+		IJ.log("1 - Fill 3D particles");
+		// fill 3D particles
+		//ImageStack imgFilled = Reconstruction3D.fillHoles(impClosed);
+		
+		//loop for to close hole in 2D. Dilatation + erosion + fill holes
+		Strel shape2D = Strel.Shape.DISK.fromRadius(strelRadius2D);
+	
 		
 		/*****loop for closing, binarize and filling holes in 2D*****/
 		System.out.println("Closing, binarize and filling");
 		IJ.log("Closing, binarize and filling");
-		Strel shape2D = Strel.Shape.DISK.fromRadius(this.strelRadius2D);
 		ImageStack imgFilled = imp_segmented.getStack().duplicate();
 		for(int i=1;i<=imp_segmented.getStackSize();i++) {
 			ImageProcessor processor = imp_segmented.getStack().getProcessor(i);
+			processor = Morphology.opening(processor, shape2D);
 			processor = Morphology.closing(processor, shape2D);
 			processor = BinaryImages.binarize(processor);
-			processor = Reconstruction.fillHoles(processor);
+			processor = Reconstruction.fillHoles(processor);	
 			imgFilled.setProcessor((ImageProcessor) processor.duplicate(), i);
 		}
 		//progressBar.show(0.1);	
@@ -138,21 +146,19 @@ public class SegmNucleiGlands{
 		//Volume opening
 		System.out.println("Small volume opening");
 		IJ.log("Small volume opening");
-		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, 50);
-		
-		//Apply morphological gradient to input image
+		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, 20);
+
+		// apply morphological gradient to input image
 		System.out.println("Gradient");
 		IJ.log("Gradient");
-		Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(this.strelRadius3D);
 		ImageStack imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
 		//progressBar.show(0.25);
-		
+
 		// find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity
 		System.out.println("Extended minima");
 		IJ.log("Extended Minima");
-		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( imgGradient, this.toleranceWatershed, conn );
+		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima( imgGradient, toleranceWatershed, conn );
 		//progressBar.show(0.4);
-		
 		
 		// impose minima on gradient image
 		System.out.println("impose minima");
@@ -160,10 +166,10 @@ public class SegmNucleiGlands{
 		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima( imgGradient, regionalMinima, conn );
 		//progressBar.show(0.5);
 
-		
 		// label minima using connected components (32-bit output)
 		System.out.println("Labelling");
 		IJ.log("Labelling");
+		// label minima using connected components (32-bit output)
 		//convert image to 16 bits to enable more labels???
 		ImageStack labeledMinima;
 		try {
@@ -174,7 +180,7 @@ public class SegmNucleiGlands{
 			converter.convertToGray16();
 			labeledMinima = BinaryImages.componentsLabeling( regMinip.getImageStack(), conn, regMinip.getBitDepth());
 			
-			//if we change the bitDepth of labeledMinima, also the imposed minima
+			//if we change the bitDepth of labeledMinima, allso the imposed minima
 			ImagePlus impMin = new ImagePlus("",imposedMinima);
 			ImageConverter converter2 = new ImageConverter(impMin);
 			converter2.convertToGray16();
@@ -185,10 +191,8 @@ public class SegmNucleiGlands{
 		
 		// apply marker-based watershed using the labeled minima on the minima-imposed 
 		System.out.println("Watershed");
-		IJ.log("Watershed");
-		ImageStack resultStack = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, dams );
+		IJ.log("Watershed");ImageStack resultStack = Watershed.computeWatershed( imposedMinima, labeledMinima, conn, dams );
 		//progressBar.show(0.85);
-
 
 		/******get array of volumes******/
 		System.out.println("Get labelled volumes");
@@ -203,12 +207,10 @@ public class SegmNucleiGlands{
 		double thresholdVolume = (volumes[nbLabels/2]/3);
 		//progressBar.show(0.9);
 		
-		
 		/********volume opening********/
 		System.out.println("Opening using the median of volumes");
 		IJ.log("Opening using the median of volumes");
 		ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
-
 
 		/***get colored labels and return image***/
 		// create image with watershed result
@@ -229,6 +231,8 @@ public class SegmNucleiGlands{
 		
 		//progressBar.show(1);
 		this.outputImp =  imp_segmentedFinal;
+				
+				
+		
 	}
-
 }
