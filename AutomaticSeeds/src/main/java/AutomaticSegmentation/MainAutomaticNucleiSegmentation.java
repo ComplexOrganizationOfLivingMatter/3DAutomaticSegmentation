@@ -23,7 +23,8 @@ public class MainAutomaticNucleiSegmentation implements PlugIn {
 	/**
 	 * Debug mode
 	 * 
-	 * @param args default arguments
+	 * @param args
+	 *            default arguments
 	 */
 	public static void main(String[] args) {
 		// set the plugins.dir property to make the plugin appear in the Plugins
@@ -43,6 +44,7 @@ public class MainAutomaticNucleiSegmentation implements PlugIn {
 
 	/*
 	 * Plugin run method (non-Javadoc)
+	 * 
 	 * @see ij.plugin.PlugIn#run(java.lang.String)
 	 */
 	public void run(String arg) {
