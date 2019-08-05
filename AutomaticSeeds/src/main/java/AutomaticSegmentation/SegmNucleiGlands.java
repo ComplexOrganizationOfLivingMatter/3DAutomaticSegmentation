@@ -42,14 +42,14 @@ public class SegmNucleiGlands{
 		strelRadius3D = 3;
 		// 10 is a good start point for 8-bit images, 2000 for 16-bits. Minor tolerance more divided objects with watershed
 		toleranceWatershed = 0;
-		segmentationProtocol(imp);
+		segmentationProtocol(imp, false);
 	}
 	
 	public SegmNucleiGlands(ImagePlus imp,int radius2D,int radius3D, int tolerance) {
 		strelRadius2D = radius2D;
 		strelRadius3D = radius3D;
 		toleranceWatershed = tolerance;
-		segmentationProtocol(imp);
+		segmentationProtocol(imp, false);
 	}
 
 	
@@ -63,7 +63,7 @@ public class SegmNucleiGlands{
 	/**
 	 * @return the segmentedImage
 	 */
-	private void segmentationProtocol(ImagePlus initImp){
+	private void segmentationProtocol(ImagePlus initImp, boolean gpuOption){
 		
 		//Convert the image to 8-Bit
 		if(initImp.getBitDepth() != 8) {
@@ -80,12 +80,17 @@ public class SegmNucleiGlands{
 		System.out.println(BitD+"-bits convertion");
 		
 		/*****Enhance Stack contrast with median threshold******/
-		// Retrieve filtered stack 
-		CLIJ clij = CLIJ.getInstance();
-        ClearCLBuffer inputClij = clij.push(initImp);
-        ClearCLBuffer temp = clij.create(inputClij);
-        Kernels.meanBox(clij, inputClij, temp, strelRadius3D, strelRadius3D, strelRadius3D);
-        initImp = clij.pull(temp);
+		if (gpuOption) {
+			// Retrieve filtered stack 
+			CLIJ clij = CLIJ.getInstance();
+	        ClearCLBuffer inputClij = clij.push(initImp);
+	        ClearCLBuffer temp = clij.create(inputClij);
+	        Kernels.meanBox(clij, inputClij, temp, strelRadius3D, strelRadius3D, strelRadius3D);
+	        initImp = clij.pull(temp);
+		} else {
+			Filters3D.filter(initImp.getStack(),Filters3D.MEAN, 3, 3, 3); 
+		}
+	    
 		
 		
         /*****Huang automatic threshold, getting the median threshold value for the full stack*****/
@@ -94,13 +99,14 @@ public class SegmNucleiGlands{
 		System.out.println("Applying Huang filter and automatic threshold");
 		int[] thresh = new int[initImp.getStackSize()+1];
 		ArrayList<Integer> thresholds = new ArrayList<Integer>();
-		for(int i=1;i<=initImp.getStackSize();i++) {
-			ImageProcessor processor = initImp.getStack().getProcessor(i);
+		for(int i=0;i<initImp.getStackSize();i++) {
+			ImageProcessor processor = initImp.getStack().getProcessor(i+1);
 			processor.setAutoThreshold("Huang");
-			thresh[i-1] = processor.getAutoThreshold();
-			if (thresh[i-1]>5){
-				thresholds.add((Integer) thresh[i-1]);
-			};
+			thresh[i] = processor.getAutoThreshold();
+			
+			if (thresh[i]>5){
+				thresholds.add((Integer) thresh[i]);
+			}
 		}
 		Collections.sort(thresholds);
 		int medianThresh = 0;
