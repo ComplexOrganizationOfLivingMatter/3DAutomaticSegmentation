@@ -1,17 +1,11 @@
 package AutomaticSegmentation;
 
 import java.awt.Color;
-
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.image.ColorModel;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -22,35 +16,18 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import ij.IJ;
 import ij.ImagePlus;
-import ij.ImageStack;
 import ij.Prefs;
 import ij.gui.OvalRoi;
 import ij.gui.ProgressBar;
 import ij.gui.Roi;
-import ij.plugin.Filters3D;
-import ij.plugin.Resizer;
 import ij.plugin.frame.RoiManager;
-
-import ij.process.ImageConverter;
-import ij.process.ImageProcessor;
-import inra.ijpb.binary.BinaryImages;
-import inra.ijpb.data.image.Images3D;
+import ij3d.ContentConstants;
+import ij3d.Image3DUniverse;
 import inra.ijpb.geometry.Ellipsoid;
-import inra.ijpb.morphology.*;
-import inra.ijpb.util.ColorMaps;
-import inra.ijpb.util.ColorMaps.CommonLabelMaps;
-import inra.ijpb.watershed.Watershed;
-import net.haesleinhuepf.clij.CLIJ;
-import net.haesleinhuepf.clij.clearcl.ClearCLBuffer;
-import net.haesleinhuepf.clij.kernels.Kernels;
-import net.miginfocom.swing.MigLayout;
-
 import inra.ijpb.label.LabelImages;
-import inra.ijpb.measure.*;
 import inra.ijpb.measure.region3d.Centroid3D;
 import inra.ijpb.measure.region3d.InertiaEllipsoid;
-import ij3d.Image3DUniverse;
-import ij3d.ContentConstants;
+import net.miginfocom.swing.MigLayout;
 
 public class MainWindow extends JFrame {
 

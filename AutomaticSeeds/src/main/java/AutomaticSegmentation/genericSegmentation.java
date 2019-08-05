@@ -32,6 +32,8 @@ import net.haesleinhuepf.clij.kernels.Kernels;
  */
 public interface genericSegmentation {
 
+	int CONNECTIVITY = 6;
+
 	/**
 	 * 
 	 * @param initImp
@@ -160,12 +162,11 @@ public interface genericSegmentation {
 	/**
 	 * @param BitD
 	 * @param dams
-	 * @param toleranceWatershed 
-	 * @param connectivity 
+	 * @param toleranceWatershed
 	 * @param imgGradient
 	 * @return
 	 */
-	public default ImageStack watershedProcess(int BitD, boolean dams, ImageStack imgFilterSmall, int strelRadius3D, double toleranceWatershed, int connectivity) {
+	public default ImageStack watershedProcess(int BitD, boolean dams, ImageStack imgFilterSmall, int strelRadius3D, double toleranceWatershed) {
 
 		// Apply morphological gradient to input image
 		System.out.println("Gradient");
@@ -177,13 +178,13 @@ public interface genericSegmentation {
 		// 'tolerance' and 'conn'-connectivity
 		System.out.println("Extended minima");
 		IJ.log("Extended Minima");
-		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima(imgGradient, toleranceWatershed, connectivity);
+		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima(imgGradient, toleranceWatershed, CONNECTIVITY);
 		// progressBar.show(0.4);
 
 		// impose minima on gradient image
 		System.out.println("impose minima");
 		IJ.log("Impose Minima");
-		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima(imgGradient, regionalMinima, conn);
+		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima(imgGradient, regionalMinima, CONNECTIVITY);
 		// progressBar.show(0.5);
 		ImagePlus imgToShow = new ImagePlus("imposeMinima", imposedMinima);
 		imgToShow.show();
@@ -194,12 +195,12 @@ public interface genericSegmentation {
 		// convert image to 16 bits to enable more labels???
 		ImageStack labeledMinima;
 		try {
-			labeledMinima = BinaryImages.componentsLabeling(regionalMinima, conn, BitD);
+			labeledMinima = BinaryImages.componentsLabeling(regionalMinima, CONNECTIVITY, BitD);
 		} catch (Exception e) {
 			ImagePlus regMinip = new ImagePlus("", regionalMinima);
 			ImageConverter converter = new ImageConverter(regMinip);
 			converter.convertToGray16();
-			labeledMinima = BinaryImages.componentsLabeling(regMinip.getImageStack(), conn, regMinip.getBitDepth());
+			labeledMinima = BinaryImages.componentsLabeling(regMinip.getImageStack(), CONNECTIVITY, regMinip.getBitDepth());
 
 			// if we change the bitDepth of labeledMinima, also the imposed
 			// minima
@@ -214,7 +215,7 @@ public interface genericSegmentation {
 		// minima-imposed
 		System.out.println("Watershed");
 		IJ.log("Watershed");
-		ImageStack resultStack = Watershed.computeWatershed(imposedMinima, labeledMinima, conn, dams);
+		ImageStack resultStack = Watershed.computeWatershed(imposedMinima, labeledMinima, CONNECTIVITY, dams);
 		// progressBar.show(0.85);
 
 		return resultStack;
