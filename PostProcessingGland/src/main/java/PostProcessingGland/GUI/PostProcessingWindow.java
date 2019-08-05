@@ -37,8 +37,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import org.eclipse.swt.widgets.ScrollBar;
-
+import net.miginfocom.layout.CC;
 import net.miginfocom.swing.MigLayout;
 
 import PostProcessingGland.Elements.Cell3D;
@@ -78,6 +77,8 @@ public class PostProcessingWindow extends ImageWindow implements
 	private JPanel upRightPanel;
 	private JPanel middlePanel;
 	private JPanel bottomRightPanel;
+	private JPanel rightPanel;
+	private JPanel leftPanel;
 	private JButton btnSave;
 	private JButton btnInsert;
 	private JButton btnLumen;
@@ -173,14 +174,24 @@ public class PostProcessingWindow extends ImageWindow implements
 		bottomRightPanel.setBorder(BorderFactory.createTitledBorder(
 			"Lumen Processing"));
 		bottomRightPanel.add(btnLumen);
+		
+		rightPanel.setLayout(new MigLayout());
+		rightPanel.add(upRightPanel, "wrap, gapy 10::50, aligny top");
+		rightPanel.add(middlePanel, "aligny center, wrap, gapy 10::50");
+		rightPanel.add(bottomRightPanel);
+		
+		
+		leftPanel.setLayout(new MigLayout());
+		leftPanel.setMaximumSize(new Dimension(500, 500));
+		leftPanel.setMinimumSize(new Dimension(500, 500));		
+		leftPanel.add(canvas, "wrap 100");
+		leftPanel.add(sliceSelector, "south");
+		//leftPanel.add(sliceSelector, "south, span 1 2");
 
 		processingFrame.setLayout(new MigLayout());
-		processingFrame.add(canvas, "alignx center, span 1 3, wrap");
-		processingFrame.add(sliceSelector, "span 1 2");
-		processingFrame.add(upRightPanel, "wrap, gapy 10::50, aligny top");
-		processingFrame.add(middlePanel, "aligny center, wrap, gapy 10::50");
-		processingFrame.add(bottomRightPanel);
-		processingFrame.setMinimumSize(new Dimension(1024, 1024));
+		processingFrame.add(leftPanel);
+		processingFrame.add(rightPanel, "east");
+		//processingFrame.setMinimumSize(new Dimension(1024, 1024));
 		processingFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		processingFrame.pack();
 		processingFrame.setVisible(true);
@@ -196,6 +207,8 @@ public class PostProcessingWindow extends ImageWindow implements
 		upRightPanel = new JPanel();
 		middlePanel = new JPanel();
 		bottomRightPanel = new JPanel();
+		rightPanel = new JPanel();
+		leftPanel = new JPanel();
 
 		cellSpinner = new JSpinner();
 		cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
