@@ -190,7 +190,7 @@ public class MainWindow extends JFrame {
 					 */
 					// imp.show();
 					input = imp.duplicate();
-					SegmNucleiGlands segGland = new SegmNucleiGlands(input);
+					SegmentingNucleiGlands segGland = new SegmentingNucleiGlands(input);
 					imp_segmented = segGland.getOuputImp().duplicate();
 					rm = getNucleiROIs(segGland.getOuputImp());
 					imp_segmented.show();
@@ -239,7 +239,7 @@ public class MainWindow extends JFrame {
 					imp = IJ.getImage();
 					input = imp.duplicate();
 
-					SegmNucleiGlands segGland = new SegmNucleiGlands(input);
+					SegmentingNucleiGlands segGland = new SegmentingNucleiGlands(input);
 					imp_segmented = segGland.getOuputImp();
 
 					rm = getNucleiROIs(imp_segmented);
