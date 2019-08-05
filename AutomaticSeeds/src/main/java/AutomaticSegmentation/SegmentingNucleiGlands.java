@@ -20,6 +20,8 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 	private int strelRadius2D;
 	private int strelRadius3D;
 	private int toleranceWatershed;
+	
+	private static final int PIXELSTOOPENVOLUME = 50;
 
 	public SegmentingNucleiGlands(ImagePlus imp) {
 		strelRadius2D = 4;
@@ -90,7 +92,7 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 		// Volume opening
 		System.out.println("Small volume opening");
 		IJ.log("Small volume opening");
-		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, 50); //TODO: CHANGE 50 FOR A VARIABLE
+		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, PIXELSTOOPENVOLUME); //TODO: CHANGE 50 FOR A VARIABLE
 
 		ImagePlus imgToShow = new ImagePlus("volumeOpening", imgFilterSmall);
 		imgToShow.show();

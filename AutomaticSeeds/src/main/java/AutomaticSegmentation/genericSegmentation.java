@@ -57,9 +57,10 @@ public interface genericSegmentation {
 	}
 	
 
-
 	/**
+	 * 
 	 * @param initImp
+	 * @param autoThresholdMethod
 	 * @return
 	 */
 	public default ImagePlus automaticThreshold(ImagePlus initImp, String autoThresholdMethod) {
@@ -130,9 +131,10 @@ public interface genericSegmentation {
 
 		imp_segmented.show();
 		return imp_segmented;
-	}
-	
+	}	
+
 	/**
+	 * 
 	 * @param initImp
 	 * @param imgFilterSize
 	 * @return
@@ -160,10 +162,12 @@ public interface genericSegmentation {
 	}
 	
 	/**
+	 * 
 	 * @param BitD
 	 * @param dams
+	 * @param imgFilterSmall
+	 * @param strelRadius3D
 	 * @param toleranceWatershed
-	 * @param imgGradient
 	 * @return
 	 */
 	public default ImageStack watershedProcess(int BitD, boolean dams, ImageStack imgFilterSmall, int strelRadius3D, double toleranceWatershed) {
