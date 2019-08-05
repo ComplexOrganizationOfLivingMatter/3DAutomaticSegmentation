@@ -33,7 +33,7 @@ import net.haesleinhuepf.clij.clearcl.ClearCLBuffer;
 import net.haesleinhuepf.clij.kernels.Kernels;
 import vib.transforms.Threshold;
 
-public class SegmentingNucleiGlands {
+public class SegmentingNucleiGlands implements genericSegmentation {
 
 	private ImagePlus outputImp;
 	private int strelRadius2D;
@@ -89,11 +89,11 @@ public class SegmentingNucleiGlands {
 		IJ.log(BitD + "-bits conversion");
 		System.out.println(BitD + "-bits conversion");
 
-		initImp = filterPreprocessing(initImp, gpuOption);
+		initImp = filterPreprocessing(initImp, gpuOption, strelRadius3D);
 
 		initImp.show();
 
-		ImagePlus imp_segmented = automaticThreshold(initImp);
+		ImagePlus imp_segmented = automaticThreshold(initImp, "Huang");
 
 		/***** loop for closing, binarize and filling holes in 2D *****/
 		System.out.println("Closing, binarize and filling");
@@ -101,18 +101,20 @@ public class SegmentingNucleiGlands {
 		Strel shape2D = Strel.Shape.DISK.fromRadius(this.strelRadius2D);
 		ImageStack imgFilled = imp_segmented.getStack().duplicate();
 		for (int i = 1; i <= imp_segmented.getStackSize(); i++) {
+			
 			ImageProcessor processor = imp_segmented.getStack().getProcessor(i);
 			processor = Morphology.closing(processor, shape2D);
 			processor = BinaryImages.binarize(processor);
 			processor = Reconstruction.fillHoles(processor);
 			imgFilled.setProcessor((ImageProcessor) processor.duplicate(), i);
+			
 		}
 		// progressBar.show(0.1);
 
 		// Volume opening
 		System.out.println("Small volume opening");
 		IJ.log("Small volume opening");
-		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, 50);
+		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, 50); //TODO: CHANGE 50 FOR A VARIABLE
 
 		ImagePlus imgToShow = new ImagePlus("volumeOpening", imgFilterSmall);
 		imgToShow.show();
@@ -138,6 +140,18 @@ public class SegmentingNucleiGlands {
 		IJ.log("Opening using the median of volumes");
 		ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
 
+		ImagePlus imp_segmentedFinal = createColouredImageWithLabels(initImp, imgFilterSize);
+
+		// progressBar.show(1);
+		this.outputImp = imp_segmentedFinal;
+	}
+
+	/**
+	 * @param initImp
+	 * @param imgFilterSize
+	 * @return
+	 */
+	public ImagePlus createColouredImageWithLabels(ImagePlus initImp, ImageStack imgFilterSize) {
 		/*** get colored labels and return image ***/
 		// create image with watershed result
 		ImagePlus imp_segmentedFinal = new ImagePlus("filtered size", imgFilterSize);
@@ -156,9 +170,7 @@ public class SegmentingNucleiGlands {
 		imp_segmentedFinal.getProcessor().setColorModel(cm);
 		imp_segmentedFinal.getImageStack().setColorModel(cm);
 		imp_segmentedFinal.updateAndDraw();
-
-		// progressBar.show(1);
-		this.outputImp = imp_segmentedFinal;
+		return imp_segmentedFinal;
 	}
 
 	/**
@@ -220,95 +232,6 @@ public class SegmentingNucleiGlands {
 		// progressBar.show(0.85);
 
 		return resultStack;
-	}
-
-	/**
-	 * @param initImp
-	 * @return
-	 */
-	public ImagePlus automaticThreshold(ImagePlus initImp) {
-
-		// Thresholder p = new Thresholder();
-		// ImagePlus imp_segmented = new ImagePlus("",
-		// initImp.getStack().duplicate());
-		// imp_segmented.setSlice(Math.round(initImp.getStackSize()/2));
-		// imp_segmented.show();
-		// p.run("");
-		//
-		// try {
-		// this.wait();
-		// } catch (InterruptedException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-
-		// initImp.show();
-
-		/*****
-		 * Huang automatic threshold, getting the median threshold value for the
-		 * full stack
-		 *****/
-		IJ.log("Applying Huang filter and automatic threshold");
-		System.out.println("Applying Huang filter and automatic threshold");
-		ArrayList<Integer> thresholds = new ArrayList<Integer>();
-		ImageProcessor processor;
-		for (int i = 1; i <= initImp.getStackSize(); i++) {
-			processor = initImp.getStack().getProcessor(i);
-			/**
-			 * Methods: "Default", "Huang", "Intermodes", "IsoData",
-			 * "IJ_IsoData", "Li","MaxEntropy", "Mean", "MinError", "Minimum",
-			 * "Moments", "Otsu","Percentile", "RenyiEntropy", "Shanbhag",
-			 * "Triangle" or "Yen"
-			 */
-			processor.setAutoThreshold("Huang");
-			// System.out.println(processor.getAutoThreshold() + " " +
-			// processor.getMinThreshold() + " " + processor.getMaxThreshold());
-			thresholds.add((int) processor.getMaxThreshold()); // Getting max
-																// instead of
-																// threshold, we
-																// similar
-																// results
-																// compared with
-																// Fiji's
-		}
-
-		// Calculate median
-		Collections.sort(thresholds);
-
-		int medianThresh = 0;
-		if (thresholds.size() % 2 == 1) {
-			medianThresh = (int) (thresholds.get(thresholds.size() / 2) + thresholds.get(thresholds.size() / 2 - 1))
-					/ 2;
-		} else {
-			medianThresh = (int) thresholds.get(thresholds.size() / 2);
-		}
-		System.out.println("thresh: " + medianThresh);
-
-		/************ Apply the calculated threshold **************/
-		ImagePlus imp_segmented = new ImagePlus("", initImp.getStack().duplicate());
-		for (int i = 1; i <= imp_segmented.getStackSize(); i++) {
-			imp_segmented.setSlice(i);
-			processor = imp_segmented.getChannelProcessor();
-			processor.threshold(medianThresh);
-		}
-
-		imp_segmented.show();
-		return imp_segmented;
-	}
-
-	public ImagePlus filterPreprocessing(ImagePlus initImp, boolean gpuOption) {
-		/***** Enhance Stack contrast with median threshold ******/
-		if (gpuOption) {
-			// Retrieve filtered stack
-			CLIJ clij = CLIJ.getInstance();
-			ClearCLBuffer inputClij = clij.push(initImp);
-			ClearCLBuffer temp = clij.create(inputClij);
-			Kernels.meanBox(clij, inputClij, temp, strelRadius3D, strelRadius3D, strelRadius3D);
-			initImp = clij.pull(temp);
-		} else {
-			Filters3D.filter(initImp.getStack(), Filters3D.MEAN, strelRadius3D, strelRadius3D, strelRadius3D);
-		}
-		return initImp;
 	}
 
 }
