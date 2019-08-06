@@ -35,21 +35,22 @@ public interface genericSegmentation {
 	int CONNECTIVITY = 6;
 
 	/**
+	 * Enhance Stack contrast with median threshold
 	 * 
 	 * @param initImp
-	 * @param gpuOption
+	 * @param clij
 	 * @param strelRadius3D
 	 * @return
 	 */
-	default ImagePlus filterPreprocessing(ImagePlus initImp, boolean gpuOption, int strelRadius3D) {
-		/***** Enhance Stack contrast with median threshold ******/
-		if (gpuOption) {
+	default ImagePlus filterPreprocessing(ImagePlus initImp, CLIJ clij, int strelRadius3D) {
+		if (clij != null) { // More info at https://clij.github.io/clij-docs/referenceJava
 			// Retrieve filtered stack
-			CLIJ clij = CLIJ.getInstance();
 			ClearCLBuffer inputClij = clij.push(initImp);
 			ClearCLBuffer temp = clij.create(inputClij);
 			Kernels.meanBox(clij, inputClij, temp, strelRadius3D, strelRadius3D, strelRadius3D);
 			initImp = clij.pull(temp);
+			inputClij.close();
+			temp.close();
 		} else {
 			Filters3D.filter(initImp.getStack(), Filters3D.MEAN, strelRadius3D, strelRadius3D, strelRadius3D);
 		}
@@ -58,6 +59,8 @@ public interface genericSegmentation {
 	
 
 	/**
+	 * Automatic threshold, getting the median threshold value for the full
+	 * stack. No need for clij here
 	 * 
 	 * @param initImp
 	 * @param autoThresholdMethod
@@ -81,32 +84,18 @@ public interface genericSegmentation {
 
 		// initImp.show();
 
-		/*****
-		 * Huang automatic threshold, getting the median threshold value for the
-		 * full stack
-		 *****/
-		IJ.log("Applying Huang filter and automatic threshold");
-		System.out.println("Applying Huang filter and automatic threshold");
+		IJ.log("Applying " + autoThresholdMethod + " and automatic threshold");
+		System.out.println("Applying " + autoThresholdMethod + " and automatic threshold");
 		ArrayList<Integer> thresholds = new ArrayList<Integer>();
 		ImageProcessor processor;
 		for (int i = 1; i <= initImp.getStackSize(); i++) {
 			processor = initImp.getStack().getProcessor(i);
-			/**
-			 * Methods: "Default", "Huang", "Intermodes", "IsoData",
-			 * "IJ_IsoData", "Li","MaxEntropy", "Mean", "MinError", "Minimum",
-			 * "Moments", "Otsu","Percentile", "RenyiEntropy", "Shanbhag",
-			 * "Triangle" or "Yen"
-			 */
-			processor.setAutoThreshold(autoThresholdMethod); // "Huang"
+			processor.setAutoThreshold(autoThresholdMethod);
 			// System.out.println(processor.getAutoThreshold() + " " +
 			// processor.getMinThreshold() + " " + processor.getMaxThreshold());
-			thresholds.add((int) processor.getMaxThreshold()); // Getting max
-																// instead of
-																// threshold, we
-																// similar
-																// results
-																// compared with
-																// Fiji's
+			
+			// Getting max instead of threshold, we obtain similar results compared with Fiji's
+			thresholds.add((int) processor.getMaxThreshold()); 
 		}
 
 		// Calculate median
@@ -121,6 +110,8 @@ public interface genericSegmentation {
 		}
 		System.out.println("thresh: " + medianThresh);
 
+
+		long startTime = System.nanoTime();
 		/************ Apply the calculated threshold **************/
 		ImagePlus imp_segmented = new ImagePlus("", initImp.getStack().duplicate());
 		for (int i = 1; i <= imp_segmented.getStackSize(); i++) {
@@ -128,6 +119,10 @@ public interface genericSegmentation {
 			processor = imp_segmented.getChannelProcessor();
 			processor.threshold(medianThresh);
 		}
+
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime) / 1000000;  //divide by 1000000 to get milliseconds.
+        System.out.println("Duration " + duration + " msec");
 
 		imp_segmented.show();
 		return imp_segmented;

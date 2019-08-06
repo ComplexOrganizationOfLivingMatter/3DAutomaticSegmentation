@@ -14,8 +14,11 @@ import inra.ijpb.morphology.Morphology;
 import inra.ijpb.morphology.Reconstruction;
 import inra.ijpb.morphology.Strel;
 import inra.ijpb.morphology.Strel3D;
+import net.haesleinhuepf.clij.CLIJ;
 
 public class SegmZebrafish implements genericSegmentation {
+	
+	private ImagePlus inputImp;
 	private ImagePlus outputImp;
 	private int strelRadius2D;
 	private int strelRadius3D;
@@ -28,14 +31,14 @@ public class SegmZebrafish implements genericSegmentation {
 		// 10 is a good start point for 8-bit images, 2000 for 16-bits. Minor
 		// tolerance more divided objects with watershed
 		toleranceWatershed = 0;
-		segmentationProtocol(imp, false);
+		this.inputImp = imp;
 	}
 
 	public SegmZebrafish(ImagePlus imp, int radius2D, int radius3D, int tolerance) {
 		strelRadius2D = radius2D;
 		strelRadius3D = radius3D;
 		toleranceWatershed = tolerance;
-		segmentationProtocol(imp, false);
+		this.inputImp = imp;
 	}
 
 	/**
@@ -48,26 +51,26 @@ public class SegmZebrafish implements genericSegmentation {
 	/**
 	 * @return the segmentedImage
 	 */
-	public void segmentationProtocol(ImagePlus initImp, boolean gpuOption) {
+	public void segmentationProtocol(CLIJ clij, String thresholdMethod) {
 
 		// Convert the image to 8-Bit
-		if (initImp.getBitDepth() != 8) {
-			ImageConverter converter = new ImageConverter(initImp);
+		if (this.inputImp.getBitDepth() != 8) {
+			ImageConverter converter = new ImageConverter(this.inputImp);
 			converter.convertToGray8();
 		}
 		// Test
-		int BitD = initImp.getBitDepth();
+		int BitD = this.inputImp.getBitDepth();
 		boolean dams = false;
 		// double resizeFactor = 1;
 
 		IJ.log(BitD + "-bits convertion");
 		System.out.println(BitD + "-bits convertion");
 
-		initImp = filterPreprocessing(initImp, gpuOption, strelRadius3D);
+		this.inputImp = filterPreprocessing(this.inputImp, clij, strelRadius3D);
 
-		initImp.show();
+		this.inputImp.show();
 
-		ImagePlus imp_segmented = automaticThreshold(initImp, "Huang");
+		ImagePlus imp_segmented = automaticThreshold(this.inputImp, thresholdMethod);
 
 		// create structuring element (cube of radius 'radius')
 		Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(strelRadius3D);
@@ -119,7 +122,7 @@ public class SegmZebrafish implements genericSegmentation {
 		IJ.log("Opening using the median of volumes");
 		ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
 
-		ImagePlus imp_segmentedFinal = createColouredImageWithLabels(initImp, imgFilterSize);
+		ImagePlus imp_segmentedFinal = createColouredImageWithLabels(this.inputImp, imgFilterSize);
 
 		// progressBar.show(1);
 		this.outputImp = imp_segmentedFinal;

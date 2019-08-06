@@ -13,6 +13,7 @@ import inra.ijpb.measure.IntrinsicVolumes3D;
 import inra.ijpb.morphology.Morphology;
 import inra.ijpb.morphology.Reconstruction;
 import inra.ijpb.morphology.Strel;
+import net.haesleinhuepf.clij.CLIJ;
 
 public class SegmentingNucleiGlands implements genericSegmentation {
 
@@ -50,7 +51,7 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 	/**
 	 * @return the segmentedImage
 	 */
-	public void segmentationProtocol(boolean gpuOption, ThresholdMethod thresholdMethod) {
+	public void segmentationProtocol(CLIJ clij, String thresholdMethod) {
 
 		// Convert the image to 8-Bit
 		if (this.inputImp.getBitDepth() != 8) {
@@ -65,11 +66,11 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 		IJ.log(BitD + "-bits conversion");
 		System.out.println(BitD + "-bits conversion");
 
-		ImagePlus filteredImp = filterPreprocessing(this.inputImp, gpuOption, strelRadius3D);
+		ImagePlus filteredImp = filterPreprocessing(this.inputImp, clij, strelRadius3D);
 
 		filteredImp.show();
 
-		ImagePlus imp_segmented = automaticThreshold(filteredImp, "Triangle");
+		ImagePlus imp_segmented = automaticThreshold(filteredImp, thresholdMethod);
 
 		/***** loop for closing, binarize and filling holes in 2D *****/
 		System.out.println("Closing, binarize and filling");

@@ -4,10 +4,9 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -30,6 +29,9 @@ import inra.ijpb.geometry.Ellipsoid;
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.region3d.Centroid3D;
 import inra.ijpb.measure.region3d.InertiaEllipsoid;
+import net.haesleinhuepf.clij.CLIJ;
+import net.haesleinhuepf.clij.clearcl.ClearCLBuffer;
+import net.haesleinhuepf.clij.kernels.Kernels;
 import net.miginfocom.swing.MigLayout;
 
 public class MainWindow extends JFrame {
@@ -59,6 +61,11 @@ public class MainWindow extends JFrame {
 	/**
 	 * 
 	 */
+	private JCheckBox jcbGPUEnable;
+	
+	/**
+	 * 
+	 */
 	private ProgressBar progressBar;
 	
 	/**
@@ -66,6 +73,9 @@ public class MainWindow extends JFrame {
 	 */
 	private JComboBox<ThresholdMethod> cbThresholdMethod;
 
+	/**
+	 * 
+	 */
 	public MainWindow() {
 		String name = UIManager.getInstalledLookAndFeels()[3].getClassName();
 		try {
@@ -86,16 +96,14 @@ public class MainWindow extends JFrame {
 		panel = new JPanel();
 		panel.setLayout(new MigLayout());
 
-		// Create 'open' button
+		
+		// Init GUI elements
 		btNewImage = new JButton("Open new image");
-
-		// Create 'Select Current Image' button
 		btCurrentImageButton = new JButton("Select current image");
-
-		// Create ProgressBar
+		jcbGPUEnable = new JCheckBox("Enable GPU operations");
+		jcbGPUEnable.setSelected(true);
 		progressBar = new ProgressBar(100, 25);
 
-		// Create ComboBox
 		cbPredefinedTypeSegmentation = new JComboBox<String>();
 		cbPredefinedTypeSegmentation.addItem("Select a type of DAPI segmentation");
 		cbPredefinedTypeSegmentation.addItem("Salivary glands (cylinder monolayer)");
@@ -103,7 +111,6 @@ public class MainWindow extends JFrame {
 		
 		cbThresholdMethod = new JComboBox<ThresholdMethod>(ThresholdMethod.values());
 		cbThresholdMethod.setSelectedIndex(0);
-		
 
 		// Add components
 		panel.add(cbThresholdMethod, "wrap");
@@ -161,13 +168,38 @@ public class MainWindow extends JFrame {
 
 	}
 
+	/**
+	 * 
+	 * @param imp_segmented
+	 * @return
+	 */
 	public RoiManager getNucleiROIs(ImagePlus imp_segmented) {
 		// 3D-OC options settings
 		Prefs.set("3D-OC-Options_centroid.boolean", true);
 
 		int[] labels = LabelImages.findAllLabels(imp_segmented.getImageStack());
 		// deprecatedGeometricMeasures3D - investigate about the new region3D
+		if (jcbGPUEnable.isSelected()) {
+			
+		} else {
+			
+		}
+		
+		long startTime = System.nanoTime();
+		CLIJ clij = CLIJ.getInstance();
+		ClearCLBuffer inputClij = clij.push(imp_segmented);
+		double[] resultCenterOfMass = clij.op().centerOfMass(inputClij);
+		inputClij.close();
+		long endTime = System.nanoTime();
+        long duration = (endTime - startTime) / 1000000;  //divide by 1000000 to get milliseconds.
+        System.out.println("Duration " + duration + " msec");
+        
+		// centerOfMass( ClearCLBuffer input )
+		startTime = System.nanoTime();
 		double[][] centroidList = Centroid3D.centroids(imp_segmented.getImageStack(), labels);
+		endTime = System.nanoTime();
+        duration = (endTime - startTime) / 1000000;  //divide by 1000000 to get milliseconds.
+        System.out.println("Duration " + duration + " msec");
 
 		// double[][] centroidList = Centroid3D.centroids();
 		// 0 0 1 2
@@ -195,7 +227,7 @@ public class MainWindow extends JFrame {
 			rm.addRoi(roi);
 		}
 		return rm;
-	};
+	}
 	
 	/**
 	 * @param input
@@ -207,16 +239,22 @@ public class MainWindow extends JFrame {
 		btNewImage.setEnabled(false);
 		
 		ImagePlus imp_segmented = null;
+		
+		CLIJ clij = null;
+		
+		if (jcbGPUEnable.isSelected())
+			clij = CLIJ.getInstance();
 
 		switch (cbPredefinedTypeSegmentation.getSelectedIndex()) {
 		case 1:
 			SegmentingNucleiGlands segGland = new SegmentingNucleiGlands(input);
-			segGland.segmentationProtocol(false, (ThresholdMethod) cbThresholdMethod.getSelectedItem());
+			segGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
 			imp_segmented = segGland.getOuputImp().duplicate();
 			break;
 
 		case 2:
 			SegmZebrafish segZeb = new SegmZebrafish(input);
+			segZeb.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
 			imp_segmented = segZeb.getOuputImp().duplicate();
 			break;
 		}
@@ -228,6 +266,10 @@ public class MainWindow extends JFrame {
 		return imp_segmented;
 	}
 
+	/**
+	 * 
+	 * @param imp
+	 */
 	public void visualization3D(ImagePlus imp) {
 
 		/*
