@@ -90,7 +90,7 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 		// Volume opening
 		System.out.println("Small volume opening");
 		IJ.log("Small volume opening");
-		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, PIXELSTOOPENVOLUME); //TODO: CHANGE 50 FOR A VARIABLE
+		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, PIXELSTOOPENVOLUME);
 
 		ImagePlus imgToShow = new ImagePlus("volumeOpening", imgFilterSmall);
 		imgToShow.show();
