@@ -4,19 +4,18 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.scijava</groupId>
-		<artifactId>pom-scijava</artifactId>
-		<version>26.0.0</version>
+		<groupId>sc.fiji</groupId>
+		<artifactId>pom-fiji</artifactId>
+		<version>26.1.1</version>
 		<relativePath />
 	</parent>
 
-	<groupId>sc.fiji</groupId>
 	<artifactId>AutomaticSegmentation3D_</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>plugins/AutomaticSegmentation3D_</name>
-	<description>EpiGraph is a Fiji plugin that combines computational geometry and graph theory to measure the degree of arrangement in any tessellation. </description>
+	<name>plugins/AutomaticSegmentation3D_.jar</name>
+	<description></description>
 	<url>http://scutoids.es/</url>
-	<inceptionYear>2017</inceptionYear>
+	<inceptionYear>2019</inceptionYear>
 	<organization>
 		<name>University of Seville - IBiS</name>
 		<url>http://www.us.es</url>
@@ -136,9 +135,11 @@
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-ij</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
+			<version>3.8</version>
 		</dependency>
 
 		<dependency>
@@ -150,6 +151,7 @@
 		<dependency>
 			<groupId>fr.inra.ijpb</groupId>
 			<artifactId>MorphoLibJ_</artifactId>
+			<version>1.4.1</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math3 -->
@@ -226,6 +228,20 @@
 				<artifactId>maven-shade-plugin</artifactId>
 				<version>3.0.0</version>
 				<configuration>
+					<artifactSet>
+						<excludes>
+							<exclude>sc.fiji:Fiji_Plugins</exclude>
+							<exclude>sc.fiji:VIB-lib</exclude>
+							<exclude>sc.fiji:pal-optimization</exclude>
+							<exclude>sc.fiji:fiji-lib</exclude>
+							<exclude>ome:*</exclude>
+							<exclude>sc.fiji:legacy-imglib1</exclude>
+							<exclude>net.imagej:*</exclude>
+							<exclude>net.imglib2:*</exclude>
+							<exclude>org.jogamp.*:*</exclude>
+							<exclude>org.apache.commons:*</exclude>
+						</excludes>
+					</artifactSet>
 					<archive>
 						<manifest>
 							<mainClass>${main-class}</mainClass>
@@ -245,7 +261,8 @@
 		</plugins>
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>
