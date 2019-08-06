@@ -16,6 +16,7 @@ import inra.ijpb.morphology.Strel;
 
 public class SegmentingNucleiGlands implements genericSegmentation {
 
+	private ImagePlus inputImp;
 	private ImagePlus outputImp;
 	private int strelRadius2D;
 	private int strelRadius3D;
@@ -24,22 +25,19 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 	private static final int PIXELSTOOPENVOLUME = 50;
 
 	public SegmentingNucleiGlands(ImagePlus imp) {
-		strelRadius2D = 4;
-		strelRadius3D = 3;
+		this.strelRadius2D = 4;
+		this.strelRadius3D = 3;
 		// 10 is a good start point for 8-bit images, 2000 for 16-bits. Minor
 		// tolerance more divided objects with watershed
-		toleranceWatershed = 0;
-
-		segmentationProtocol(imp, false);
-
+		this.toleranceWatershed = 0;
+		this.inputImp = imp;
 	}
 
 	public SegmentingNucleiGlands(ImagePlus imp, int radius2D, int radius3D, int tolerance) {
-		strelRadius2D = radius2D;
-		strelRadius3D = radius3D;
-		toleranceWatershed = tolerance;
-
-		segmentationProtocol(imp, false);
+		this.strelRadius2D = radius2D;
+		this.strelRadius3D = radius3D;
+		this.toleranceWatershed = tolerance;
+		this.inputImp = imp;
 	}
 
 	/**
@@ -52,26 +50,26 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 	/**
 	 * @return the segmentedImage
 	 */
-	private void segmentationProtocol(ImagePlus initImp, boolean gpuOption) {
+	public void segmentationProtocol(boolean gpuOption, ThresholdMethod thresholdMethod) {
 
 		// Convert the image to 8-Bit
-		if (initImp.getBitDepth() != 8) {
-			ImageConverter converter = new ImageConverter(initImp);
+		if (this.inputImp.getBitDepth() != 8) {
+			ImageConverter converter = new ImageConverter(this.inputImp);
 			converter.convertToGray8();
 		}
 
-		int BitD = initImp.getBitDepth();
+		int BitD = this.inputImp.getBitDepth();
 		boolean dams = false;
 		// double resizeFactor = 1;
 
 		IJ.log(BitD + "-bits conversion");
 		System.out.println(BitD + "-bits conversion");
 
-		initImp = filterPreprocessing(initImp, gpuOption, strelRadius3D);
+		ImagePlus filteredImp = filterPreprocessing(this.inputImp, gpuOption, strelRadius3D);
 
-		initImp.show();
+		filteredImp.show();
 
-		ImagePlus imp_segmented = automaticThreshold(initImp, "Huang");
+		ImagePlus imp_segmented = automaticThreshold(filteredImp, "Triangle");
 
 		/***** loop for closing, binarize and filling holes in 2D *****/
 		System.out.println("Closing, binarize and filling");
@@ -118,7 +116,7 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 		IJ.log("Opening using the median of volumes");
 		ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
 
-		ImagePlus imp_segmentedFinal = createColouredImageWithLabels(initImp, imgFilterSize);
+		ImagePlus imp_segmentedFinal = createColouredImageWithLabels(this.inputImp, imgFilterSize);
 
 		// progressBar.show(1);
 		this.outputImp = imp_segmentedFinal;

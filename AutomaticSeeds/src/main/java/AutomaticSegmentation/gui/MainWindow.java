@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -16,6 +17,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import AutomaticSegmentation.SegmZebrafish;
 import AutomaticSegmentation.SegmentingNucleiGlands;
+import AutomaticSegmentation.ThresholdMethod;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -37,12 +39,33 @@ public class MainWindow extends JFrame {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	/**
+	 * 
+	 */
 	private JPanel panel;
-	private JButton OpenButton;
-	private JComboBox<String> ComboBox;
+	/**
+	 * 
+	 */
+	private JButton btNewImage;
+	/**
+	 * 
+	 */
+	private JComboBox<String> cbPredefinedTypeSegmentation;
 
-	private JButton CurrentImageButton;
+	/**
+	 * 
+	 */
+	private JButton btCurrentImageButton;
+	
+	/**
+	 * 
+	 */
 	private ProgressBar progressBar;
+	
+	/**
+	 * 
+	 */
+	private JComboBox<ThresholdMethod> cbThresholdMethod;
 
 	public MainWindow() {
 		String name = UIManager.getInstalledLookAndFeels()[3].getClassName();
@@ -110,138 +133,72 @@ public class MainWindow extends JFrame {
 		panel.setLayout(new MigLayout());
 
 		// Create 'open' button
-		OpenButton = new JButton("Open new image");
+		btNewImage = new JButton("Open new image");
 
 		// Create 'Select Current Image' button
-		CurrentImageButton = new JButton("Select current image");
+		btCurrentImageButton = new JButton("Select current image");
 
 		// Create ProgressBar
 		progressBar = new ProgressBar(100, 25);
 
 		// Create ComboBox
-		ComboBox = new JComboBox<String>();
-		ComboBox.addItem("Select a type of DAPI segmentation");
-		ComboBox.addItem("Salivary glands (cylinder monolayer)");
-		ComboBox.addItem("Zebrafish multilayer");
+		cbPredefinedTypeSegmentation = new JComboBox<String>();
+		cbPredefinedTypeSegmentation.addItem("Select a type of DAPI segmentation");
+		cbPredefinedTypeSegmentation.addItem("Salivary glands (cylinder monolayer)");
+		cbPredefinedTypeSegmentation.addItem("Zebrafish multilayer");
+		
+		cbThresholdMethod = new JComboBox<ThresholdMethod>(ThresholdMethod.values());
+		cbThresholdMethod.setSelectedIndex(0);
+		
 
 		// Add components
-		panel.add(OpenButton, "wrap");
-		panel.add(CurrentImageButton, "wrap");
-		panel.add(ComboBox, "wrap");
-		ComboBox.setSelectedIndex(0);
+		panel.add(cbThresholdMethod, "wrap");
+		panel.add(btNewImage, "wrap");
+		panel.add(btCurrentImageButton, "wrap");
+		panel.add(cbPredefinedTypeSegmentation, "wrap");
+		cbPredefinedTypeSegmentation.setSelectedIndex(0);
 		panel.add(progressBar);
 
-		CurrentImageButton.setEnabled(false);
-		OpenButton.setEnabled(false);
+		btCurrentImageButton.setEnabled(false);
+		btNewImage.setEnabled(false);
 		// Associate this panel to the window
 		getContentPane().add(panel);
 
-		ComboBox.addActionListener(new ActionListener() {
+		cbPredefinedTypeSegmentation.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				if (ComboBox.getSelectedIndex() == 0) {
-					CurrentImageButton.setEnabled(false);
-					OpenButton.setEnabled(false);
+				if (cbPredefinedTypeSegmentation.getSelectedIndex() == 0) {
+					btCurrentImageButton.setEnabled(false);
+					btNewImage.setEnabled(false);
 				} else {
-					CurrentImageButton.setEnabled(true);
-					OpenButton.setEnabled(true);
+					btCurrentImageButton.setEnabled(true);
+					btNewImage.setEnabled(true);
 				}
 
 			}
 		});
-		OpenButton.addActionListener(new ActionListener() {
+		btNewImage.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
-				ImagePlus imp = new ImagePlus();
-				ImagePlus input = new ImagePlus();
-				ImagePlus imp_segmented = new ImagePlus();
-				RoiManager rm = null;
-
-				switch (ComboBox.getSelectedIndex()) {
-				case 1:
-					ComboBox.setEnabled(false);
-					CurrentImageButton.setEnabled(false);
-					OpenButton.setEnabled(false);
-					// Open the image (ADD any exception)
-					imp = IJ.openImage();
-					/*
-					 * WindowManager.addWindow(imp.getWindow()); imp.show();
-					 */
-					// imp.show();
-					input = imp.duplicate();
-					SegmentingNucleiGlands segGland = new SegmentingNucleiGlands(input);
-					imp_segmented = segGland.getOuputImp().duplicate();
-					rm = getNucleiROIs(segGland.getOuputImp());
-					imp_segmented.show();
-					break;
-
-				case 2:
-					ComboBox.setEnabled(false);
-					CurrentImageButton.setEnabled(false);
-					OpenButton.setEnabled(false);
-					// Open the image (ADD any exception)
-					imp = IJ.openImage();
-					/*
-					 * WindowManager.addWindow(imp.getWindow()); imp.show();
-					 */
-					imp.show();
-					input = imp.duplicate();
-					SegmZebrafish segZeb = new SegmZebrafish(input);
-					imp_segmented = segZeb.getOuputImp();
-					rm = getNucleiROIs(imp_segmented);
-					imp_segmented.show();
-					break;
-
-				default:
-					break;
-				}
-				ComboBox.setEnabled(true);
+				// Open the image (ADD any exception)
+				ImagePlus imp = IJ.openImage();
+				/*
+				 * WindowManager.addWindow(imp.getWindow()); imp.show();
+				 */
+				imp.show();
+				
+				ImagePlus imp_segmented = runSegmentation(imp.duplicate());
 
 				// visualization3D (imp_segmented);
 
 			}
 		});
 
-		CurrentImageButton.addActionListener(new ActionListener() {
+		btCurrentImageButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ImagePlus imp = new ImagePlus();
-				ImagePlus input = new ImagePlus();
-				ImagePlus imp_segmented = new ImagePlus();
-				RoiManager rm = null;
+				// Get image from the workspace (ADD any exception)
+				ImagePlus imp = IJ.getImage();
 
-				switch (ComboBox.getSelectedIndex()) {
-				case 1:
-					ComboBox.setEnabled(false);
-					CurrentImageButton.setEnabled(false);
-					OpenButton.setEnabled(false);
-					// Get image from the workspace (ADD any exception)
-					imp = IJ.getImage();
-					input = imp.duplicate();
-
-					SegmentingNucleiGlands segGland = new SegmentingNucleiGlands(input);
-					imp_segmented = segGland.getOuputImp();
-
-					rm = getNucleiROIs(imp_segmented);
-					imp_segmented.show();
-					break;
-
-				case 2:
-					ComboBox.setEnabled(false);
-					CurrentImageButton.setEnabled(false);
-					OpenButton.setEnabled(false);
-					// Get image from the workspace (ADD any exception)
-					imp = IJ.getImage();
-					input = imp.duplicate();
-					SegmZebrafish segZeb = new SegmZebrafish(input);
-					imp_segmented = segZeb.getOuputImp();
-					rm = getNucleiROIs(imp_segmented);
-					imp_segmented.show();
-					break;
-
-				default:
-					break;
-				}
-				ComboBox.setEnabled(true);
+				ImagePlus imp_segmented = runSegmentation(imp.duplicate());
 
 				// visualization3D (imp_segmented);
 
@@ -285,6 +242,37 @@ public class MainWindow extends JFrame {
 		}
 		return rm;
 	};
+	
+	/**
+	 * @param input
+	 * @param imp_segmented
+	 */
+	public ImagePlus runSegmentation(ImagePlus input) {
+		cbPredefinedTypeSegmentation.setEnabled(false);
+		btCurrentImageButton.setEnabled(false);
+		btNewImage.setEnabled(false);
+		
+		ImagePlus imp_segmented = null;
+
+		switch (cbPredefinedTypeSegmentation.getSelectedIndex()) {
+		case 1:
+			SegmentingNucleiGlands segGland = new SegmentingNucleiGlands(input);
+			segGland.segmentationProtocol(false, (ThresholdMethod) cbThresholdMethod.getSelectedItem());
+			imp_segmented = segGland.getOuputImp().duplicate();
+			break;
+
+		case 2:
+			SegmZebrafish segZeb = new SegmZebrafish(input);
+			imp_segmented = segZeb.getOuputImp().duplicate();
+			break;
+		}
+		
+		RoiManager rm = getNucleiROIs(imp_segmented);
+		imp_segmented.show();
+		cbPredefinedTypeSegmentation.setEnabled(true);
+		
+		return imp_segmented;
+	}
 
 	public void visualization3D(ImagePlus imp) {
 
