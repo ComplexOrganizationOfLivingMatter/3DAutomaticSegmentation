@@ -38,6 +38,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.smurn.jply.Element;
+
 import net.miginfocom.layout.CC;
 import net.miginfocom.swing.MigLayout;
 
@@ -50,6 +52,7 @@ import PostProcessingGland.PostProcessingGland;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
+import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
 import fiji.util.gui.OverlayedImageCanvas.Overlay;
 import ij.ImagePlus;
@@ -226,6 +229,8 @@ public class PostProcessingWindow extends ImageWindow implements
 		btnInsert.addActionListener(this);
 		
 		btnSave = new JButton("Save Results");
+		btnSave.addActionListener(this);
+		
 		btnLumen = new JButton("Add Lumen");
 
 		canvas.addComponentListener(new ComponentAdapter() {
@@ -339,7 +344,7 @@ public class PostProcessingWindow extends ImageWindow implements
 		}
 		
 		if (e.getSource() == btnSave) {
-			
+			this.savePlyFile(all3dCells, initialDirectory);
 			
 		}
 
@@ -439,6 +444,39 @@ public class PostProcessingWindow extends ImageWindow implements
 			}
 		}
 		
+	}
+	
+	static public void savePlyFile(ArrayList<Cell3D> allCells, String path_in) {
+		    if (!path_in.endsWith(File.separator)) {path_in=path_in+File.separator;}
+		    String path = path_in;
+		    	File dir = new File(path);
+		    	if (!dir.isDirectory()) {
+		    		System.out.println("Erreur, given path is not a directory");
+		    		return;
+		    	}
+		    	// By default removes all files in the folder
+		    	// But ask for confirmation if the folder is not empty...
+		    	if (dir.listFiles().length!=0) {
+		    		System.out.println("Saving will remove the content of the folder "+path+" that contains "+dir.listFiles().length+" files and folders.");
+		    	}
+
+		        // create the optimizer parameter element
+		        allCells.forEach(c->{
+		        	// Now writes all ply files for CellT object
+		        	for (int i = 0; i < c.dotsList.size(); i++) {
+		        		CellT cellt = new CellT(c, i);
+		        		String pathCell=path+File.separator+c.id_Cell+File.separator;
+		        	    File dirCell = new File(pathCell);		        	    
+		        	    // attempt to create the directory here
+		        	    if (dirCell.mkdir()) {
+		        	    	IOXmlPlyLimeSeg.saveCellTAsPly(cellt,pathCell+"T_"+cellt.frame+".ply");
+		        	    } else {
+		        	    	if (dirCell.exists()) {
+		        	    		IOXmlPlyLimeSeg.saveCellTAsPly(cellt,pathCell+"T_"+cellt.frame+".ply");
+		        	    	}
+		        	    }
+		        	}
+		        });
 	}
 
 }
