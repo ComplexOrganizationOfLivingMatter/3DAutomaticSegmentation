@@ -2,6 +2,7 @@
 package PostProcessingGland.GUI;
 
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -182,11 +183,12 @@ public class PostProcessingWindow extends ImageWindow implements
 		
 		
 		leftPanel.setLayout(new MigLayout());
-		leftPanel.setMaximumSize(new Dimension(500, 500));
-		leftPanel.setMinimumSize(new Dimension(500, 500));		
-		leftPanel.add(canvas, "wrap 100");
-		leftPanel.add(sliceSelector, "south");
-		//leftPanel.add(sliceSelector, "south, span 1 2");
+		canvas.setMaximumSize(new Dimension(1024, 1024));
+		canvas.setMinimumSize(new Dimension(500, 500));	
+		Color newColor = new Color(200, 200, 255);
+		sliceSelector.setBackground(newColor);
+		leftPanel.add(canvas, "wrap");
+		leftPanel.add(sliceSelector, "growx");;
 
 		processingFrame.setLayout(new MigLayout());
 		processingFrame.add(leftPanel);
