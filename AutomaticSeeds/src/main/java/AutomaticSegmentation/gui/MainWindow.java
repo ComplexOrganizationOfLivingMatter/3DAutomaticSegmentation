@@ -1,4 +1,4 @@
-package AutomaticSegmentation;
+package AutomaticSegmentation.gui;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -14,6 +14,8 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import AutomaticSegmentation.SegmZebrafish;
+import AutomaticSegmentation.SegmentingNucleiGlands;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;

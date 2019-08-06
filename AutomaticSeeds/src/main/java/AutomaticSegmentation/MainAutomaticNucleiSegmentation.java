@@ -4,6 +4,8 @@
 package AutomaticSegmentation;
 
 import javax.swing.SwingUtilities;
+
+import AutomaticSegmentation.gui.MainWindow;
 import ij.IJ;
 import ij.ImageJ;
 import ij.plugin.PlugIn;
