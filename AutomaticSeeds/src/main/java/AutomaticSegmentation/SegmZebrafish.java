@@ -1,10 +1,6 @@
 package AutomaticSegmentation;
 
-import java.awt.Color;
-import java.awt.image.ColorModel;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -12,20 +8,12 @@ import ij.ImageStack;
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
 import inra.ijpb.binary.BinaryImages;
-import inra.ijpb.data.image.Images3D;
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.IntrinsicVolumes3D;
-import inra.ijpb.morphology.MinimaAndMaxima3D;
 import inra.ijpb.morphology.Morphology;
 import inra.ijpb.morphology.Reconstruction;
 import inra.ijpb.morphology.Strel;
 import inra.ijpb.morphology.Strel3D;
-import inra.ijpb.util.ColorMaps;
-import inra.ijpb.util.ColorMaps.CommonLabelMaps;
-import inra.ijpb.watershed.Watershed;
-import net.haesleinhuepf.clij.CLIJ;
-import net.haesleinhuepf.clij.clearcl.ClearCLBuffer;
-import net.haesleinhuepf.clij.kernels.Kernels;
 
 public class SegmZebrafish implements genericSegmentation {
 	private ImagePlus outputImp;
