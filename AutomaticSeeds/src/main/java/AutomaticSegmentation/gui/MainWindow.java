@@ -29,7 +29,7 @@ import ij3d.Image3DUniverse;
 import inra.ijpb.geometry.Ellipsoid;
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.region3d.Centroid3D;
-import inra.ijpb.measure.region3d.InertiaEllipsoid;
+import inra.ijpb.measure.region3d.EquivalentEllipsoid;
 import net.haesleinhuepf.clij.CLIJ;
 import net.miginfocom.swing.MigLayout;
 
@@ -71,6 +71,16 @@ public class MainWindow extends JFrame {
 	 * 
 	 */
 	private JComboBox<ThresholdMethod> cbThresholdMethod;
+	
+	/**
+	 * 
+	 */
+	private JButton btCreateROIs;
+	
+	/**
+	 * 
+	 */
+	private ImagePlus imp_segmented;
 
 	/**
 	 * 
@@ -99,6 +109,7 @@ public class MainWindow extends JFrame {
 		// Init GUI elements
 		btNewImage = new JButton("Open new image");
 		btCurrentImageButton = new JButton("Select current image");
+		btCreateROIs = new JButton("Create ROIs");
 		jcbGPUEnable = new JCheckBox("Enable GPU operations");
 		jcbGPUEnable.setSelected(true);
 		progressBar = new ProgressBar(100, 25);
@@ -112,6 +123,7 @@ public class MainWindow extends JFrame {
 		cbThresholdMethod.setSelectedIndex(0);
 
 		// Add components
+		panel.add(btCreateROIs, "wrap");
 		panel.add(cbThresholdMethod, "wrap");
 		panel.add(btNewImage, "wrap");
 		panel.add(btCurrentImageButton, "wrap");
@@ -146,7 +158,7 @@ public class MainWindow extends JFrame {
 				 */
 				imp.show();
 				
-				ImagePlus imp_segmented = runSegmentation(imp.duplicate());
+				imp_segmented = runSegmentation(imp.duplicate());
 
 				// visualization3D (imp_segmented);
 
@@ -158,10 +170,24 @@ public class MainWindow extends JFrame {
 				// Get image from the workspace (ADD any exception)
 				ImagePlus imp = IJ.getImage();
 
-				ImagePlus imp_segmented = runSegmentation(imp.duplicate());
+				imp_segmented = runSegmentation(imp.duplicate());
 
 				// visualization3D (imp_segmented);
 
+			}
+		});
+		
+		btCreateROIs.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if (imp_segmented == null){
+					imp_segmented = IJ.openImage();
+					imp_segmented.show();
+				}
+				
+				RoiManager rm = getNucleiROIs(imp_segmented);
 			}
 		});
 
@@ -179,30 +205,28 @@ public class MainWindow extends JFrame {
 		int[] labels = LabelImages.findAllLabels(imp_segmented.getImageStack());
 		// deprecatedGeometricMeasures3D - investigate about the new region3D
 		
-
 		double[][] centroidList = Centroid3D.centroids(imp_segmented.getImageStack(), labels);
 		// double[][] centroidList = Centroid3D.centroids();
 		// 0 0 1 2
 		// | | | |
 		// centroid -> [id][x,y,z]
 
-		Ellipsoid[] ellipsoid = InertiaEllipsoid.inertiaEllipsoids(imp_segmented.getImageStack(), labels,
+		Ellipsoid[] ellipsoid = EquivalentEllipsoid.equivalentEllipsoids(imp_segmented.getImageStack(), labels,
 				imp_segmented.getCalibration());
 
 		// Creating the ROI manager
 		RoiManager rm = new RoiManager();
 		// Reset to 0 the RoiManager
 		rm.reset();
-		// Adding ROI to ROI Manager
-		ImagePlus impOpen = IJ.getImage();
 
 		for (int i = 0; i < centroidList.length; i++) {
 			// Get the slice to create the ROI
 			int z = (int) Math.round(centroidList[i][2]);
 			// Get the area and radius of the index i nuclei
-			double majorRadius = 1.5 * (ellipsoid[i].radius1()) / (imp_segmented.getCalibration().pixelHeight);
+			double[] radii = {ellipsoid[i].radius1(), ellipsoid[i].radius2()};
+			double majorRadius = 1.5 * (Utils.getMean(radii)) / (imp_segmented.getCalibration().pixelHeight);
 			int r = (int) Math.round(majorRadius);
-			impOpen.setSlice(z);
+			imp_segmented.setSlice(z);
 			Roi roi = new OvalRoi(centroidList[i][0] - r / 2, centroidList[i][1] - r / 2, r, r);
 			rm.addRoi(roi);
 		}
@@ -238,8 +262,6 @@ public class MainWindow extends JFrame {
 			imp_segmented = segZeb.getOuputImp().duplicate();
 			break;
 		}
-		
-		RoiManager rm = getNucleiROIs(imp_segmented);
 		imp_segmented.show();
 		cbPredefinedTypeSegmentation.setEnabled(true);
 		

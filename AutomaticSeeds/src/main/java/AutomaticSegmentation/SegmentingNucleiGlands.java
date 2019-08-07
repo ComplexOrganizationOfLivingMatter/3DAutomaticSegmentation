@@ -68,7 +68,7 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 
 		ImagePlus filteredImp = filterPreprocessing(this.inputImp, clij, strelRadius3D);
 
-		filteredImp.show();
+//		filteredImp.show();
 
 		ImagePlus imp_segmented = automaticThreshold(filteredImp, thresholdMethod);
 
@@ -93,8 +93,8 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 		IJ.log("Small volume opening");
 		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, PIXELSTOOPENVOLUME);
 
-		ImagePlus imgToShow = new ImagePlus("volumeOpening", imgFilterSmall);
-		imgToShow.show();
+//		ImagePlus imgToShow = new ImagePlus("volumeOpening", imgFilterSmall);
+//		imgToShow.show();
 
 		ImageStack resultStack = watershedProcess(BitD, dams, imgFilterSmall, strelRadius3D, toleranceWatershed);
 

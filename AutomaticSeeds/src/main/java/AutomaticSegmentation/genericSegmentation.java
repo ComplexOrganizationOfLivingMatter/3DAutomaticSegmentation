@@ -110,8 +110,6 @@ public interface genericSegmentation {
 		}
 		System.out.println("thresh: " + medianThresh);
 
-
-		long startTime = System.nanoTime();
 		/************ Apply the calculated threshold **************/
 		ImagePlus imp_segmented = new ImagePlus("", initImp.getStack().duplicate());
 		for (int i = 1; i <= imp_segmented.getStackSize(); i++) {
@@ -120,11 +118,7 @@ public interface genericSegmentation {
 			processor.threshold(medianThresh);
 		}
 
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime) / 1000000;  //divide by 1000000 to get milliseconds.
-        System.out.println("Duration " + duration + " msec");
-
-		imp_segmented.show();
+		//imp_segmented.show();
 		return imp_segmented;
 	}	
 
@@ -185,8 +179,8 @@ public interface genericSegmentation {
 		IJ.log("Impose Minima");
 		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima(imgGradient, regionalMinima, CONNECTIVITY);
 		// progressBar.show(0.5);
-		ImagePlus imgToShow = new ImagePlus("imposeMinima", imposedMinima);
-		imgToShow.show();
+		//ImagePlus imgToShow = new ImagePlus("imposeMinima", imposedMinima);
+		//imgToShow.show();
 
 		// label minima using connected components (32-bit output)
 		System.out.println("Labelling");
