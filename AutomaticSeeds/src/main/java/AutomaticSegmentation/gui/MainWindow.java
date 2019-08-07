@@ -4,8 +4,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -15,14 +13,12 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import com.sun.jna.platform.win32.COM.TypeInfoUtil.Invoke;
-
 import AutomaticSegmentation.SegmZebrafish;
 import AutomaticSegmentation.SegmentingNucleiGlands;
 import AutomaticSegmentation.ThresholdMethod;
+import AutomaticSegmentation.utils.Utils;
 import ij.IJ;
 import ij.ImagePlus;
-import ij.ImageStack;
 import ij.Prefs;
 import ij.gui.OvalRoi;
 import ij.gui.ProgressBar;
@@ -35,8 +31,6 @@ import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.region3d.Centroid3D;
 import inra.ijpb.measure.region3d.InertiaEllipsoid;
 import net.haesleinhuepf.clij.CLIJ;
-import net.haesleinhuepf.clij.clearcl.ClearCLBuffer;
-import net.haesleinhuepf.clij.kernels.Kernels;
 import net.miginfocom.swing.MigLayout;
 
 public class MainWindow extends JFrame {
@@ -185,14 +179,7 @@ public class MainWindow extends JFrame {
 		int[] labels = LabelImages.findAllLabels(imp_segmented.getImageStack());
 		// deprecatedGeometricMeasures3D - investigate about the new region3D
 		
-		Object[] args = {imp_segmented.getImageStack(), labels};
-		try {
-			
-			meassureTime(Centroid3D.class.getMethod("centroids", imp_segmented.getImageStack().getClass(), labels.getClass()), null, args);
-		} catch (SecurityException | NoSuchMethodException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+
 		double[][] centroidList = Centroid3D.centroids(imp_segmented.getImageStack(), labels);
 		// double[][] centroidList = Centroid3D.centroids();
 		// 0 0 1 2
