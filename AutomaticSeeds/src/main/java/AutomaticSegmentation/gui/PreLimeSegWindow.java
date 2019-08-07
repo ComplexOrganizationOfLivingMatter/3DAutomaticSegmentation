@@ -26,14 +26,16 @@ import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 import ij3d.ContentConstants;
 import ij3d.Image3DUniverse;
+import inra.ijpb.geometry.Box3D;
 import inra.ijpb.geometry.Ellipsoid;
 import inra.ijpb.label.LabelImages;
+import inra.ijpb.measure.region3d.BoundingBox3D;
 import inra.ijpb.measure.region3d.Centroid3D;
 import inra.ijpb.measure.region3d.EquivalentEllipsoid;
 import net.haesleinhuepf.clij.CLIJ;
 import net.miginfocom.swing.MigLayout;
 
-public class MainWindow extends JFrame {
+public class PreLimeSegWindow extends JFrame {
 
 	/**
 	 * 
@@ -85,7 +87,7 @@ public class MainWindow extends JFrame {
 	/**
 	 * 
 	 */
-	public MainWindow() {
+	public PreLimeSegWindow() {
 		String name = UIManager.getInstalledLookAndFeels()[3].getClassName();
 		try {
 			UIManager.setLookAndFeel(name);
@@ -211,7 +213,10 @@ public class MainWindow extends JFrame {
 		// | | | |
 		// centroid -> [id][x,y,z]
 
-		Ellipsoid[] ellipsoid = EquivalentEllipsoid.equivalentEllipsoids(imp_segmented.getImageStack(), labels,
+//		Ellipsoid[] ellipsoid = EquivalentEllipsoid.equivalentEllipsoids(imp_segmented.getImageStack(), labels,
+//				imp_segmented.getCalibration());
+		
+		Box3D[] bboxes = BoundingBox3D.boundingBoxes(imp_segmented.getImageStack(), labels,
 				imp_segmented.getCalibration());
 
 		// Creating the ROI manager
@@ -223,8 +228,9 @@ public class MainWindow extends JFrame {
 			// Get the slice to create the ROI
 			int z = (int) Math.round(centroidList[i][2]);
 			// Get the area and radius of the index i nuclei
-			double[] radii = {ellipsoid[i].radius1(), ellipsoid[i].radius2()};
-			double majorRadius = 1.5 * (Utils.getMean(radii)) / (imp_segmented.getCalibration().pixelHeight);
+			double[] radii = {bboxes[i].height(), bboxes[i].width()};
+			double[] calibrations = {imp_segmented.getCalibration().pixelHeight, imp_segmented.getCalibration().pixelWidth};
+			double majorRadius = 1.2 * Utils.getMean(radii) / Utils.getMean(calibrations);
 			int r = (int) Math.round(majorRadius);
 			imp_segmented.setSlice(z);
 			Roi roi = new OvalRoi(centroidList[i][0] - r / 2, centroidList[i][1] - r / 2, r, r);
