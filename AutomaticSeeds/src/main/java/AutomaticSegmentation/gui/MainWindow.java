@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -13,11 +15,14 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import com.sun.jna.platform.win32.COM.TypeInfoUtil.Invoke;
+
 import AutomaticSegmentation.SegmZebrafish;
 import AutomaticSegmentation.SegmentingNucleiGlands;
 import AutomaticSegmentation.ThresholdMethod;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.Prefs;
 import ij.gui.OvalRoi;
 import ij.gui.ProgressBar;
@@ -179,28 +184,16 @@ public class MainWindow extends JFrame {
 
 		int[] labels = LabelImages.findAllLabels(imp_segmented.getImageStack());
 		// deprecatedGeometricMeasures3D - investigate about the new region3D
-		if (jcbGPUEnable.isSelected()) {
-			
-		} else {
-			
-		}
 		
-		long startTime = System.nanoTime();
-		CLIJ clij = CLIJ.getInstance();
-		ClearCLBuffer inputClij = clij.push(imp_segmented);
-		double[] resultCenterOfMass = clij.op().centerOfMass(inputClij);
-		inputClij.close();
-		long endTime = System.nanoTime();
-        long duration = (endTime - startTime) / 1000000;  //divide by 1000000 to get milliseconds.
-        System.out.println("Duration " + duration + " msec");
-        
-		// centerOfMass( ClearCLBuffer input )
-		startTime = System.nanoTime();
+		Object[] args = {imp_segmented.getImageStack(), labels};
+		try {
+			
+			meassureTime(Centroid3D.class.getMethod("centroids", imp_segmented.getImageStack().getClass(), labels.getClass()), null, args);
+		} catch (SecurityException | NoSuchMethodException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		double[][] centroidList = Centroid3D.centroids(imp_segmented.getImageStack(), labels);
-		endTime = System.nanoTime();
-        duration = (endTime - startTime) / 1000000;  //divide by 1000000 to get milliseconds.
-        System.out.println("Duration " + duration + " msec");
-
 		// double[][] centroidList = Centroid3D.centroids();
 		// 0 0 1 2
 		// | | | |
@@ -322,5 +315,4 @@ public class MainWindow extends JFrame {
 		 */
 
 	}
-
 }
