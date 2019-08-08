@@ -9,14 +9,13 @@ import java.awt.HeadlessException;
 import javax.swing.JFrame;
 
 import eu.kiaru.limeseg.LimeSeg;
+import eu.kiaru.limeseg.commands.CoarsenRefineSegmentation;
 import eu.kiaru.limeseg.commands.SphereSeg;
 import eu.kiaru.limeseg.commands.SphereSegAdvanced;
 import eu.kiaru.limeseg.commands.TestCurvature;
 import eu.kiaru.limeseg.gui.JPanelLimeSeg;
 import ij.IJ;
 import ij.ImagePlus;
-import net.imagej.ImageJ;
-
 import java.awt.GridLayout;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
@@ -70,17 +69,23 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				ImagePlus image = IJ.openImage();
-				image.show();
+//				ImagePlus image = IJ.openImage();
+//				image.show();
+//				
+//				LimeSeg ls = new LimeSeg();
+//				ls.initialize();
+//				ls.opt.setWorkingImage(IJ.openImage(), 1, 1);
+//				ls.run();
+////				
+////				JPanelLimeSeg jp = new J(ls);
+////				jp.setVisible(true);
+//				
+//				JPanelLimeSeg jp = new JPanelLimeSeg(ls);
+//				jp.setVisible(true);
+//				jp.repaint();
 				
-				LimeSeg ls = new LimeSeg();
-				ls.initialize();
-				
-				JPanelLimeSeg jp = new JPanelLimeSeg(ls);
-				jp.setVisible(true);
-				
-//				SphereSegAdvanced sphereSeg = new SphereSegAdvanced();
-//				sphereSeg.run();
+				SphereSegAdvanced cf = new SphereSegAdvanced();
+				cf.run();
 				//IJ.runPlugIn("eu.kiaru.limeseg.commands.SphereSeg", ""); Does not show anything
 			  
 			}
