@@ -5,7 +5,7 @@ package AutomaticSegmentation;
 
 import javax.swing.SwingUtilities;
 
-import AutomaticSegmentation.gui.PreLimeSegWindow;
+import AutomaticSegmentation.gui.MainWindow;
 import ij.IJ;
 import ij.ImageJ;
 import ij.plugin.PlugIn;
@@ -13,7 +13,7 @@ import ij.plugin.PlugIn;
 public class MainAutomaticNucleiSegmentation implements PlugIn {
 
 	// Window
-	PreLimeSegWindow mainWindow;
+	MainWindow mainWindow;
 
 	/**
 	 * Constructor by default
@@ -42,6 +42,8 @@ public class MainAutomaticNucleiSegmentation implements PlugIn {
 
 		// run the plugin
 		IJ.runPlugIn(clazz.getName(), "");
+		
+		
 	}
 
 	/*
@@ -54,7 +56,7 @@ public class MainAutomaticNucleiSegmentation implements PlugIn {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				// Create the main window
-				mainWindow = new PreLimeSegWindow();
+				mainWindow = new MainWindow();
 				mainWindow.pack();
 				mainWindow.setVisible(true);
 			}

@@ -21,7 +21,7 @@ final public class Utils {
 	 * <pre>
 	 * Object[] args = { imp_segmented.getImageStack(), labels };
 	 * try {
-	 * 	Utils.meassureTime(Centroid3D.class.getMethod("centroids", imp_segmented.getImageStack().getClass(), labels.getClass()), null, args);
+	 * 	Utils.measureTime(Centroid3D.class.getMethod("centroids", imp_segmented.getImageStack().getClass(), labels.getClass()), null, args);
 	 * } catch (SecurityException | NoSuchMethodException e) {
 	 * 	// TODO Auto-generated catch block
 	 * 	e.printStackTrace();
@@ -36,7 +36,7 @@ final public class Utils {
 	 * @param args
 	 *            the arguments to invoke the class
 	 */
-	static public void meassureTime(Method m, Object obj, Object[] args) {
+	static public void measureTime(Method m, Object obj, Object[] args) {
 		long startTime = System.nanoTime();
 		// Method p = new Method();
 

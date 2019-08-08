@@ -8,6 +8,20 @@ import java.awt.HeadlessException;
 
 import javax.swing.JFrame;
 
+import eu.kiaru.limeseg.LimeSeg;
+import eu.kiaru.limeseg.commands.SphereSeg;
+import eu.kiaru.limeseg.commands.SphereSegAdvanced;
+import eu.kiaru.limeseg.commands.TestCurvature;
+import eu.kiaru.limeseg.gui.JPanelLimeSeg;
+import ij.IJ;
+import ij.ImagePlus;
+import net.imagej.ImageJ;
+
+import java.awt.GridLayout;
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+
 /**
  * @author Pablo Vicente-Munuera, Pedro Gómez-Gálvez
  *
@@ -15,10 +29,62 @@ import javax.swing.JFrame;
 public class MainWindow extends JFrame {
 
 	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	/**
+	 * 
+	 */
+	private PreLimeSegWindow preLimeSeg;
+	
+	/**
+	 * 
+	 */
+	private SphereSegAdvanced limeSeg;
+
+	/**
 	 * @throws HeadlessException
 	 */
 	public MainWindow() throws HeadlessException {
-		// TODO Auto-generated constructor stub
+		getContentPane().setLayout(new GridLayout(1, 0, 0, 0));
+		
+		JButton btPreLimeSeg = new JButton("Preprocess to LimeSeg");
+		getContentPane().add(btPreLimeSeg);
+		
+		JButton btLimeSeg = new JButton("LimeSeg");
+		getContentPane().add(btLimeSeg);
+		
+		JButton btPostLimeSeg = new JButton("Postprocess LimeSeg's output");
+		getContentPane().add(btPostLimeSeg);
+		
+		//Functions
+		btPreLimeSeg.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				preLimeSeg = new PreLimeSegWindow();
+				preLimeSeg.pack();
+				preLimeSeg.setVisible(true);
+			}
+		});
+		
+		btLimeSeg.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ImagePlus image = IJ.openImage();
+				image.show();
+				
+				LimeSeg ls = new LimeSeg();
+				ls.initialize();
+				
+				JPanelLimeSeg jp = new JPanelLimeSeg(ls);
+				jp.setVisible(true);
+				
+//				SphereSegAdvanced sphereSeg = new SphereSegAdvanced();
+//				sphereSeg.run();
+				//IJ.runPlugIn("eu.kiaru.limeseg.commands.SphereSeg", ""); Does not show anything
+			  
+			}
+		});
 	}
 
 	/**

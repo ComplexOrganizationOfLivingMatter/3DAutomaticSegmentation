@@ -184,6 +184,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>eu.kiaru</groupId>
+			<artifactId>limeseg</artifactId>
+			<version>0.4.3-SNAPSHOT</version>
+		</dependency>
+		
+		<dependency>
 			<groupId>net.haesleinhuepf</groupId>
 			<artifactId>clij_</artifactId>
 			<version>1.0.7</version>
@@ -226,7 +232,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.0.0</version>
+				<version>3.1.0</version>
 				<configuration>
 					<artifactSet>
 						<excludes>
