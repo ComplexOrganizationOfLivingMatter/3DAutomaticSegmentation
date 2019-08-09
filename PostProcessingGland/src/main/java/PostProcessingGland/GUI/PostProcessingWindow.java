@@ -3,11 +3,7 @@ package PostProcessingGland.GUI;
 
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Point;
-import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Scrollbar;
 import java.awt.event.ActionEvent;
@@ -23,45 +19,35 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollBar;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import org.smurn.jply.Element;
-
-import net.miginfocom.layout.CC;
-import net.miginfocom.swing.MigLayout;
-
+import PostProcessingGland.PostProcessingGland;
 import PostProcessingGland.Elements.Cell3D;
 import PostProcessingGland.Elements.RoiAdjustment;
-// import JTableModel;
-import PostProcessingGland.GUI.CustomElements.CustomCanvas;
-import PostProcessingGland.GUI.CustomElements.SegmentationOverlay;
-import PostProcessingGland.PostProcessingGland;
+import epigraph.GUI.CustomElements.CustomCanvas;
+import epigraph.GUI.CustomElements.ImageOverlay;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
-import fiji.util.gui.OverlayedImageCanvas.Overlay;
 import ij.ImagePlus;
-import ij.gui.ImageCanvas;
 import ij.gui.ImageWindow;
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
-import ij.plugin.frame.RoiManager;
+import ij.gui.Overlay;
+import net.miginfocom.swing.MigLayout;
 
 public class PostProcessingWindow extends ImageWindow implements
 	ActionListener
@@ -70,7 +56,7 @@ public class PostProcessingWindow extends ImageWindow implements
 	private IOXmlPlyLimeSeg OutputLimeSeg;
 	private Hashtable<Integer, ArrayList<Roi>> cellsROIs;
 	private CustomCanvas canvas;
-	private SegmentationOverlay overlayResult;
+	private ImageOverlay overlayResult;
 	private Cell LimeSegCell;
 	private LimeSeg limeSeg;
 	public ArrayList<Cell> allCells;
@@ -139,26 +125,20 @@ public class PostProcessingWindow extends ImageWindow implements
 		initializeGUIItems(raw_img);
 
 		
-		overlayResult = new SegmentationOverlay();
+		overlayResult = new ImageOverlay();
 		if (overlayResult != null) {
 
 			if (canvas.getImageOverlay() == null) {
 				canvas.clearOverlay();
-				raw_img.setOverlay(overlayResult.getOverlay(0, canvas.getImage()
+				raw_img.setOverlay(getOverlay(0, canvas.getImage()
 					.getCurrentSlice(), all3dCells, raw_img, false));
-				overlayResult.setImage(raw_img);
 				canvas.addOverlay(overlayResult);
 				canvas.setImageOverlay(overlayResult);
 
 			}
 		}
-		// removeAll();
 
 		initGUI(raw_img);
-
-		setEnablePanels(false);
-
-		// threadFinished = false;
 
 	}
 
@@ -247,7 +227,6 @@ public class PostProcessingWindow extends ImageWindow implements
 			public void adjustmentValueChanged(AdjustmentEvent e) {
 				int z = sliceSelector.getValue();
 				imp.setSlice(z);			
-				canvas.clearOverlay();
 				updateOverlay();
 				
 			}
@@ -271,7 +250,6 @@ public class PostProcessingWindow extends ImageWindow implements
 			this.addROI();
 			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(), all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell);
 
-			canvas.clearOverlay();
 			checkOverlay.setSelectedIndex(1);
 			updateOverlay();
 		}
@@ -288,87 +266,32 @@ public class PostProcessingWindow extends ImageWindow implements
 	 */
 	private void updateOverlay() {
 		if (checkOverlay.getSelectedItem() == "All overlays") {
-			canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
+			
+			canvas.setOverlay(getOverlay(((Integer) cellSpinner
 				.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
 				canvas.getImage(), true));
-			overlayResult.setImage(canvas.getImage());
+			
 			canvas.addOverlay(overlayResult);
-			canvas.setImageOverlay(overlayResult);
-		} else {
-			canvas.clearOverlay();
-			overlayResult.ov.clear();
-			overlayResult.workingImP.setHideOverlay(true);
-
-			if (checkOverlay.getSelectedItem() == "Cell overlay") {
-				canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
+			
+		} else if (checkOverlay.getSelectedItem() == "Cell overlay") {
+				canvas.setOverlay(getOverlay(((Integer) cellSpinner
 					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
 					canvas.getImage(), false));
-				overlayResult.setImage(canvas.getImage());
-			}
-
-			canvas.setImageOverlay(overlayResult);
-
 		}
+		
+		canvas.setImageOverlay(overlayResult);
+		overlayResult.setImage(canvas.getImage().getProcessor());
+		canvas.setImageUpdated();
+		canvas.repaint();
 	}
 
 	ChangeListener listener = new ChangeListener() {
 
 		@Override
 		public void stateChanged(ChangeEvent e) {
-			// TODO Auto-generated method stub
-			canvas.clearOverlay();
-
-			if (checkOverlay.getSelectedItem() == "All overlays") {
-				canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
-					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
-					canvas.getImage(), true));
-			}
-			else {
-
-				if (checkOverlay.getSelectedItem() == "Cell overlay") {
-					canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
-						.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
-						canvas.getImage(), false));
-				}
-				else {
-					canvas.clearOverlay();
-				}
-
-			}
-
-			overlayResult.setImage(canvas.getImage());
-			canvas.addOverlay(overlayResult);
-			canvas.setImageOverlay(overlayResult);
-			canvas.setImageUpdated();
-
+			updateOverlay();
 		}
 	};
-
-	/**
-	 * Enable/disable all the panels in the window
-	 * 
-	 * @param enabled true it will enable panels, false disable all panels
-	 */
-	protected void setEnablePanels(boolean enabled) {
-		btnSave.setEnabled(true);
-		btnInsert.setEnabled(true);
-	}
-
-	/**
-	 * Disable all the action buttons
-	 */
-	protected void disableActionButtons() {
-		btnSave.setEnabled(false);
-		btnInsert.setEnabled(false);
-	}
-
-	/**
-	 * Enable all the action buttons
-	 */
-	protected void enableActionButtons() {
-		btnSave.setEnabled(true);
-		btnInsert.setEnabled(true);
-	}
 
 	/**
 	 * Add the painted Roi to the roiManager
@@ -386,24 +309,6 @@ public class PostProcessingWindow extends ImageWindow implements
 				polyRoi.setLocation(r.getXBase(), r.getYBase());
 		}
 		this.getImagePlus().deleteRoi();
-		
-	}
-	
-	public void addPoints(ArrayList <DotN> newDots) {
-		int yinc = 10; 						//the increment in the y axis between each point's y coordinate
-		int xinc = 10; 
-		for (int nSides=0; nSides < newDots.size(); nSides++) {
-			float ylength = newDots.get(nSides).pos.y - newDots.get(nSides+1).pos.y; 						//finds the length of the line in the y axis by taking the first y coordinate from the second
-			float xlength = newDots.get(nSides).pos.x - newDots.get(nSides+1).pos.x;						//finds the length in the x axis	the same way
-			for (int j=0; j<= xlength/xinc; j++) { 						//a for loop to plot points, repeats for the total number of segments + 1 (as 0 is counted)
-				float xcoord = newDots.get(nSides).pos.x - (xinc*j); 				//calculates the x coordinate of the point to be plotted by subtracting the increment value (multiplied by the current segment number defined by 'j') from the first x coord of the line
-				float ycoord = newDots.get(nSides).pos.y - (yinc*j); 				//calculates the y coordinate as above from the top-most point on the line
-				DotN dot = new DotN();
-				dot.pos.x = xcoord; 				
-				dot.pos.y = ycoord;
-				newDots.add(dot);
-			}
-		}
 		
 	}
 	
@@ -439,5 +344,53 @@ public class PostProcessingWindow extends ImageWindow implements
 		        	}
 		        });
 	}
+	
+	/**
+	 * 
+	 * @param id
+	 * @param frame
+	 * @param cells
+	 * @param workingImP
+	 * @param allOverlays
+	 * @return
+	 */
+	public Overlay getOverlay(Integer id, Integer frame,
+			ArrayList<Cell3D> cells, ImagePlus workingImP, boolean allOverlays)
+		{
+			Overlay ov = new Overlay();
+			if (workingImP != null) {
+				PointRoi roi;
+				if (allOverlays) {
+					
+				for (int nCell = 0; nCell < cells.size(); nCell++) {
+					ArrayList<DotN> dots = cells.get(nCell).getCell3DAt(frame);
+					Iterator<DotN> i = dots.iterator();
+					while (i.hasNext()) {
+						DotN loadedDots = i.next();
+						roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);
+						Color colorCurrentCell = new Color(0, 0, 255);
+						roi.setFillColor(colorCurrentCell);
+						if (nCell == id) {
+							colorCurrentCell = new Color(255, 0, 0);
+							roi.setStrokeColor(colorCurrentCell);
+						}
+						ov.addElement(roi);
+					}	
+				}
+			}
+				else {
+					ArrayList<DotN> dots = cells.get(id).getCell3DAt(frame);
+					Iterator<DotN> i = dots.iterator();
+					while (i.hasNext()) {
+						DotN loadedDots = i.next();
+						roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);
+						Color colorCurrentCell = new Color(255, 0, 0);
+						roi.setFillColor(colorCurrentCell);
+						ov.addElement(roi);
+					}
+				}
+			}
+			return ov;
+		}
 
 }
