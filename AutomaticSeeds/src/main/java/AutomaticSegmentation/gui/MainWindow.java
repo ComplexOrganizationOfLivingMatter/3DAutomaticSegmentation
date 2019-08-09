@@ -13,16 +13,15 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import eu.kiaru.limeseg.LimeSeg;
-import eu.kiaru.limeseg.commands.CoarsenRefineSegmentation;
-import eu.kiaru.limeseg.commands.SphereSeg;
 import eu.kiaru.limeseg.commands.SphereSegAdvanced;
-import eu.kiaru.limeseg.commands.TestCurvature;
-import eu.kiaru.limeseg.gui.JPanelLimeSeg;
 import ij.IJ;
 import ij.ImagePlus;
+import io.scif.img.ImgOpener;
 import net.imagej.patcher.LegacyInjector;
 
 import java.awt.GridLayout;
+
+import javax.swing.ComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 
@@ -49,15 +48,15 @@ public class MainWindow extends JFrame {
 	/**
 	 * 
 	 */
-	private SphereSegAdvanced limeSeg;
+	private LimeSegWindow limeSegWindow;
 	
 	/**
 	 * 
 	 */
 	private JPanel imageChannelsPanel;
 	private JPanel buttonsPanel;
-	private JComboBox cbNucleiChannel;
-	private JComboBox cbSegmentableChannel;
+	private JComboBox<String> cbNucleiChannel;
+	private JComboBox<String> cbSegmentableChannel;
 	private JLabel lbNucleiChannel;
 	private JLabel lbSegmentableChannel;
 	
@@ -74,7 +73,7 @@ public class MainWindow extends JFrame {
 		getContentPane().add(imageChannelsPanel);
 		getContentPane().add(buttonsPanel);
 
-		cbNucleiChannel = new JComboBox<>();
+		cbNucleiChannel = new JComboBox<String>();
 		
 		lbNucleiChannel = new JLabel("Nuclei Channel");
 		lbNucleiChannel.setLabelFor(cbNucleiChannel);
@@ -83,7 +82,7 @@ public class MainWindow extends JFrame {
 		imageChannelsPanel.add(lbNucleiChannel);
 		imageChannelsPanel.add(cbNucleiChannel);
 		
-		cbSegmentableChannel = new JComboBox<>();
+		cbSegmentableChannel = new JComboBox<String>();
 		lbSegmentableChannel = new JLabel("Channel to segment");
 		lbSegmentableChannel.setLabelFor(cbSegmentableChannel);
 		
@@ -115,25 +114,11 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				ImagePlus image = IJ.openImage();
-				image.show();
-//				
-//				LimeSeg ls = new LimeSeg();
-//				ls.initialize();
-//				ls.opt.setWorkingImage(IJ.openImage(), 1, 1);
-//				ls.run();
-////				
-////				JPanelLimeSeg jp = new J(ls);
-////				jp.setVisible(true);
-//				
-//				JPanelLimeSeg jp = new JPanelLimeSeg(ls);
-//				jp.setVisible(true);
-//				jp.repaint();
+				workingImp.setC(cbSegmentableChannel.getSelectedIndex());
 				
-				SphereSegAdvanced cf = new SphereSegAdvanced();
-				cf.run();
-				//IJ.runPlugIn("eu.kiaru.limeseg.commands.SphereSeg", ""); Does not show anything
-			  
+				limeSegWindow = new LimeSegWindow(new ImagePlus("ToSegment", workingImp.getChannelProcessor()));
+				limeSegWindow.pack();
+				limeSegWindow.setVisible(true);
 			}
 		});
 		
@@ -185,7 +170,12 @@ public class MainWindow extends JFrame {
 					        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 					
 					if (response == JOptionPane.NO_OPTION) {
-						workingImp = IJ.openImage();
+						IJ.open();
+						try {
+							workingImp = IJ.getImage();
+						} catch (Exception ex) {
+							// TODO: handle exception
+						}
 					} else if (response == JOptionPane.YES_OPTION) {
 						try {
 							workingImp = IJ.getImage();
@@ -195,7 +185,14 @@ public class MainWindow extends JFrame {
 					}
 				}
 				
-				System.out.println(workingImp.getNChannels());
+				String fileName = workingImp.getOriginalFileInfo().fileName;
+				
+				for (int numChannel = 0; numChannel < workingImp.getNChannels(); numChannel++) {
+					cbNucleiChannel.addItem(fileName + " - C=" + numChannel);
+					cbSegmentableChannel.addItem(fileName + " - C=" + numChannel);
+				}
+				
+				workingImp.show();
 			}
 		});
 	}
