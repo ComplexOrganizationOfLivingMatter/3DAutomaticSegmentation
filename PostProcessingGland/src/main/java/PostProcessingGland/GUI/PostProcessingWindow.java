@@ -259,20 +259,22 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	 * 
 	 */
 	private void updateOverlay() {
+
+		canvas.clearOverlay();
+		canvas.getImage().getOverlay().clear();
+		
 		if (checkOverlay.getSelectedItem() == "All overlays") {
-
-			canvas.setOverlay(getOverlay(((Integer) cellSpinner.getValue() - 1), canvas.getImage().getCurrentSlice(),
-					all3dCells, canvas.getImage(), true));
-
-			canvas.addOverlay(overlayResult);
-
+			Overlay newOverlay = getOverlay(((Integer) cellSpinner
+					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
+					canvas.getImage(), true);
+			canvas.getImage().setOverlay(newOverlay);
 		} else if (checkOverlay.getSelectedItem() == "Cell overlay") {
-			canvas.setOverlay(getOverlay(((Integer) cellSpinner.getValue() - 1), canvas.getImage().getCurrentSlice(),
-					all3dCells, canvas.getImage(), false));
+				Overlay newOverlay = getOverlay(((Integer) cellSpinner
+						.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
+						canvas.getImage(), false);
+				canvas.getImage().setOverlay(newOverlay);
 		}
-
-		canvas.setImageOverlay(overlayResult);
-		overlayResult.setImage(canvas.getImage().getProcessor());
+		
 		canvas.setImageUpdated();
 		canvas.repaint();
 	}
@@ -364,7 +366,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 						DotN loadedDots = i.next();
 						roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);
 						Color colorCurrentCell = new Color(0, 0, 255);
-						roi.setFillColor(colorCurrentCell);
+						roi.setStrokeColor(colorCurrentCell);
 						if (nCell == id) {
 							colorCurrentCell = new Color(255, 0, 0);
 							roi.setStrokeColor(colorCurrentCell);
@@ -379,7 +381,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					DotN loadedDots = i.next();
 					roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);
 					Color colorCurrentCell = new Color(255, 0, 0);
-					roi.setFillColor(colorCurrentCell);
+					roi.setStrokeColor(colorCurrentCell);
 					ov.addElement(roi);
 				}
 			}
