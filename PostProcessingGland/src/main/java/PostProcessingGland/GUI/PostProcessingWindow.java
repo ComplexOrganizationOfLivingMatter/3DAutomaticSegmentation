@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Hashtable;
 import java.util.Iterator;
 
 import javax.swing.BorderFactory;
@@ -34,7 +33,6 @@ import PostProcessingGland.PostProcessingGland;
 import PostProcessingGland.Elements.Cell3D;
 import PostProcessingGland.Elements.RoiAdjustment;
 import epigraph.GUI.CustomElements.CustomCanvas;
-import epigraph.GUI.CustomElements.ImageOverlay;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
@@ -50,10 +48,12 @@ import net.miginfocom.swing.MigLayout;
 
 public class PostProcessingWindow extends ImageWindow implements ActionListener {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private IOXmlPlyLimeSeg OutputLimeSeg;
-	private Hashtable<Integer, ArrayList<Roi>> cellsROIs;
 	private CustomCanvas canvas;
-	private ImageOverlay overlayResult;
 	private Cell LimeSegCell;
 	private LimeSeg limeSeg;
 	public ArrayList<Cell> allCells;
@@ -69,11 +69,10 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private JButton btnSave;
 	private JButton btnInsert;
 	private JButton btnLumen;
-	private JComboBox checkOverlay;
+	private JComboBox<String> checkOverlay;
 	private JSpinner cellSpinner;
 	private Scrollbar sliceSelector;
 
-	private PointRoi dotsRoi;
 	private PolygonRoi polyRoi;
 
 	private String initialDirectory;
@@ -119,19 +118,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		sliceSelector.setVisible(true);
 
 		initializeGUIItems(raw_img);
-
-		overlayResult = new ImageOverlay();
-		if (overlayResult != null) {
-
-			if (canvas.getImageOverlay() == null) {
-				canvas.clearOverlay();
-				raw_img.setOverlay(getOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false));
-				canvas.addOverlay(overlayResult);
-				canvas.setImageOverlay(overlayResult);
-
-			}
-		}
-
 		initGUI(raw_img);
 
 	}
@@ -192,7 +178,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
 		cellSpinner.addChangeListener(listener);
 
-		checkOverlay = new JComboBox();
+		checkOverlay = new JComboBox<String>();
 		checkOverlay.addItem("None overlay");
 		checkOverlay.addItem("Cell overlay");
 		checkOverlay.addItem("All overlays");
@@ -306,6 +292,12 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		this.getImagePlus().deleteRoi();
 
 	}
+	
+	/**
+	 * 
+	 * @param allCells
+	 * @param path_in
+	 */
 
 	static public void savePlyFile(ArrayList<Cell3D> allCells, String path_in) {
 		if (!path_in.endsWith(File.separator)) {
