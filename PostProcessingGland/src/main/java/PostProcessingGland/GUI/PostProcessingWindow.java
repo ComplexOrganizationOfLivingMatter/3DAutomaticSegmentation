@@ -223,6 +223,7 @@ public class PostProcessingWindow extends ImageWindow implements
 		checkOverlay.addItem("None overlay");
 		checkOverlay.addItem("Cell overlay");
 		checkOverlay.addItem("All overlays");
+		checkOverlay.setSelectedIndex(1);
 		checkOverlay.addActionListener(this);
 
 		btnInsert = new JButton("Modify Cell");
@@ -245,34 +246,9 @@ public class PostProcessingWindow extends ImageWindow implements
 		sliceSelector.addAdjustmentListener(new AdjustmentListener() {
 			public void adjustmentValueChanged(AdjustmentEvent e) {
 				int z = sliceSelector.getValue();
-				imp.setSlice(z);
-				
+				imp.setSlice(z);			
 				canvas.clearOverlay();
-				
-				if (checkOverlay.getSelectedItem() == "All overlays") {
-					canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
-						.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
-						canvas.getImage(), true));
-					overlayResult.setImage(canvas.getImage());
-					canvas.addOverlay(overlayResult);
-					canvas.setImageOverlay(overlayResult);
-				}
-
-				else {
-					canvas.clearOverlay();
-					overlayResult.ov.clear();
-					overlayResult.workingImP.setHideOverlay(true);
-
-					if (checkOverlay.getSelectedItem() == "Cell overlay") {
-						canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
-							.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
-							canvas.getImage(), false));
-						overlayResult.setImage(canvas.getImage());
-					}
-
-					canvas.setImageOverlay(overlayResult);
-
-				}
+				updateOverlay();
 				
 			}
 		});
@@ -284,41 +260,11 @@ public class PostProcessingWindow extends ImageWindow implements
 	 * @see
 	 * java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
-	
-	
-		
-
-	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 
 		if (e.getSource() == checkOverlay) {
-
-			if (checkOverlay.getSelectedItem() == "All overlays") {
-				canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
-					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
-					canvas.getImage(), true));
-				overlayResult.setImage(canvas.getImage());
-				canvas.addOverlay(overlayResult);
-				canvas.setImageOverlay(overlayResult);
-			}
-
-			else {
-				canvas.clearOverlay();
-				overlayResult.ov.clear();
-				overlayResult.workingImP.setHideOverlay(true);
-
-				if (checkOverlay.getSelectedItem() == "Cell overlay") {
-					canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
-						.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
-						canvas.getImage(), false));
-					overlayResult.setImage(canvas.getImage());
-				}
-
-				canvas.setImageOverlay(overlayResult);
-
-			}
-
+			updateOverlay();
 		}
 
 		if (e.getSource() == btnInsert) {
@@ -326,21 +272,8 @@ public class PostProcessingWindow extends ImageWindow implements
 			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(), all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell);
 
 			canvas.clearOverlay();
-			
-			if ((checkOverlay.getSelectedItem() == "All overlays")) {
-				canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
-					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
-					canvas.getImage(), true));
-			}
-			else {
-				canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
-					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
-					canvas.getImage(), false));
-			}
-			overlayResult.setImage(canvas.getImage());
-			canvas.addOverlay(overlayResult);
-			canvas.setImageOverlay(overlayResult);
-
+			checkOverlay.setSelectedIndex(1);
+			updateOverlay();
 		}
 		
 		if (e.getSource() == btnSave) {
@@ -348,6 +281,34 @@ public class PostProcessingWindow extends ImageWindow implements
 			
 		}
 
+	}
+
+	/**
+	 * 
+	 */
+	private void updateOverlay() {
+		if (checkOverlay.getSelectedItem() == "All overlays") {
+			canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
+				.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
+				canvas.getImage(), true));
+			overlayResult.setImage(canvas.getImage());
+			canvas.addOverlay(overlayResult);
+			canvas.setImageOverlay(overlayResult);
+		} else {
+			canvas.clearOverlay();
+			overlayResult.ov.clear();
+			overlayResult.workingImP.setHideOverlay(true);
+
+			if (checkOverlay.getSelectedItem() == "Cell overlay") {
+				canvas.setOverlay(overlayResult.getOverlay(((Integer) cellSpinner
+					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
+					canvas.getImage(), false));
+				overlayResult.setImage(canvas.getImage());
+			}
+
+			canvas.setImageOverlay(overlayResult);
+
+		}
 	}
 
 	ChangeListener listener = new ChangeListener() {
