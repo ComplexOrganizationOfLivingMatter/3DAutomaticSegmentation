@@ -250,12 +250,12 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		canvas.getImage().getOverlay().clear();
 		
 		if (checkOverlay.getSelectedItem() == "All overlays") {
-			Overlay newOverlay = getOverlay(((Integer) cellSpinner
+			Overlay newOverlay = addOverlay(((Integer) cellSpinner
 					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
 					canvas.getImage(), true);
 			canvas.getImage().setOverlay(newOverlay);
 		} else if (checkOverlay.getSelectedItem() == "Cell overlay") {
-				Overlay newOverlay = getOverlay(((Integer) cellSpinner
+				Overlay newOverlay = addOverlay(((Integer) cellSpinner
 						.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
 						canvas.getImage(), false);
 				canvas.getImage().setOverlay(newOverlay);
@@ -344,7 +344,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	 * @param allOverlays
 	 * @return
 	 */
-	public Overlay getOverlay(Integer id, Integer frame, ArrayList<Cell3D> cells, ImagePlus workingImP,
+	public Overlay addOverlay(Integer id, Integer frame, ArrayList<Cell3D> cells, ImagePlus workingImP,
 			boolean allOverlays) {
 		Overlay ov = new Overlay();
 		if (workingImP != null) {
