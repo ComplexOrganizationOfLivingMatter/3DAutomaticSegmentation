@@ -23,6 +23,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
@@ -78,6 +79,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private String initialDirectory;
 	public Cell3D PostProcessCell;
 	public ArrayList<Cell3D> all3dCells;
+	public float zScale;
 
 	public PostProcessingWindow(ImagePlus raw_img) {
 		super(raw_img, new CustomCanvas(raw_img));
@@ -113,6 +115,9 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		canvas = (CustomCanvas) super.getCanvas();
 		PostProcessingGland.callToolbarPolygon();
+		
+//		String scale_zStack = JOptionPane.showInputDialog("Z_Scale: ");
+//		zScale = Float.parseFloat(scale_zStack);
 
 		sliceSelector = new Scrollbar(Scrollbar.HORIZONTAL, 1, 1, 1, (imp.getStackSize() + 1));
 		sliceSelector.setVisible(true);
