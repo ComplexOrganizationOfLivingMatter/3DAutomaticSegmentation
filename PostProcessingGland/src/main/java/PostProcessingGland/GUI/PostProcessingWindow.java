@@ -247,7 +247,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private void updateOverlay() {
 
 		canvas.clearOverlay();
-		canvas.getImage().getOverlay().clear();
+		//canvas.getImage().getOverlay().clear();
 		
 		if (checkOverlay.getSelectedItem() == "All overlays") {
 			Overlay newOverlay = addOverlay(((Integer) cellSpinner
@@ -318,19 +318,21 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		// create the optimizer parameter element
 		allCells.forEach(c -> {
+			
 			// Now writes all ply files for CellT object
-			for (int i = 0; i < c.dotsList.size(); i++) {
-				CellT cellt = new CellT(c, i);
-				String pathCell = path + File.separator + c.id_Cell + File.separator;
+			
+				CellT cellt = new CellT(c, 1);
+				cellt.dots = c.dotsList;
+				String pathCell = path + File.separator + "cell_" + c.id_Cell + File.separator;
 				File dirCell = new File(pathCell);
 				// attempt to create the directory here
 				if (dirCell.mkdir()) {
-					IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + cellt.frame + ".ply");
+					IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
 				} else {
 					if (dirCell.exists()) {
-						IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + cellt.frame + ".ply");
+						IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
 					}
-				}
+				
 			}
 		});
 	}
