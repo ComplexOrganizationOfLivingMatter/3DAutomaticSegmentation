@@ -11,14 +11,17 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -39,6 +42,7 @@ import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
+import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.ImageWindow;
 import ij.gui.PointRoi;
@@ -198,6 +202,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		btnSave.addActionListener(this);
 
 		btnLumen = new JButton("Add Lumen");
+		btnLumen.addActionListener(this);
+		
 
 		canvas.addComponentListener(new ComponentAdapter() {
 
@@ -242,7 +248,29 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		if (e.getSource() == btnSave) {
 			this.savePlyFile(all3dCells, initialDirectory);
-
+		}
+		
+		if (e.getSource() == btnLumen) {
+			File lumen = new File(this.initialDirectory + "SegmentedLumen.tif");
+			try {
+				BufferedImage lumen_img = ImageIO.read(lumen);
+				ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
+				ArrayList<DotN> lumenDots = new ArrayList<DotN>();
+				for (int i = 0; i < lumenImg.getProcessor().getHeight(); i++) {
+					for (int j = 0; j < lumenImg.getProcessor().getWidth(); j++) {
+						if (lumenImg.getProcessor().getPixel(i, j) == 0) {
+							DotN dot = new DotN();
+							dot.pos.x = j;
+							dot.pos.y = i;
+							lumenDots.add(dot);
+						}
+					}
+				}
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
 		}
 
 	}
