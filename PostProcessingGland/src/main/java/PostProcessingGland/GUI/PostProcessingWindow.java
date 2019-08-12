@@ -118,6 +118,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		sliceSelector.setVisible(true);
 
 		initializeGUIItems(raw_img);
+		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false));
 		initGUI(raw_img);
 
 	}

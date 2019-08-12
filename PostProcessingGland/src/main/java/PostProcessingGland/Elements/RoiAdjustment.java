@@ -125,7 +125,7 @@ public class RoiAdjustment {
 		for (int i = 0; i < oldDots.size(); i++) {
 			DotN dot = oldDots.get(i);
 			int zpos = 1 + (int) ((float) (dot.pos.z / zScale));
-			if ((frame - 1) > zpos | zpos > (frame + 1)) {
+			if (zpos != frame) {
 				currentDots.add(dot);
 			}
 		}
