@@ -251,21 +251,27 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		}
 		
 		if (e.getSource() == btnLumen) {
-			File lumen = new File(this.initialDirectory + "SegmentedLumen.tif");
+			File lumen = new File(this.initialDirectory.toString() + "/SegmentedLumen.tif");
 			try {
 				BufferedImage lumen_img = ImageIO.read(lumen);
 				ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
-				ArrayList<DotN> lumenDots = new ArrayList<DotN>();
-				for (int i = 0; i < lumenImg.getProcessor().getHeight(); i++) {
-					for (int j = 0; j < lumenImg.getProcessor().getWidth(); j++) {
+				Roi[] lumenDots = new Roi[]{};
+				int k = 0;
+				for (int i = 0; i < lumenImg.getProcessor().getWidth(); i++) {
+					for (int j = 0; j < lumenImg.getProcessor().getHeight(); j++) {
 						if (lumenImg.getProcessor().getPixel(i, j) == 0) {
-							DotN dot = new DotN();
-							dot.pos.x = j;
-							dot.pos.y = i;
-							lumenDots.add(dot);
+							PointRoi dot = new PointRoi(i, j);
+							lumenDots[k] = dot;
+							k++;
 						}
 					}
 				}
+				
+				PolygonRoi poly = newCell.getConcaveHull(lumenDots);
+				
+				Overlay ov = new Overlay(poly);
+				canvas.getImage().getOverlay().clear();
+				canvas.getImage().setOverlay(ov);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -281,7 +287,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private void updateOverlay() {
 
 		canvas.clearOverlay();
-		//canvas.getImage().getOverlay().clear();
+		canvas.getImage().getOverlay().clear();
 		
 		if (checkOverlay.getSelectedItem() == "All overlays") {
 			Overlay newOverlay = addOverlay(((Integer) cellSpinner
@@ -337,11 +343,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		if (!path_in.endsWith(File.separator)) {
 			path_in = path_in + File.separator;
 		}
-		String path = path_in;
+		String path = path_in + "/newOutputLimeSeg";
 		File dir = new File(path);
 		if (!dir.isDirectory()) {
-			System.out.println("Erreur, given path is not a directory");
-			return;
+			System.out.println("New folder created");
+			dir.mkdir();
 		}
 		// By default removes all files in the folder
 		// But ask for confirmation if the folder is not empty...
