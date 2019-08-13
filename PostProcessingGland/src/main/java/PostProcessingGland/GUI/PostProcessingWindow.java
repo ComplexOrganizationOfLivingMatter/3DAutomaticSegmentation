@@ -35,6 +35,8 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import com.google.common.primitives.Ints;
+
 import PostProcessingGland.PostProcessingGland;
 import PostProcessingGland.Elements.Cell3D;
 import PostProcessingGland.Elements.RoiAdjustment;
@@ -267,29 +269,33 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					FileInputStream lumen = new FileInputStream(f);
 					BufferedImage lumen_img = ImageIO.read(lumen);
 					ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
-					ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
-					int dotIndex = 0;
+					ArrayList<Integer> xPoints = new ArrayList<Integer>();
+					ArrayList<Integer> yPoints = new ArrayList<Integer>();
+					
 					for (int i = 0; i < lumenImg.getProcessor().getWidth(); i++) {
 						for (int j = 0; j < lumenImg.getProcessor().getHeight(); j++) {
+							int pepe = lumenImg.getProcessor().getPixel(404, 474);
 							if (lumenImg.getProcessor().getPixel(i, j) == 0) {
-								PointRoi dot = new PointRoi(i, j);
-								fileLumenDots.add(dot);
-								dotIndex++;
+								xPoints.add(i);
+								yPoints.add(j);
 							}
 						}
 					}
 					
-					if (fileLumenDots.size() != 0) {
-						Roi[] sliceDots = new Roi[fileLumenDots.size()];
-						sliceDots = fileLumenDots.toArray(sliceDots);
-						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots);
+					if (xPoints.size() != 0) {
+						int[] xArray = new int[xPoints.size()];
+						int[] yArray = new int[yPoints.size()];
+						xArray = Ints.toArray(xPoints);
+						yArray = Ints.toArray(yPoints);
+						PolygonRoi sliceLumen = new PolygonRoi(xArray, yArray, xArray.length, 10);
+						lumenDots[zIndex] = sliceLumen;
 					}
 					
 					zIndex++;
 				}
 				
-				Overlay ov = new Overlay(lumenDots[37]);
-				canvas.getImage().getOverlay().clear();
+				Overlay ov = new Overlay(lumenDots[29]);
+				//canvas.getImage().getOverlay().clear();
 				canvas.getImage().setOverlay(ov);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
