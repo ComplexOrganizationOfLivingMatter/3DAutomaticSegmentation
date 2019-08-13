@@ -60,34 +60,9 @@ public class RoiAdjustment {
 					& allCells.get(nCell).id_Cell != id) {
 				ShapeRoi sNotOverlappingCell = new ShapeRoi(sOverlappingCell.not(sNewPolygonBackUp));
 				Roi[] overRoi = sNotOverlappingCell.getRois();
-
-				// ConvexHull algoritm
-				GeometryFactory geoF = new GeometryFactory();
-				com.vividsolutions.jts.geom.Point[] allPoints = new com.vividsolutions.jts.geom.Point[overRoi.length];
-
-				for (int i = 0; i < overRoi.length; i++) {
-					Coordinate coordinate = new Coordinate(overRoi[i].getXBase(), overRoi[i].getYBase());
-					allPoints[i] = geoF.createPoint(coordinate);
-				}
-
-				ArrayList<com.vividsolutions.jts.geom.Point> geoList = new ArrayList<com.vividsolutions.jts.geom.Point>(
-						Arrays.asList(allPoints));
-				Geometry geoP = geoF.buildGeometry(geoList);
-
-				ConcaveHull ch = new ConcaveHull(geoP, 100000);
-
-				Geometry newGeoP = ch.getConcaveHull();
-				Coordinate[] coords = newGeoP.getCoordinates();
-				int[] xPoints = new int[coords.length];
-				int[] yPoints = new int[coords.length];
-
-				for (int i = 0; i < yPoints.length; i++) {
-					xPoints[i] = (int) coords[i].x;
-					yPoints[i] = (int) coords[i].y;
-				}
-
-				PolygonRoi poly = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
-
+				
+				PolygonRoi poly = getConcaveHull(overRoi);
+				
 				// Convert the PolygonRoi in Dots and integrate with the dots of
 				// the other frames.
 				// Later, replace the selected cell by the cell with the new
@@ -135,6 +110,37 @@ public class RoiAdjustment {
 		return currentDots;
 
 	}
+	
+	// ConcaveHull algoritm
+	public PolygonRoi getConcaveHull(Roi[] rois) {
+	GeometryFactory geoF = new GeometryFactory();
+	com.vividsolutions.jts.geom.Point[] allPoints = new com.vividsolutions.jts.geom.Point[rois.length];
+
+	for (int i = 0; i < rois.length; i++) {
+		Coordinate coordinate = new Coordinate(rois[i].getXBase(), rois[i].getYBase());
+		allPoints[i] = geoF.createPoint(coordinate);
+	}
+
+	ArrayList<com.vividsolutions.jts.geom.Point> geoList = new ArrayList<com.vividsolutions.jts.geom.Point>(
+			Arrays.asList(allPoints));
+	Geometry geoP = geoF.buildGeometry(geoList);
+
+	ConcaveHull ch = new ConcaveHull(geoP, 100000);
+
+	Geometry newGeoP = ch.getConcaveHull();
+	Coordinate[] coords = newGeoP.getCoordinates();
+	int[] xPoints = new int[coords.length];
+	int[] yPoints = new int[coords.length];
+
+	for (int i = 0; i < yPoints.length; i++) {
+		xPoints[i] = (int) coords[i].x;
+		yPoints[i] = (int) coords[i].y;
+	}
+
+	PolygonRoi poly = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
+	
+	return poly;
+}
 
 	// Setter method.
 

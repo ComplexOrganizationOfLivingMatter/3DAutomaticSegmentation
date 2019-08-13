@@ -12,7 +12,9 @@ import java.awt.event.AdjustmentListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -251,25 +253,42 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		}
 		
 		if (e.getSource() == btnLumen) {
-			File lumen = new File(this.initialDirectory.toString() + "/SegmentedLumen.tif");
+			File dirLumen = new File(this.initialDirectory.toString() + "/SegmentedLumen");
+			File[] filesLumen = dirLumen.listFiles(new FilenameFilter() {
+
+				public boolean accept(File dir, String name) {
+					return name.startsWith("SegmentedLumen");
+				}
+			});
+			int zIndex=0;
+			Roi[] lumenDots = new Roi[filesLumen.length];
 			try {
-				BufferedImage lumen_img = ImageIO.read(lumen);
-				ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
-				Roi[] lumenDots = new Roi[]{};
-				int k = 0;
-				for (int i = 0; i < lumenImg.getProcessor().getWidth(); i++) {
-					for (int j = 0; j < lumenImg.getProcessor().getHeight(); j++) {
-						if (lumenImg.getProcessor().getPixel(i, j) == 0) {
-							PointRoi dot = new PointRoi(i, j);
-							lumenDots[k] = dot;
-							k++;
+				for (File f : filesLumen) {
+					FileInputStream lumen = new FileInputStream(f);
+					BufferedImage lumen_img = ImageIO.read(lumen);
+					ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
+					ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
+					int dotIndex = 0;
+					for (int i = 0; i < lumenImg.getProcessor().getWidth(); i++) {
+						for (int j = 0; j < lumenImg.getProcessor().getHeight(); j++) {
+							if (lumenImg.getProcessor().getPixel(i, j) == 0) {
+								PointRoi dot = new PointRoi(i, j);
+								fileLumenDots.add(dot);
+								dotIndex++;
+							}
 						}
 					}
+					
+					if (fileLumenDots.size() != 0) {
+						Roi[] sliceDots = new Roi[fileLumenDots.size()];
+						sliceDots = fileLumenDots.toArray(sliceDots);
+						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots);
+					}
+					
+					zIndex++;
 				}
 				
-				PolygonRoi poly = newCell.getConcaveHull(lumenDots);
-				
-				Overlay ov = new Overlay(poly);
+				Overlay ov = new Overlay(lumenDots[37]);
 				canvas.getImage().getOverlay().clear();
 				canvas.getImage().setOverlay(ov);
 			} catch (IOException e1) {
