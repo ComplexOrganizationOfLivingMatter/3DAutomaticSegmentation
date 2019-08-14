@@ -269,33 +269,39 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					FileInputStream lumen = new FileInputStream(f);
 					BufferedImage lumen_img = ImageIO.read(lumen);
 					ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
-					ArrayList<Integer> xPoints = new ArrayList<Integer>();
-					ArrayList<Integer> yPoints = new ArrayList<Integer>();
-					
+					ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
+					int dotIndex = 0;
 					for (int i = 0; i < lumenImg.getProcessor().getWidth(); i++) {
 						for (int j = 0; j < lumenImg.getProcessor().getHeight(); j++) {
-							int pepe = lumenImg.getProcessor().getPixel(404, 474);
 							if (lumenImg.getProcessor().getPixel(i, j) == 0) {
-								xPoints.add(i);
-								yPoints.add(j);
+								PointRoi dot = new PointRoi(i, j);
+								fileLumenDots.add(dot);
+								dotIndex++;
 							}
 						}
 					}
 					
-					if (xPoints.size() != 0) {
-						int[] xArray = new int[xPoints.size()];
-						int[] yArray = new int[yPoints.size()];
-						xArray = Ints.toArray(xPoints);
-						yArray = Ints.toArray(yPoints);
-						PolygonRoi sliceLumen = new PolygonRoi(xArray, yArray, xArray.length, 10);
-						lumenDots[zIndex] = sliceLumen;
+					if (fileLumenDots.size() != 0) {
+						Roi[] sliceDots = new Roi[fileLumenDots.size()];
+						sliceDots = fileLumenDots.toArray(sliceDots);
+						/*
+						float[] xPoints = new float[sliceDots.length];
+						float[] yPoints = new float[sliceDots.length];
+
+						for (int i = 0; i < yPoints.length; i++) {
+							xPoints[i] = (float) (sliceDots[i].getXBase() + sliceDots[i].getFloatWidth());
+							yPoints[i] = (float) (sliceDots[i].getYBase() + sliceDots[i].getFloatHeight());
+						}
+
+						PointRoi poly = new PointRoi(xPoints, yPoints);
+						*/
+						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots);
 					}
 					
 					zIndex++;
 				}
 				
-				Overlay ov = new Overlay(lumenDots[29]);
-				//canvas.getImage().getOverlay().clear();
+				Overlay ov = new Overlay(lumenDots[35]);
 				canvas.getImage().setOverlay(ov);
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
