@@ -52,6 +52,7 @@ import ij.gui.ImageWindow;
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
+import ij.gui.ShapeRoi;
 import ij.gui.Overlay;
 import net.miginfocom.swing.MigLayout;
 
@@ -174,7 +175,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		processingFrame.setLayout(new MigLayout());
 		processingFrame.add(leftPanel);
 		processingFrame.add(rightPanel, "east");
-		// processingFrame.setMinimumSize(new Dimension(1024, 1024));
 		processingFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		processingFrame.pack();
 		processingFrame.setVisible(true);
@@ -286,10 +286,10 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 					ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
 
-					for (int i = 0; i < lumenImg.getProcessor().getWidth(); i++) {
-						for (int j = 0; j < lumenImg.getProcessor().getHeight(); j++) {
-							if (lumenImg.getProcessor().getPixel(i, j) == 0) {
-								PointRoi dot = new PointRoi(i, j);
+					for (int x = 0; x < lumenImg.getProcessor().getWidth(); x++) {
+						for (int y = 0; y < lumenImg.getProcessor().getHeight(); y++) {
+							if (lumenImg.getProcessor().getPixel(x, y) == 0) {
+								PointRoi dot = new PointRoi(x, y);
 								fileLumenDots.add(dot);
 							}
 						}
@@ -298,7 +298,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					if (fileLumenDots.size() != 0) {
 						Roi[] sliceDots = new Roi[fileLumenDots.size()];
 						sliceDots = fileLumenDots.toArray(sliceDots);
-
+						/*
 						float[] xPoints = new float[sliceDots.length];
 						float[] yPoints = new float[sliceDots.length];
 						for (int i = 0; i < yPoints.length; i++) {
@@ -307,9 +307,13 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 						}
 
 						PointRoi poly = new PointRoi(xPoints, yPoints);
+						//Color colorCurrentCell = new Color(255, 255, 255);
+						//poly.setStrokeColor(colorCurrentCell);
+						*/
+						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots);
+						
 						Color colorCurrentCell = new Color(255, 255, 255);
-						poly.setStrokeColor(colorCurrentCell);
-						lumenDots[zIndex] = poly;
+						lumenDots[zIndex].setStrokeColor(colorCurrentCell);
 					}
 
 					zIndex++;
@@ -319,7 +323,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-
+			removeCellLumenOverlap();
+			updateOverlay();
 		}
 
 	}
@@ -460,13 +465,48 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					ov.addElement(roi);
 				}
 			}
-	
-			if (lumen[lumen.length/2] != null & checkLumen.getSelectedItem() == "Show lumen") {
+
+			if (lumen[lumen.length / 2] != null & checkLumen.getSelectedItem() == "Show lumen") {
 				ov.addElement(lumen[frame - 1]);
 			}
 
 		}
 		return ov;
+	}
+
+	public void removeCellLumenOverlap() {
+		for (int nFrame = 1; nFrame < imp.getStackSize(); nFrame++) {
+			for (int nCell = 1; nCell < all3dCells.size(); nCell++) {
+				if (lumenDots[nFrame] != null) {
+
+					float[] xCell = all3dCells.get(nCell).getCoordinate("x", all3dCells.get(nCell).getCell3DAt(nFrame));
+					float[] yCell = all3dCells.get(nCell).getCoordinate("y", all3dCells.get(nCell).getCell3DAt(nFrame));
+
+					PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 2);
+					ShapeRoi r = new ShapeRoi(overlappingCell);
+					ShapeRoi lum = new ShapeRoi(lumenDots[nFrame]);
+					r.not(lum);
+					Roi[] overRoi = r.getRois();
+
+					PolygonRoi poly = newCell.getConcaveHull(overRoi);
+
+					// Convert the PolygonRoi in Dots and integrate with the
+					// dots of
+					// the other frames.
+					// Later, replace the selected cell by the cell with the new
+					// region
+					ArrayList<DotN> dotsNewRegion = newCell.setOverlapRegion(nFrame, poly, r);
+					ArrayList<DotN> integratedDots = newCell.integrateNewRegion(dotsNewRegion,
+							all3dCells.get(nCell).dotsList, nFrame);
+
+					Cell3D newCell = new Cell3D(all3dCells.get(nCell).id_Cell, integratedDots);
+					all3dCells.set(nCell, newCell);
+
+				}
+			}
+			int pepe = 0;
+			pepe++;
+		}
 	}
 
 }
