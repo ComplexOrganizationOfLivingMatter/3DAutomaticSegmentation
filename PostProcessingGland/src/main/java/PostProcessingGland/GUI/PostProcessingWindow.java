@@ -79,6 +79,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private JButton btnInsert;
 	private JButton btnLumen;
 	private JComboBox<String> checkOverlay;
+	private JComboBox<String> checkLumen;
 	private JSpinner cellSpinner;
 	private Scrollbar sliceSelector;
 
@@ -87,6 +88,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private String initialDirectory;
 	public Cell3D PostProcessCell;
 	public ArrayList<Cell3D> all3dCells;
+	public Roi[] lumenDots;
 	public float zScale;
 
 	public PostProcessingWindow(ImagePlus raw_img) {
@@ -123,15 +125,17 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		canvas = (CustomCanvas) super.getCanvas();
 		PostProcessingGland.callToolbarPolygon();
-		
-//		String scale_zStack = JOptionPane.showInputDialog("Z_Scale: ");
-//		zScale = Float.parseFloat(scale_zStack);
+
+		// String scale_zStack = JOptionPane.showInputDialog("Z_Scale: ");
+		// zScale = Float.parseFloat(scale_zStack);
 
 		sliceSelector = new Scrollbar(Scrollbar.HORIZONTAL, 1, 1, 1, (imp.getStackSize() + 1));
 		sliceSelector.setVisible(true);
 
+		lumenDots = new Roi[imp.getStackSize() + 1];
+
 		initializeGUIItems(raw_img);
-		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false));
+		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false, lumenDots));
 		initGUI(raw_img);
 
 	}
@@ -150,7 +154,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		bottomRightPanel.setLayout(new MigLayout());
 		bottomRightPanel.setBorder(BorderFactory.createTitledBorder("Lumen Processing"));
-		bottomRightPanel.add(btnLumen);
+		bottomRightPanel.add(btnLumen, "wrap");
+		bottomRightPanel.add(checkLumen);
 
 		rightPanel.setLayout(new MigLayout());
 		rightPanel.add(upRightPanel, "wrap, gapy 10::50, aligny top");
@@ -199,6 +204,12 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		checkOverlay.setSelectedIndex(1);
 		checkOverlay.addActionListener(this);
 
+		checkLumen = new JComboBox<String>();
+		checkLumen.addItem("Without lumen");
+		checkLumen.addItem("Show lumen");
+		checkLumen.setSelectedIndex(1);
+		checkLumen.addActionListener(this);
+
 		btnInsert = new JButton("Modify Cell");
 		btnInsert.addActionListener(this);
 
@@ -207,7 +218,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		btnLumen = new JButton("Add Lumen");
 		btnLumen.addActionListener(this);
-		
 
 		canvas.addComponentListener(new ComponentAdapter() {
 
@@ -241,6 +251,10 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			updateOverlay();
 		}
 
+		if (e.getSource() == checkLumen) {
+			updateOverlay();
+		}
+
 		if (e.getSource() == btnInsert) {
 			this.addROI();
 			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
@@ -253,7 +267,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		if (e.getSource() == btnSave) {
 			this.savePlyFile(all3dCells, initialDirectory);
 		}
-		
+
 		if (e.getSource() == btnLumen) {
 			File dirLumen = new File(this.initialDirectory.toString() + "/SegmentedLumen");
 			File[] filesLumen = dirLumen.listFiles(new FilenameFilter() {
@@ -262,52 +276,50 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					return name.startsWith("SegmentedLumen");
 				}
 			});
-			int zIndex=0;
-			Roi[] lumenDots = new Roi[filesLumen.length];
+			int zIndex = 0;
+
 			try {
 				for (File f : filesLumen) {
 					FileInputStream lumen = new FileInputStream(f);
 					BufferedImage lumen_img = ImageIO.read(lumen);
 					ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
+
 					ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
-					int dotIndex = 0;
+
 					for (int i = 0; i < lumenImg.getProcessor().getWidth(); i++) {
 						for (int j = 0; j < lumenImg.getProcessor().getHeight(); j++) {
 							if (lumenImg.getProcessor().getPixel(i, j) == 0) {
 								PointRoi dot = new PointRoi(i, j);
 								fileLumenDots.add(dot);
-								dotIndex++;
 							}
 						}
 					}
-					
+
 					if (fileLumenDots.size() != 0) {
 						Roi[] sliceDots = new Roi[fileLumenDots.size()];
 						sliceDots = fileLumenDots.toArray(sliceDots);
-						/*
+
 						float[] xPoints = new float[sliceDots.length];
 						float[] yPoints = new float[sliceDots.length];
-
 						for (int i = 0; i < yPoints.length; i++) {
 							xPoints[i] = (float) (sliceDots[i].getXBase() + sliceDots[i].getFloatWidth());
 							yPoints[i] = (float) (sliceDots[i].getYBase() + sliceDots[i].getFloatHeight());
 						}
 
 						PointRoi poly = new PointRoi(xPoints, yPoints);
-						*/
-						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots);
+						Color colorCurrentCell = new Color(255, 255, 255);
+						poly.setStrokeColor(colorCurrentCell);
+						lumenDots[zIndex] = poly;
 					}
-					
+
 					zIndex++;
 				}
-				
-				Overlay ov = new Overlay(lumenDots[35]);
-				canvas.getImage().setOverlay(ov);
+
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			
+
 		}
 
 	}
@@ -319,19 +331,17 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		canvas.clearOverlay();
 		canvas.getImage().getOverlay().clear();
-		
+
 		if (checkOverlay.getSelectedItem() == "All overlays") {
-			Overlay newOverlay = addOverlay(((Integer) cellSpinner
-					.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
-					canvas.getImage(), true);
+			Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1), canvas.getImage().getCurrentSlice(),
+					all3dCells, canvas.getImage(), true, lumenDots);
 			canvas.getImage().setOverlay(newOverlay);
 		} else if (checkOverlay.getSelectedItem() == "Cell overlay") {
-				Overlay newOverlay = addOverlay(((Integer) cellSpinner
-						.getValue() - 1), canvas.getImage().getCurrentSlice(), all3dCells,
-						canvas.getImage(), false);
-				canvas.getImage().setOverlay(newOverlay);
+			Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1), canvas.getImage().getCurrentSlice(),
+					all3dCells, canvas.getImage(), false, lumenDots);
+			canvas.getImage().setOverlay(newOverlay);
 		}
-		
+
 		canvas.setImageUpdated();
 		canvas.repaint();
 	}
@@ -363,7 +373,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		this.getImagePlus().deleteRoi();
 
 	}
-	
+
 	/**
 	 * 
 	 * @param allCells
@@ -389,21 +399,21 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		// create the optimizer parameter element
 		allCells.forEach(c -> {
-			
+
 			// Now writes all ply files for CellT object
-			
-				CellT cellt = new CellT(c, 1);
-				cellt.dots = c.dotsList;
-				String pathCell = path + File.separator + "cell_" + c.id_Cell + File.separator;
-				File dirCell = new File(pathCell);
-				// attempt to create the directory here
-				if (dirCell.mkdir()) {
+
+			CellT cellt = new CellT(c, 1);
+			cellt.dots = c.dotsList;
+			String pathCell = path + File.separator + "cell_" + c.id_Cell + File.separator;
+			File dirCell = new File(pathCell);
+			// attempt to create the directory here
+			if (dirCell.mkdir()) {
+				IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
+			} else {
+				if (dirCell.exists()) {
 					IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
-				} else {
-					if (dirCell.exists()) {
-						IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
-					}
-				
+				}
+
 			}
 		});
 	}
@@ -418,7 +428,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	 * @return
 	 */
 	public Overlay addOverlay(Integer id, Integer frame, ArrayList<Cell3D> cells, ImagePlus workingImP,
-			boolean allOverlays) {
+			boolean allOverlays, Roi[] lumen) {
 		Overlay ov = new Overlay();
 		if (workingImP != null) {
 			PointRoi roi;
@@ -450,6 +460,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					ov.addElement(roi);
 				}
 			}
+	
+			if (lumen[lumen.length/2] != null & checkLumen.getSelectedItem() == "Show lumen") {
+				ov.addElement(lumen[frame - 1]);
+			}
+
 		}
 		return ov;
 	}
