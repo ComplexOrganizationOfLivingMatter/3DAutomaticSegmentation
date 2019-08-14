@@ -3,33 +3,16 @@ package PostProcessingGland.Elements;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 
-import java.awt.Color;
-import java.awt.Point;
-import java.awt.Polygon;
-import java.awt.Rectangle;
-import java.awt.Shape;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Random;
-import java.util.stream.IntStream;
 
-import net.imglib2.roi.geom.real.DefaultWritablePolygon2D;
-
-import org.apache.commons.lang3.ArrayUtils;
 import org.opensphere.geometry.algorithm.ConcaveHull;
 
-import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
-import ij.plugin.frame.Recorder;
-import ij.plugin.frame.RoiManager;
-import ij.process.FloatPolygon;
 import eu.kiaru.limeseg.struct.DotN;
 
 public class RoiAdjustment {
