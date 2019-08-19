@@ -144,7 +144,7 @@ public class MainWindow extends JFrame {
 		//Functions
 		btPreLimeSeg.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				preLimeSeg = new PreLimeSegWindow(nucleiChannel.getProcessor());
+				preLimeSeg = new PreLimeSegWindow(nucleiChannel.getStack());
 				preLimeSeg.pack();
 				preLimeSeg.setVisible(true);
 			}

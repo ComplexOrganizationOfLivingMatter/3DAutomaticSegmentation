@@ -20,6 +20,7 @@ import AutomaticSegmentation.preProcessing.ThresholdMethod;
 import AutomaticSegmentation.utils.Utils;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.Prefs;
 import ij.gui.OvalRoi;
 import ij.gui.ProgressBar;
@@ -82,12 +83,12 @@ public class PreLimeSegWindow extends JFrame {
 	 */
 	private ImagePlus imp_segmented;
 	
-	private ImageProcessor imp_original;
+	private ImageStack imp_original;
 
 	/**
 	 * 
 	 */
-	public PreLimeSegWindow(ImageProcessor imgProcessor) {
+	public PreLimeSegWindow(ImageStack imgProcessor) {
 		this.imp_original = imgProcessor;
 		String name = UIManager.getInstalledLookAndFeels()[3].getClassName();
 		try {
