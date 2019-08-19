@@ -20,30 +20,31 @@ import net.haesleinhuepf.clij.CLIJ;
  * @author Pedro Gómez-Gálvez, Pedro Rodríguez-Hiruela and Pablo Vicente-Munuera
  *
  */
-public class SegmentingNucleiGlands implements genericSegmentation {
-
+public class DefaultSegmentation implements genericSegmentation {
+	
 	private ImagePlus inputImp;
 	private ImagePlus outputImp;
 	private int strelRadius2D;
 	private int strelRadius3D;
 	private int toleranceWatershed;
-	
-	private static final int PIXELSTOOPENVOLUME = 50;
+	private int pixelsToOpenVolume;
 
-	public SegmentingNucleiGlands(ImagePlus imp) {
+	public DefaultSegmentation(ImagePlus imp) {
 		this.strelRadius2D = 4;
 		this.strelRadius3D = 3;
 		// 10 is a good start point for 8-bit images, 2000 for 16-bits. Minor
 		// tolerance more divided objects with watershed
 		this.toleranceWatershed = 0;
 		this.inputImp = imp;
+		this.pixelsToOpenVolume = 50;
 	}
 
-	public SegmentingNucleiGlands(ImagePlus imp, int radius2D, int radius3D, int tolerance) {
+	public DefaultSegmentation(ImagePlus imp, int radius2D, int radius3D, int tolerance, int pixelsToOpenVolume) {
 		this.strelRadius2D = radius2D;
 		this.strelRadius3D = radius3D;
 		this.toleranceWatershed = tolerance;
 		this.inputImp = imp;
+		this.pixelsToOpenVolume = pixelsToOpenVolume;
 	}
 
 	/**
@@ -96,7 +97,7 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 		// Volume opening
 		System.out.println("Small volume opening");
 		IJ.log("Small volume opening");
-		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, PIXELSTOOPENVOLUME);
+		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, pixelsToOpenVolume);
 
 //		ImagePlus imgToShow = new ImagePlus("volumeOpening", imgFilterSmall);
 //		imgToShow.show();
@@ -127,5 +128,4 @@ public class SegmentingNucleiGlands implements genericSegmentation {
 		// progressBar.show(1);
 		this.outputImp = imp_segmentedFinal;
 	}
-
 }

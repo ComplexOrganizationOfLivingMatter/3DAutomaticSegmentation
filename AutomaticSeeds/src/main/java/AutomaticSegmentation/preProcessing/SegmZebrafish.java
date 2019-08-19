@@ -16,6 +16,11 @@ import inra.ijpb.morphology.Strel;
 import inra.ijpb.morphology.Strel3D;
 import net.haesleinhuepf.clij.CLIJ;
 
+/**
+ * 
+ * @author Pedro Gómez-Gálvez, Pedro Rodríguez-Hiruela and Pablo Vicente-Munuera
+ *
+ */
 public class SegmZebrafish implements genericSegmentation {
 	
 	private ImagePlus inputImp;
@@ -23,6 +28,7 @@ public class SegmZebrafish implements genericSegmentation {
 	private int strelRadius2D;
 	private int strelRadius3D;
 	private int toleranceWatershed;
+	
 	private static final int PIXELSTOOPENVOLUME = 20;
 
 	public SegmZebrafish(ImagePlus imp) {
