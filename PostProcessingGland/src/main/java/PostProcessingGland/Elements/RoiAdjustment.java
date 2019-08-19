@@ -17,7 +17,7 @@ import eu.kiaru.limeseg.struct.DotN;
 
 public class RoiAdjustment {
 
-	public float zScale;
+	public float zScale = (float) 4.06;
 	public int selectedCell;
 
 	/**
@@ -27,8 +27,8 @@ public class RoiAdjustment {
 	 * @param frame
 	 * @param id
 	 */
-	public void removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame, String id, float z_scale) {
-		zScale = z_scale;
+	public void removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame, String id) {
+		//zScale = z_scale;
 		for (int nCell = 0; nCell < allCells.size(); nCell++) {
 			float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).getCell3DAt(frame));
 			float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).getCell3DAt(frame));
@@ -45,7 +45,7 @@ public class RoiAdjustment {
 				ShapeRoi sNotOverlappingCell = new ShapeRoi(sOverlappingCell.not(sNewPolygonBackUp));
 				Roi[] overRoi = sNotOverlappingCell.getRois();
 				
-				PolygonRoi poly = getConcaveHull(overRoi);
+				PolygonRoi poly = getConcaveHull(overRoi, 100);
 				
 				// Convert the PolygonRoi in Dots and integrate with the dots of
 				// the other frames.
@@ -96,7 +96,7 @@ public class RoiAdjustment {
 	}
 	
 	// ConcaveHull algoritm
-	public PolygonRoi getConcaveHull(Roi[] rois) {
+	public PolygonRoi getConcaveHull(Roi[] rois, double threshold) {
 	GeometryFactory geoF = new GeometryFactory();
 	com.vividsolutions.jts.geom.Point[] allPoints = new com.vividsolutions.jts.geom.Point[rois.length];
 
@@ -109,7 +109,7 @@ public class RoiAdjustment {
 			Arrays.asList(allPoints));
 	Geometry geoP = geoF.buildGeometry(geoList);
 
-	ConcaveHull ch = new ConcaveHull(geoP, 100000);
+	ConcaveHull ch = new ConcaveHull(geoP, threshold);
 
 	Geometry newGeoP = ch.getConcaveHull();
 	Coordinate[] coords = newGeoP.getCoordinates();

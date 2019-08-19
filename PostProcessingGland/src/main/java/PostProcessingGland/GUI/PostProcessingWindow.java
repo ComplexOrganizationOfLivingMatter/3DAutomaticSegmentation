@@ -94,7 +94,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 	public PostProcessingWindow(ImagePlus raw_img) {
 		super(raw_img, new CustomCanvas(raw_img));
-		
+
 		this.initialDirectory = raw_img.getOriginalFileInfo().directory;
 		limeSeg = new LimeSeg();
 		LimeSeg.allCells = new ArrayList<Cell>();
@@ -127,10 +127,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		canvas = (CustomCanvas) super.getCanvas();
 		PostProcessingGland.callToolbarPolygon();
 
-		sliceSelector = new Scrollbar(Scrollbar.HORIZONTAL, 1, 1, 1, (imp.getStackSize() + 1));
+		sliceSelector = new Scrollbar(Scrollbar.HORIZONTAL, 1, 1, 1, (imp.getStackSize()));
 		sliceSelector.setVisible(true);
-		
-		zScale = (float) (raw_img.getFileInfo().pixelDepth / raw_img.getFileInfo().pixelWidth);
+
+		// zScale = (float) (raw_img.getFileInfo().pixelDepth /
+		// raw_img.getFileInfo().pixelWidth);
 		lumenDots = new Roi[imp.getStackSize() + 1];
 
 		initializeGUIItems(raw_img);
@@ -214,7 +215,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		btnSave = new JButton("Save Results");
 		btnSave.addActionListener(this);
 
-		btnLumen = new JButton("Add Lumen");
+		btnLumen = new JButton("Update Lumen");
 		btnLumen.addActionListener(this);
 
 		canvas.addComponentListener(new ComponentAdapter() {
@@ -256,7 +257,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		if (e.getSource() == btnInsert) {
 			this.addROI();
 			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
-					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, zScale);
+					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell);
 
 			checkOverlay.setSelectedIndex(1);
 			updateOverlay();
@@ -297,19 +298,20 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 						Roi[] sliceDots = new Roi[fileLumenDots.size()];
 						sliceDots = fileLumenDots.toArray(sliceDots);
 						/*
-						float[] xPoints = new float[sliceDots.length];
-						float[] yPoints = new float[sliceDots.length];
-						for (int i = 0; i < yPoints.length; i++) {
-							xPoints[i] = (float) (sliceDots[i].getXBase() + sliceDots[i].getFloatWidth());
-							yPoints[i] = (float) (sliceDots[i].getYBase() + sliceDots[i].getFloatHeight());
-						}
+						 * float[] xPoints = new float[sliceDots.length];
+						 * float[] yPoints = new float[sliceDots.length]; for
+						 * (int i = 0; i < yPoints.length; i++) { xPoints[i] =
+						 * (float) (sliceDots[i].getXBase() +
+						 * sliceDots[i].getFloatWidth()); yPoints[i] = (float)
+						 * (sliceDots[i].getYBase() +
+						 * sliceDots[i].getFloatHeight()); }
+						 * 
+						 * PointRoi poly = new PointRoi(xPoints, yPoints);
+						 * //Color colorCurrentCell = new Color(255, 255, 255);
+						 * //poly.setStrokeColor(colorCurrentCell);
+						 */
+						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots,1);
 
-						PointRoi poly = new PointRoi(xPoints, yPoints);
-						//Color colorCurrentCell = new Color(255, 255, 255);
-						//poly.setStrokeColor(colorCurrentCell);
-						*/
-						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots);
-						
 						Color colorCurrentCell = new Color(255, 255, 255);
 						lumenDots[zIndex].setStrokeColor(colorCurrentCell);
 					}
@@ -473,32 +475,40 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	}
 
 	public void removeCellLumenOverlap() {
-		for (int nFrame = 0; nFrame < imp.getStackSize(); nFrame++) {
+		for (int nFrame = 1; nFrame < imp.getStackSize()+1; nFrame++) {
 			for (int nCell = 0; nCell < all3dCells.size(); nCell++) {
-				if (lumenDots[nFrame] != null) {
+				if (lumenDots[nFrame-1] != null & all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) {
 
 					float[] xCell = all3dCells.get(nCell).getCoordinate("x", all3dCells.get(nCell).getCell3DAt(nFrame));
 					float[] yCell = all3dCells.get(nCell).getCoordinate("y", all3dCells.get(nCell).getCell3DAt(nFrame));
 
 					PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 2);
 					ShapeRoi r = new ShapeRoi(overlappingCell);
-					ShapeRoi lum = new ShapeRoi(lumenDots[nFrame]);
-					r.not(lum);
-					Roi[] overRoi = r.getRois();
+					ShapeRoi s = new ShapeRoi(overlappingCell);
+					ShapeRoi lum = new ShapeRoi(lumenDots[nFrame-1]);
+					s.and(lum);
+					if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
+						r.not(lum);
+						Roi[] overRoi = r.getRois();
+						
+						if (nCell != 41 && nFrame != 44) {
+							PolygonRoi poly = newCell.getConcaveHull(overRoi,100);
 
-					PolygonRoi poly = newCell.getConcaveHull(overRoi);
+							// Convert the PolygonRoi in Dots and integrate with
+							// the
+							// dots of
+							// the other frames.
+							// Later, replace the selected cell by the cell with
+							// the new
+							// region
+							ArrayList<DotN> dotsNewRegion = newCell.setOverlapRegion(nFrame, poly, r);
+							ArrayList<DotN> integratedDots = newCell.integrateNewRegion(dotsNewRegion,
+									all3dCells.get(nCell).dotsList, nFrame);
 
-					// Convert the PolygonRoi in Dots and integrate with the
-					// dots of
-					// the other frames.
-					// Later, replace the selected cell by the cell with the new
-					// region
-					ArrayList<DotN> dotsNewRegion = newCell.setOverlapRegion(nFrame, poly, r);
-					ArrayList<DotN> integratedDots = newCell.integrateNewRegion(dotsNewRegion,
-							all3dCells.get(nCell).dotsList, nFrame);
-
-					Cell3D newCell = new Cell3D(all3dCells.get(nCell).id_Cell, integratedDots);
-					all3dCells.set(nCell, newCell);
+							Cell3D newCell = new Cell3D(all3dCells.get(nCell).id_Cell, integratedDots);
+							all3dCells.set(nCell, newCell);
+						}
+					}
 
 				}
 			}
