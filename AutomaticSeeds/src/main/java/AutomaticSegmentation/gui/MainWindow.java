@@ -16,6 +16,7 @@ import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.commands.SphereSegAdvanced;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.ImageStack;
 import io.scif.img.ImgOpener;
 import net.imagej.patcher.LegacyInjector;
 
@@ -143,7 +144,7 @@ public class MainWindow extends JFrame {
 		//Functions
 		btPreLimeSeg.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				preLimeSeg = new PreLimeSegWindow(nucleiChannel.getChannelProcessor());
+				preLimeSeg = new PreLimeSegWindow(nucleiChannel.getProcessor());
 				preLimeSeg.pack();
 				preLimeSeg.setVisible(true);
 			}
@@ -181,8 +182,11 @@ public class MainWindow extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				cellOutlineChannel = IJ.openImage();
-				newOriginalFileName();
+				try {
+					originalImp = IJ.openImage();
+					newOriginalFileName();
+				} catch (Exception ex) {
+				}
 			}
 		});
 		
@@ -193,8 +197,8 @@ public class MainWindow extends JFrame {
 				if (((String) cbNucleiChannel.getSelectedItem()).equals("")){
 					nucleiChannel = null;
 				} else {
-					originalImp.setC(cbNucleiChannel.getSelectedIndex());
-					nucleiChannel = new ImagePlus("", originalImp.getChannelProcessor());
+					nucleiChannel = extractChannelOfStack(cbNucleiChannel.getSelectedIndex(), originalImp);
+					
 					lbNucleiFileName.setText("");
 				}
 			}
@@ -207,8 +211,7 @@ public class MainWindow extends JFrame {
 				if (((String) cbSegmentableChannel.getSelectedItem()).equals("")){
 					cellOutlineChannel = null;
 				} else {
-					originalImp.setC(cbSegmentableChannel.getSelectedIndex());
-					cellOutlineChannel = new ImagePlus("", originalImp.getChannelProcessor());
+					cellOutlineChannel = extractChannelOfStack(cbSegmentableChannel.getSelectedIndex(), originalImp);
 					lbCellOutlinesFileName.setText("");
 				}
 			}
@@ -220,7 +223,7 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				originalImp.setC(cbSegmentableChannel.getSelectedIndex());
 				
-				limeSegWindow = new LimeSegWindow(new ImagePlus("ToSegment", cellOutlineChannel.getChannelProcessor()));
+				limeSegWindow = new LimeSegWindow(cellOutlineChannel.duplicate());
 				limeSegWindow.pack();
 				limeSegWindow.setVisible(true);
 			}
@@ -314,6 +317,22 @@ public class MainWindow extends JFrame {
 			cbSegmentableChannel.addItem("Original file - C=" + numChannel);
 		}
 	}
+
+	/**
+	 * @param numChannel
+	 */
+	public ImagePlus extractChannelOfStack(int numChannel, ImagePlus originalImage) {
+		ImageStack newChannelStack = new ImageStack(originalImage.getWidth(), originalImage.getHeight());
+		
+		int indexToAdd = 0;
+		for (int numZ = 0; numZ < originalImage.getStackSize(); numZ++) {
+			indexToAdd = originalImage.getStackIndex(numChannel, numZ, originalImage.getFrame());
+			newChannelStack.addSlice(originalImage.getStack().getProcessor(indexToAdd));
+		}
+		return new ImagePlus("", newChannelStack);
+	}
+
+
 
 	/**
 	 * @param gc
