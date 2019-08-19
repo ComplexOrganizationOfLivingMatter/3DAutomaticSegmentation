@@ -17,7 +17,7 @@ import eu.kiaru.limeseg.struct.DotN;
 
 public class RoiAdjustment {
 
-	public float zScale = (float) 4.06;
+	public float zScale;
 	public int selectedCell;
 
 	/**
@@ -27,7 +27,8 @@ public class RoiAdjustment {
 	 * @param frame
 	 * @param id
 	 */
-	public void removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame, String id) {
+	public void removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame, String id, float z_scale) {
+		zScale = z_scale;
 		for (int nCell = 0; nCell < allCells.size(); nCell++) {
 			float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).getCell3DAt(frame));
 			float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).getCell3DAt(frame));

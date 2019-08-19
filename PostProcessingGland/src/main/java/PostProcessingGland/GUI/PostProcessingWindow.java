@@ -94,7 +94,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 	public PostProcessingWindow(ImagePlus raw_img) {
 		super(raw_img, new CustomCanvas(raw_img));
-
+		
 		this.initialDirectory = raw_img.getOriginalFileInfo().directory;
 		limeSeg = new LimeSeg();
 		LimeSeg.allCells = new ArrayList<Cell>();
@@ -127,12 +127,10 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		canvas = (CustomCanvas) super.getCanvas();
 		PostProcessingGland.callToolbarPolygon();
 
-		// String scale_zStack = JOptionPane.showInputDialog("Z_Scale: ");
-		// zScale = Float.parseFloat(scale_zStack);
-
 		sliceSelector = new Scrollbar(Scrollbar.HORIZONTAL, 1, 1, 1, (imp.getStackSize() + 1));
 		sliceSelector.setVisible(true);
-
+		
+		zScale = (float) (raw_img.getFileInfo().pixelDepth / raw_img.getFileInfo().pixelWidth);
 		lumenDots = new Roi[imp.getStackSize() + 1];
 
 		initializeGUIItems(raw_img);
@@ -258,7 +256,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		if (e.getSource() == btnInsert) {
 			this.addROI();
 			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
-					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell);
+					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, zScale);
 
 			checkOverlay.setSelectedIndex(1);
 			updateOverlay();
@@ -323,7 +321,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			//removeCellLumenOverlap();
+			removeCellLumenOverlap();
 			updateOverlay();
 		}
 
@@ -475,8 +473,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	}
 
 	public void removeCellLumenOverlap() {
-		for (int nFrame = 1; nFrame < imp.getStackSize(); nFrame++) {
-			for (int nCell = 1; nCell < all3dCells.size(); nCell++) {
+		for (int nFrame = 0; nFrame < imp.getStackSize(); nFrame++) {
+			for (int nCell = 0; nCell < all3dCells.size(); nCell++) {
 				if (lumenDots[nFrame] != null) {
 
 					float[] xCell = all3dCells.get(nCell).getCoordinate("x", all3dCells.get(nCell).getCell3DAt(nFrame));
