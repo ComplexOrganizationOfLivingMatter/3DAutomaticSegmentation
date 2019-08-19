@@ -123,7 +123,7 @@ public class PreLimeSegWindow extends JFrame {
 		cbPredefinedTypeSegmentation.addItem("Zebrafish multilayer");
 		
 		cbThresholdMethod = new JComboBox<ThresholdMethod>(ThresholdMethod.values());
-		cbThresholdMethod.setSelectedIndex(16);
+		cbThresholdMethod.setSelectedIndex(15);
 
 		// Add components
 		panel.add(btCreateROIs, "wrap");

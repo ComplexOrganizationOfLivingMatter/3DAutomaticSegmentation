@@ -177,16 +177,25 @@ public class MainWindow extends JFrame {
 			}
 		});
 		
+		btOpenOriginalImage.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				cellOutlineChannel = IJ.openImage();
+				newOriginalFileName();
+			}
+		});
+		
 		cbNucleiChannel.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
 				if (((String) cbNucleiChannel.getSelectedItem()).equals("")){
 					nucleiChannel = null;
 				} else {
 					originalImp.setC(cbNucleiChannel.getSelectedIndex());
 					nucleiChannel = new ImagePlus("", originalImp.getChannelProcessor());
+					lbNucleiFileName.setText("");
 				}
 			}
 		});
@@ -195,14 +204,12 @@ public class MainWindow extends JFrame {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
 				if (((String) cbSegmentableChannel.getSelectedItem()).equals("")){
-
 					cellOutlineChannel = null;
 				} else {
 					originalImp.setC(cbSegmentableChannel.getSelectedIndex());
-
 					cellOutlineChannel = new ImagePlus("", originalImp.getChannelProcessor());
+					lbCellOutlinesFileName.setText("");
 				}
 			}
 		});
@@ -219,82 +226,93 @@ public class MainWindow extends JFrame {
 			}
 		});
 		
-		this.addWindowListener(new WindowListener() {
+//		this.addWindowListener(new WindowListener() {
+//
+//			@Override
+//			public void windowClosing(WindowEvent e) {
+//				// TODO Auto-generated method stub
+//			}
+//
+//			@Override
+//			public void windowActivated(WindowEvent e) {
+//				// TODO Auto-generated method stub
+//
+//			}
+//
+//			@Override
+//			public void windowClosed(WindowEvent e) {
+//				// TODO Auto-generated method stub
+//
+//			}
+//
+//			@Override
+//			public void windowDeactivated(WindowEvent e) {
+//				// TODO Auto-generated method stub
+//
+//			}
+//
+//			@Override
+//			public void windowDeiconified(WindowEvent e) {
+//				// TODO Auto-generated method stub
+//
+//			}
+//
+//			@Override
+//			public void windowIconified(WindowEvent e) {
+//				// TODO Auto-generated method stub
+//
+//			}
+//
+//			@Override
+//			public void windowOpened(WindowEvent e) {
+//				// TODO Auto-generated method stub
+//				
+//				int response;
+//				
+//				while (originalImp == null) {
+//					response = JOptionPane.showConfirmDialog(getParent(), "Do you want to use the open stack or another one?", "Confirm",
+//					        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+//					
+//					if (response == JOptionPane.NO_OPTION) {
+//						IJ.open();
+//						try {
+//							originalImp = IJ.getImage();
+//						} catch (Exception ex) {
+//							// TODO: handle exception
+//						}
+//					} else if (response == JOptionPane.YES_OPTION) {
+//						try {
+//							originalImp = IJ.getImage();
+//						} catch (Exception ex) {
+//							// TODO: handle exception
+//						}
+//					}
+//				}
+//				
+//				newOriginalFileName();
+//				
+//				originalImp.show();
+//			}
+//		});
+	}
 
-			@Override
-			public void windowClosing(WindowEvent e) {
-				// TODO Auto-generated method stub
-			}
 
-			@Override
-			public void windowActivated(WindowEvent e) {
-				// TODO Auto-generated method stub
 
-			}
+	/**
+	 * 
+	 */
+	private void newOriginalFileName() {
+		cbNucleiChannel.removeAllItems();
+		cbSegmentableChannel.removeAllItems();
+		lbOriginalFileName.setText(originalImp.getOriginalFileInfo().fileName);
 
-			@Override
-			public void windowClosed(WindowEvent e) {
-				// TODO Auto-generated method stub
+		cbNucleiChannel.addItem("");
+		cbSegmentableChannel.addItem("");
 
-			}
-
-			@Override
-			public void windowDeactivated(WindowEvent e) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void windowDeiconified(WindowEvent e) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void windowIconified(WindowEvent e) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void windowOpened(WindowEvent e) {
-				// TODO Auto-generated method stub
-				
-				int response;
-				
-				while (originalImp == null) {
-					response = JOptionPane.showConfirmDialog(getParent(), "Do you want to use the open stack or another one?", "Confirm",
-					        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-					
-					if (response == JOptionPane.NO_OPTION) {
-						IJ.open();
-						try {
-							originalImp = IJ.getImage();
-						} catch (Exception ex) {
-							// TODO: handle exception
-						}
-					} else if (response == JOptionPane.YES_OPTION) {
-						try {
-							originalImp = IJ.getImage();
-						} catch (Exception ex) {
-							// TODO: handle exception
-						}
-					}
-				}
-				
-				String fileName = originalImp.getOriginalFileInfo().fileName;
-				
-				cbNucleiChannel.addItem("");
-				cbSegmentableChannel.addItem("");
-				
-				for (int numChannel = 0; numChannel < originalImp.getNChannels(); numChannel++) {
-					cbNucleiChannel.addItem("C=" + numChannel);
-					cbSegmentableChannel.addItem("C=" + numChannel);
-				}
-				
-				originalImp.show();
-			}
-		});
+		for (int numChannel = 0; numChannel < originalImp.getNChannels(); numChannel++) {
+			cbNucleiChannel.addItem("Original file - C=" + numChannel);
+			cbSegmentableChannel.addItem("Original file - C=" + numChannel);
+		}
 	}
 
 	/**
