@@ -60,35 +60,72 @@ public class MainWindow extends JFrame {
 	private JLabel lbNucleiChannel;
 	private JLabel lbSegmentableChannel;
 	
-	private ImagePlus workingImp;
+	private ImagePlus originalImp;
+	private ImagePlus nucleiChannel;
+	private ImagePlus cellOutlineChannel;
+	private JLabel lbNucleiFileName;
+	private JButton btNucleiOpenFile;
+	private JLabel lbCellOutlinesFileName;
+	private JButton btCellOutlinesOpenFile;
+	private JLabel lbOriginalImage;
+	private JLabel lbOriginalFileName;
+	private JButton btOpenOriginalImage;
+	private JLabel lbEmptyLabel;
 
 	/**
 	 * @throws HeadlessException
 	 */
 	public MainWindow() throws HeadlessException {
+		
+		cellOutlineChannel = null;
+		nucleiChannel = null;
+		
+		// GUI
 		getContentPane().setLayout(new GridLayout(2, 0, 0, 0));
 		
-		imageChannelsPanel = new JPanel(new GridLayout(2, 2));
+		imageChannelsPanel = new JPanel(new GridLayout(3, 4));
 		buttonsPanel = new JPanel(new GridLayout(1, 3));
 		getContentPane().add(imageChannelsPanel);
 		getContentPane().add(buttonsPanel);
 
+		//Row 1: Original image
+		lbOriginalImage = new JLabel("Original image");
+		lbOriginalFileName = new JLabel("");
+		btOpenOriginalImage = new JButton("Open");
+		lbEmptyLabel = new JLabel("");
+		
+		imageChannelsPanel.add(lbOriginalImage);
+		imageChannelsPanel.add(lbOriginalFileName);
+		imageChannelsPanel.add(lbEmptyLabel);
+		imageChannelsPanel.add(btOpenOriginalImage);
+		
+		//Row 2: Nuclei channel
 		cbNucleiChannel = new JComboBox<String>();
 		
-		lbNucleiChannel = new JLabel("Nuclei Channel");
+		lbNucleiChannel = new JLabel("Nuclei channel");
 		lbNucleiChannel.setLabelFor(cbNucleiChannel);
 		
+		
+		lbNucleiFileName = new JLabel("");
+		btNucleiOpenFile = new JButton("Open");
 
 		imageChannelsPanel.add(lbNucleiChannel);
 		imageChannelsPanel.add(cbNucleiChannel);
+		imageChannelsPanel.add(lbNucleiFileName);
+		imageChannelsPanel.add(btNucleiOpenFile);
 		
+		//Row 3: Cell outline channel
 		cbSegmentableChannel = new JComboBox<String>();
-		lbSegmentableChannel = new JLabel("Channel to segment");
+		lbSegmentableChannel = new JLabel("Cell outline channel");
 		lbSegmentableChannel.setLabelFor(cbSegmentableChannel);
+		
+		lbCellOutlinesFileName = new JLabel("");
+		btCellOutlinesOpenFile = new JButton("Open");
 		
 		imageChannelsPanel.add(lbSegmentableChannel);
 		imageChannelsPanel.add(cbSegmentableChannel);
-		
+		imageChannelsPanel.add(lbCellOutlinesFileName);
+		imageChannelsPanel.add(btCellOutlinesOpenFile);
 		
 		
 		//Buttons panel
@@ -101,12 +138,72 @@ public class MainWindow extends JFrame {
 		JButton btPostLimeSeg = new JButton("Postprocess LimeSeg's output");
 		buttonsPanel.add(btPostLimeSeg);
 		
+		
+		
 		//Functions
 		btPreLimeSeg.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				preLimeSeg = new PreLimeSegWindow();
+				preLimeSeg = new PreLimeSegWindow(nucleiChannel.getChannelProcessor());
 				preLimeSeg.pack();
 				preLimeSeg.setVisible(true);
+			}
+		});
+		
+		btNucleiOpenFile.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				try {
+					nucleiChannel = IJ.openImage();
+					lbNucleiFileName.setText(nucleiChannel.getOriginalFileInfo().fileName);
+					cbNucleiChannel.setSelectedIndex(0);
+				} catch (Exception ex) {
+					
+				}
+			}
+		});
+		
+		btCellOutlinesOpenFile.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				try {
+					cellOutlineChannel = IJ.openImage();
+					lbCellOutlinesFileName.setText(cellOutlineChannel.getOriginalFileInfo().fileName);
+					cbSegmentableChannel.setSelectedIndex(0);
+				} catch (Exception ex) {
+					
+				}
+			}
+		});
+		
+		cbNucleiChannel.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if (((String) cbNucleiChannel.getSelectedItem()).equals("")){
+					nucleiChannel = null;
+				} else {
+					originalImp.setC(cbNucleiChannel.getSelectedIndex());
+					nucleiChannel = new ImagePlus("", originalImp.getChannelProcessor());
+				}
+			}
+		});
+		
+		cbSegmentableChannel.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if (((String) cbSegmentableChannel.getSelectedItem()).equals("")){
+
+					cellOutlineChannel = null;
+				} else {
+					originalImp.setC(cbSegmentableChannel.getSelectedIndex());
+
+					cellOutlineChannel = new ImagePlus("", originalImp.getChannelProcessor());
+				}
 			}
 		});
 		
@@ -114,9 +211,9 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				workingImp.setC(cbSegmentableChannel.getSelectedIndex());
+				originalImp.setC(cbSegmentableChannel.getSelectedIndex());
 				
-				limeSegWindow = new LimeSegWindow(new ImagePlus("ToSegment", workingImp.getChannelProcessor()));
+				limeSegWindow = new LimeSegWindow(new ImagePlus("ToSegment", cellOutlineChannel.getChannelProcessor()));
 				limeSegWindow.pack();
 				limeSegWindow.setVisible(true);
 			}
@@ -165,34 +262,37 @@ public class MainWindow extends JFrame {
 				
 				int response;
 				
-				while (workingImp == null) {
+				while (originalImp == null) {
 					response = JOptionPane.showConfirmDialog(getParent(), "Do you want to use the open stack or another one?", "Confirm",
 					        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 					
 					if (response == JOptionPane.NO_OPTION) {
 						IJ.open();
 						try {
-							workingImp = IJ.getImage();
+							originalImp = IJ.getImage();
 						} catch (Exception ex) {
 							// TODO: handle exception
 						}
 					} else if (response == JOptionPane.YES_OPTION) {
 						try {
-							workingImp = IJ.getImage();
+							originalImp = IJ.getImage();
 						} catch (Exception ex) {
 							// TODO: handle exception
 						}
 					}
 				}
 				
-				String fileName = workingImp.getOriginalFileInfo().fileName;
+				String fileName = originalImp.getOriginalFileInfo().fileName;
 				
-				for (int numChannel = 0; numChannel < workingImp.getNChannels(); numChannel++) {
-					cbNucleiChannel.addItem(fileName + " - C=" + numChannel);
-					cbSegmentableChannel.addItem(fileName + " - C=" + numChannel);
+				cbNucleiChannel.addItem("");
+				cbSegmentableChannel.addItem("");
+				
+				for (int numChannel = 0; numChannel < originalImp.getNChannels(); numChannel++) {
+					cbNucleiChannel.addItem("C=" + numChannel);
+					cbSegmentableChannel.addItem("C=" + numChannel);
 				}
 				
-				workingImp.show();
+				originalImp.show();
 			}
 		});
 	}

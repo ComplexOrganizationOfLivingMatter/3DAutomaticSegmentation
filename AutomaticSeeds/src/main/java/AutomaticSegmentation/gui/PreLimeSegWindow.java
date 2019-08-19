@@ -13,6 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import AutomaticSegmentation.preProcessing.DefaultSegmentation;
 import AutomaticSegmentation.preProcessing.SegmZebrafish;
 import AutomaticSegmentation.preProcessing.SegmentingNucleiGlands;
 import AutomaticSegmentation.preProcessing.ThresholdMethod;
@@ -24,6 +25,7 @@ import ij.gui.OvalRoi;
 import ij.gui.ProgressBar;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
+import ij.process.ImageProcessor;
 import ij3d.ContentConstants;
 import ij3d.Image3DUniverse;
 import inra.ijpb.geometry.Box3D;
@@ -48,16 +50,12 @@ public class PreLimeSegWindow extends JFrame {
 	/**
 	 * 
 	 */
-	private JButton btNewImage;
-	/**
-	 * 
-	 */
 	private JComboBox<String> cbPredefinedTypeSegmentation;
 
 	/**
 	 * 
 	 */
-	private JButton btCurrentImageButton;
+	private JButton btRun;
 	
 	/**
 	 * 
@@ -83,11 +81,14 @@ public class PreLimeSegWindow extends JFrame {
 	 * 
 	 */
 	private ImagePlus imp_segmented;
+	
+	private ImageProcessor imp_original;
 
 	/**
 	 * 
 	 */
-	public PreLimeSegWindow() {
+	public PreLimeSegWindow(ImageProcessor imgProcessor) {
+		this.imp_original = imgProcessor;
 		String name = UIManager.getInstalledLookAndFeels()[3].getClassName();
 		try {
 			UIManager.setLookAndFeel(name);
@@ -109,8 +110,7 @@ public class PreLimeSegWindow extends JFrame {
 
 		
 		// Init GUI elements
-		btNewImage = new JButton("Open new image");
-		btCurrentImageButton = new JButton("Select current image");
+		btRun = new JButton("Run!");
 		btCreateROIs = new JButton("Create ROIs");
 		jcbGPUEnable = new JCheckBox("Enable GPU operations");
 		jcbGPUEnable.setSelected(true);
@@ -118,23 +118,22 @@ public class PreLimeSegWindow extends JFrame {
 
 		cbPredefinedTypeSegmentation = new JComboBox<String>();
 		cbPredefinedTypeSegmentation.addItem("Select a type of DAPI segmentation");
+		cbPredefinedTypeSegmentation.addItem("Default");
 		cbPredefinedTypeSegmentation.addItem("Salivary glands (cylinder monolayer)");
 		cbPredefinedTypeSegmentation.addItem("Zebrafish multilayer");
 		
 		cbThresholdMethod = new JComboBox<ThresholdMethod>(ThresholdMethod.values());
-		cbThresholdMethod.setSelectedIndex(0);
+		cbThresholdMethod.setSelectedIndex(16);
 
 		// Add components
 		panel.add(btCreateROIs, "wrap");
 		panel.add(cbThresholdMethod, "wrap");
-		panel.add(btNewImage, "wrap");
-		panel.add(btCurrentImageButton, "wrap");
 		panel.add(cbPredefinedTypeSegmentation, "wrap");
 		cbPredefinedTypeSegmentation.setSelectedIndex(0);
+		panel.add(btRun, "wrap");
 		panel.add(progressBar);
 
-		btCurrentImageButton.setEnabled(false);
-		btNewImage.setEnabled(false);
+		btRun.setEnabled(false);
 		// Associate this panel to the window
 		getContentPane().add(panel);
 
@@ -142,40 +141,18 @@ public class PreLimeSegWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 
 				if (cbPredefinedTypeSegmentation.getSelectedIndex() == 0) {
-					btCurrentImageButton.setEnabled(false);
-					btNewImage.setEnabled(false);
+					btRun.setEnabled(false);
 				} else {
-					btCurrentImageButton.setEnabled(true);
-					btNewImage.setEnabled(true);
+					btRun.setEnabled(true);
 				}
 
 			}
 		});
-		btNewImage.addActionListener(new ActionListener() {
+
+		btRun.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// Open the image (ADD any exception)
-				ImagePlus imp = IJ.openImage();
-				/*
-				 * WindowManager.addWindow(imp.getWindow()); imp.show();
-				 */
-				imp.show();
-				
-				imp_segmented = runSegmentation(imp.duplicate());
-
+				imp_segmented = runSegmentation(new ImagePlus("Nuclei", imp_original.duplicate()));
 				// visualization3D (imp_segmented);
-
-			}
-		});
-
-		btCurrentImageButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// Get image from the workspace (ADD any exception)
-				ImagePlus imp = IJ.getImage();
-
-				imp_segmented = runSegmentation(imp.duplicate());
-
-				// visualization3D (imp_segmented);
-
 			}
 		});
 		
@@ -245,8 +222,7 @@ public class PreLimeSegWindow extends JFrame {
 	 */
 	public ImagePlus runSegmentation(ImagePlus input) {
 		cbPredefinedTypeSegmentation.setEnabled(false);
-		btCurrentImageButton.setEnabled(false);
-		btNewImage.setEnabled(false);
+		btRun.setEnabled(false);
 		
 		ImagePlus imp_segmented = null;
 		
@@ -257,12 +233,17 @@ public class PreLimeSegWindow extends JFrame {
 
 		switch (cbPredefinedTypeSegmentation.getSelectedIndex()) {
 		case 1:
+			DefaultSegmentation defaultGland = new DefaultSegmentation(input);
+			defaultGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
+			imp_segmented = defaultGland.getOuputImp().duplicate();
+			break;
+		case 2:
 			SegmentingNucleiGlands segGland = new SegmentingNucleiGlands(input);
 			segGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
 			imp_segmented = segGland.getOuputImp().duplicate();
 			break;
 
-		case 2:
+		case 3:
 			SegmZebrafish segZeb = new SegmZebrafish(input);
 			segZeb.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
 			imp_segmented = segZeb.getOuputImp().duplicate();
