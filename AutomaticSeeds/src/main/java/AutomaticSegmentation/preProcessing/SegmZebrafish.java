@@ -1,4 +1,4 @@
-package AutomaticSegmentation;
+package AutomaticSegmentation.preProcessing;
 
 import java.util.Arrays;
 

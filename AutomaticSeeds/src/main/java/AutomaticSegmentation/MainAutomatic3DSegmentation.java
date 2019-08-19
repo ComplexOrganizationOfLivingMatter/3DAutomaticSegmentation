@@ -10,7 +10,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.plugin.PlugIn;
 
-public class MainAutomaticNucleiSegmentation implements PlugIn {
+public class MainAutomatic3DSegmentation implements PlugIn {
 
 	// Window
 	MainWindow mainWindow;
@@ -18,7 +18,7 @@ public class MainAutomaticNucleiSegmentation implements PlugIn {
 	/**
 	 * Constructor by default
 	 */
-	public MainAutomaticNucleiSegmentation() {
+	public MainAutomatic3DSegmentation() {
 		super();
 	}
 
@@ -31,7 +31,7 @@ public class MainAutomaticNucleiSegmentation implements PlugIn {
 	public static void main(String[] args) {
 		// set the plugins.dir property to make the plugin appear in the Plugins
 		// menu
-		Class<?> clazz = MainAutomaticNucleiSegmentation.class;
+		Class<?> clazz = MainAutomatic3DSegmentation.class;
 		String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
 		String pluginsDir = url.substring("file:".length(),
 				url.length() - clazz.getName().length() - ".class".length() - "classes".length());

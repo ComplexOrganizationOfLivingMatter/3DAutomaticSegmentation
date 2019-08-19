@@ -13,9 +13,9 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import AutomaticSegmentation.SegmZebrafish;
-import AutomaticSegmentation.SegmentingNucleiGlands;
-import AutomaticSegmentation.ThresholdMethod;
+import AutomaticSegmentation.preProcessing.SegmZebrafish;
+import AutomaticSegmentation.preProcessing.SegmentingNucleiGlands;
+import AutomaticSegmentation.preProcessing.ThresholdMethod;
 import AutomaticSegmentation.utils.Utils;
 import ij.IJ;
 import ij.ImagePlus;

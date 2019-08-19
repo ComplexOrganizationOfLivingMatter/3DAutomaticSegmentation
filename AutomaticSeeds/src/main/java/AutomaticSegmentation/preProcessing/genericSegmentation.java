@@ -1,7 +1,7 @@
 /**
  * 
  */
-package AutomaticSegmentation;
+package AutomaticSegmentation.preProcessing;
 
 import java.awt.Color;
 import java.awt.image.ColorModel;
