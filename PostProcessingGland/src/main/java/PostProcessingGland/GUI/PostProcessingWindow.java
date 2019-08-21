@@ -91,6 +91,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	public ArrayList<Cell3D> all3dCells;
 	public Roi[] lumenDots;
 	public float zScale;
+	public int threshold; 
 
 	public PostProcessingWindow(ImagePlus raw_img) {
 		super(raw_img, new CustomCanvas(raw_img));
@@ -132,6 +133,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		// zScale = (float) (raw_img.getFileInfo().pixelDepth /
 		// raw_img.getFileInfo().pixelWidth);
+		threshold = 5; 
 		lumenDots = new Roi[imp.getStackSize() + 1];
 
 		initializeGUIItems(raw_img);
@@ -257,7 +259,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		if (e.getSource() == btnInsert) {
 			this.addROI();
 			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
-					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell);
+					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, threshold);
 
 			checkOverlay.setSelectedIndex(1);
 			updateOverlay();
@@ -310,7 +312,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 						 * //Color colorCurrentCell = new Color(255, 255, 255);
 						 * //poly.setStrokeColor(colorCurrentCell);
 						 */
-						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots,1);
+						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots,threshold);
 
 						Color colorCurrentCell = new Color(255, 255, 255);
 						lumenDots[zIndex].setStrokeColor(colorCurrentCell);
@@ -346,9 +348,12 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					all3dCells, canvas.getImage(), false, lumenDots);
 			canvas.getImage().setOverlay(newOverlay);
 		}
-
+		
 		canvas.setImageUpdated();
 		canvas.repaint();
+		ImagePlus imgimg= new ImagePlus("", canvas.getImage().getStack());
+		imgimg.setOverlay(canvas.getImage().getOverlay());
+		imgimg.show();
 	}
 
 	ChangeListener listener = new ChangeListener() {
@@ -488,12 +493,20 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					ShapeRoi lum = new ShapeRoi(lumenDots[nFrame-1]);
 					s.and(lum);
 					if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
-						r.not(lum);
-						Roi[] overRoi = r.getRois();
+						Roi[] overRoi = newCell.preProcessingConcaveHull(r.not(lum));
+								r.not(lum);	
 						
-						if (nCell != 41 && nFrame != 44) {
-							PolygonRoi poly = newCell.getConcaveHull(overRoi,100);
-
+							//PolygonRoi poly = newCell.getConcaveHull(overRoi,threshold);
+								
+								float[] xPoints = new float[overRoi.length];
+								float[] yPoints = new float[overRoi.length]; 
+								for (int i = 0; i < yPoints.length; i++) { 
+									xPoints[i] =(float) (overRoi[i].getXBase() + overRoi[i].getFloatWidth()); 
+									yPoints[i] = (float) (overRoi[i].getYBase() + overRoi[i].getFloatHeight()); 
+									}
+								PolygonRoi poly = new PolygonRoi(xPoints, yPoints,2);
+								Color colorCurrentCell = new Color(255, 255, 255);
+								poly.setStrokeColor(colorCurrentCell);
 							// Convert the PolygonRoi in Dots and integrate with
 							// the
 							// dots of
@@ -507,13 +520,10 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 							Cell3D newCell = new Cell3D(all3dCells.get(nCell).id_Cell, integratedDots);
 							all3dCells.set(nCell, newCell);
-						}
 					}
 
 				}
 			}
-			int pepe = 0;
-			pepe++;
 		}
 	}
 
