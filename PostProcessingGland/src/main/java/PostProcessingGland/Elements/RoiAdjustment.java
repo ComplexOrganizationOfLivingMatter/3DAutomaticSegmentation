@@ -5,10 +5,14 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.opensphere.geometry.algorithm.ConcaveHull;
 
 import ij.gui.PointRoi;
@@ -31,20 +35,16 @@ public class RoiAdjustment {
 	 */
 	public void removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame, String id, int threshold) {
 		//zScale = z_scale;
+		PolygonRoi newPolygonInterpolated = new PolygonRoi(newPolygon.getInterpolatedPolygon(2, false), 2);
 		for (int nCell = 0; nCell < allCells.size(); nCell++) {
 			float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).getCell3DAt(frame));
 			float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).getCell3DAt(frame));
 
 			PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 2);
 			
-			
 			ShapeRoi sNewPolygon = new ShapeRoi(newPolygon);
 			ShapeRoi sNewPolygonBackUp = new ShapeRoi(sNewPolygon);
 			ShapeRoi sOverlappingCell = new ShapeRoi(overlappingCell);
-			// 
-			
-			
-			
 			ShapeRoi overlappingZone = new ShapeRoi(sNewPolygon.and(sOverlappingCell));
 
 			if ((overlappingZone.getFloatWidth() != 0 | overlappingZone.getFloatHeight() != 0)
@@ -68,7 +68,7 @@ public class RoiAdjustment {
 		}
 
 		// Replace the cell with the mistaken overlay by the new cell.
-		ArrayList<DotN> dotsNewRegion = setNewRegion(frame, newPolygon);
+		ArrayList<DotN> dotsNewRegion = setNewRegion(frame, newPolygonInterpolated);
 		ArrayList<DotN> integratedDots = integrateNewRegion(dotsNewRegion, allCells.get(selectedCell).dotsList, frame);
 		Cell3D newCell = new Cell3D(id, integratedDots);
 		allCells.set(selectedCell, newCell);
@@ -80,14 +80,43 @@ public class RoiAdjustment {
 	 * @return
 	 */
 	public Roi[] preProcessingConcaveHull(ShapeRoi shapeRoi) {
-		Roi[] overRoi = shapeRoi.getRois();
-		ArrayList<Roi> overRoiList = new ArrayList<Roi>(Arrays.asList(overRoi));
-		 Rectangle mask = new Rectangle(shapeRoi.getBounds());
+		Roi[] overlappingRois = shapeRoi.getRois();
+		ArrayList<Float> xPointsList = new ArrayList<Float>();
+		ArrayList<Float> yPointsList = new ArrayList<Float>();
+
+		for (int i = 0; i < overlappingRois.length; i++) {
+			Point[] insidePoints = new Point[overlappingRois[i].getContainedPoints().length];
+			insidePoints = overlappingRois[i].getContainedPoints();
+			for (int j = 0; j < insidePoints.length; j++) {
+				xPointsList.add((float) insidePoints[j].getX());
+				yPointsList.add((float) insidePoints[j].getY());
+			}
+		}
+		
+		float[] xPointsRois = ArrayUtils.toPrimitive(xPointsList.toArray(new Float[xPointsList.size()]));
+		float[] yPointsRois = ArrayUtils.toPrimitive(yPointsList.toArray(new Float[yPointsList.size()]));
+		
+		PointRoi p = new PointRoi(xPointsRois, yPointsRois);
+		ArrayList<Roi> overRoiList = new ArrayList<Roi>();
+		Rectangle mask = new Rectangle(p.getBounds());
+		 
+//		 Collections.sort(overRoiList, new Comparator<Roi>() {
+//
+//				@Override
+//				public int compare(Roi r1, Roi r2) {
+//					Point[] p1 = r1.getContainedPoints();
+//					Point[] p2 = r2.getContainedPoints();
+//					return Double.compare(p1[0].getX(), p2[0].getX());
+//					//TODO: check if p1 has more than 1 element
+//				}
+//			});
+//		 
 		 
 			for (int x = 0; x < mask.getWidth(); x++) {
 				 for (int y = 0; y < mask.getHeight(); y++) {
-					 if (shapeRoi.contains(x+mask.getLocation().x, y+mask.getLocation().y)) {
-						overRoiList.add(new Roi(mask.getLocation().x + x, mask.getLocation().y + y, 0, 0));
+					 if (p.contains(x+mask.getLocation().x, y+mask.getLocation().y)) {
+						PointRoi point = new PointRoi(x + mask.getLocation().x, y + mask.getLocation().y);
+						overRoiList.add(point);
 					}
 				}
 				
