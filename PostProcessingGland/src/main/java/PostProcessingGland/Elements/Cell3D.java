@@ -24,7 +24,7 @@ public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 	public Cell3D(String id, ArrayList<DotN> dots) {
 		dotsList = new ArrayList<DotN>();
 		id_Cell = new String();
-		this.dotsList = dots;
+		this.dotsList.addAll(dots);
 		this.id_Cell = id;
 	}
 
@@ -92,6 +92,12 @@ public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 	public void clearCell() {
 		if (this.dotsList != null) {
 			this.dotsList.clear();
+		}
+	}
+	
+	public void addDotsList(ArrayList<DotN> dots) {
+		for (int nDot = 0; nDot < dots.size(); nDot++) {
+			this.dotsList.add(dots.get(nDot));
 		}
 	}
 
