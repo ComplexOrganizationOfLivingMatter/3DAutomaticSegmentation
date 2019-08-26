@@ -55,7 +55,7 @@ public class OpeningWindow extends JFrame {
 		
 		// Not close Fiji when PostProcessingGland is closed
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
+		
 		this.addWindowListener(new WindowListener() {
 
 			@Override
@@ -128,79 +128,74 @@ public class OpeningWindow extends JFrame {
 	}
 
 	private void initPostProcessingWindow() {
+		// TODO Auto-generated method stub
+		try {
+			ImagePlus raw_img = IJ.openImage();
+
+			/**
+			 * Create the image processing window. However, restrictions are applied with
+			 * the selected image. It cannot exceed 3000 neither in width nor height.
+			 */
+
+			if (raw_img != null) {
+				this.initialDirectory = raw_img.getOriginalFileInfo().directory;
+
+				postprocessingWindow = new PostProcessingWindow(raw_img);
+				postprocessingWindow.pack();
+
+				postprocessingWindow.addWindowListener(new WindowListener() {
+
+					@Override
+					public void windowOpened(WindowEvent e) {
 						// TODO Auto-generated method stub
-						try {
-							ImagePlus raw_img = IJ.openImage();
-							
-							/**
-							 * Create the image processing window. However, restrictions are applied with
-							 * the selected image. It cannot exceed 3000 neither in width nor height.
-							 */
-
-							
-							if (raw_img != null) {
-				        if (raw_img.getHeight() >= 3000 || raw_img.getWidth() >= 3000) {
-				          JOptionPane.showMessageDialog(centralPanel.getParent(),
-				              "Warning! Large image detected. It may take time to process it.");
-				        }
-				        
-				        this.initialDirectory = raw_img.getOriginalFileInfo().directory;
-				        
-				        postprocessingWindow = new PostProcessingWindow(raw_img);
-				        postprocessingWindow.pack();
-
-				        postprocessingWindow.addWindowListener(new WindowListener() {
-
-				          @Override
-				          public void windowOpened(WindowEvent e) {
-				            // TODO Auto-generated method stub
-				            btnOpenButton.setEnabled(false);
-				          }
-
-				          @Override
-				          public void windowClosing(WindowEvent e) {
-				            // TODO Auto-generated method stub
-				            btnOpenButton.setEnabled(true);
-				          }
-
-				          @Override
-				          public void windowClosed(WindowEvent e) {
-				            // TODO Auto-generated method stub
-
-				          }
-
-				          @Override
-				          public void windowIconified(WindowEvent e) {
-				            // TODO Auto-generated method stub
-
-				          }
-
-				          @Override
-				          public void windowDeiconified(WindowEvent e) {
-				            // TODO Auto-generated method stub
-
-				          }
-
-				          @Override
-				          public void windowActivated(WindowEvent e) {
-				            // TODO Auto-generated method stub
-
-				          }
-
-				          @Override
-				          public void windowDeactivated(WindowEvent e) {
-				            // TODO Auto-generated method stub
-
-				          }
-
-				        });
-
-							} else {
-								JOptionPane.showMessageDialog(centralPanel.getParent(), "You must introduce a valid image or set of images.");
-							}
-
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
+						btnOpenButton.setEnabled(false);
 					}
+
+					@Override
+					public void windowClosing(WindowEvent e) {
+						// TODO Auto-generated method stub
+						btnOpenButton.setEnabled(true);
+					}
+
+					@Override
+					public void windowClosed(WindowEvent e) {
+						// TODO Auto-generated method stub
+
+					}
+
+					@Override
+					public void windowIconified(WindowEvent e) {
+						// TODO Auto-generated method stub
+
+					}
+
+					@Override
+					public void windowDeiconified(WindowEvent e) {
+						// TODO Auto-generated method stub
+
+					}
+
+					@Override
+					public void windowActivated(WindowEvent e) {
+						// TODO Auto-generated method stub
+
+					}
+
+					@Override
+					public void windowDeactivated(WindowEvent e) {
+						// TODO Auto-generated method stub
+
+					}
+
+				});
+
+			} else {
+				JOptionPane.showMessageDialog(centralPanel.getParent(),
+						"You must introduce a valid image or set of images.");
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }

@@ -69,6 +69,10 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	
+
+	public static int TRESHOLD = 5; 
+	
 	private IOXmlPlyLimeSeg OutputLimeSeg;
 	private CustomCanvas canvas;
 	private Cell LimeSegCell;
@@ -98,7 +102,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	public ArrayList<Cell3D> all3dCells;
 	public Roi[] lumenDots;
 	public float zScale;
-	public int threshold; 
 
 	public PostProcessingWindow(ImagePlus raw_img) {
 		super(raw_img, new CustomCanvas(raw_img));
@@ -109,7 +112,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		LimeSeg.allCells = new ArrayList<Cell>();
 		LimeSegCell = new Cell();
 		all3dCells = new ArrayList<Cell3D>();
-		threshold = 10; 
 		File dir = new File(this.initialDirectory.toString() + "/OutputLimeSeg");
 		File[] files = dir.listFiles(new FilenameFilter() {
 
@@ -320,7 +322,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					if (fileLumenDots.size() != 0) {
 						Roi[] sliceDots = new Roi[fileLumenDots.size()];
 						sliceDots = fileLumenDots.toArray(sliceDots);
-						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots,threshold);
+						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots,TRESHOLD);
 						Color colorCurrentCell = new Color(255, 255, 255);
 						lumenDots[zIndex].setStrokeColor(colorCurrentCell);
 					}
@@ -516,7 +518,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	//PolygonRoi polygon = new PolygonRoi(prePolygon.getInterpolatedPolygon(2, false),2);
 	//Roi[] allRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
 		
-	PolygonRoi poly = newCell.getConcaveHull(allRoi, threshold);
+	PolygonRoi poly = newCell.getConcaveHull(allRoi, TRESHOLD);
 	PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(2, false),2);
 	
 	//Roi[] allRois = newCell.preProcessingConcaveHull(polygon);
