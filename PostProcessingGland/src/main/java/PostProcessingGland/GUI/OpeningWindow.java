@@ -25,6 +25,11 @@ import java.awt.event.MouseEvent;
 
 public class OpeningWindow extends JFrame {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
 	private JPanel centralPanel = new JPanel();
 	private String initialDirectory;
 	private PostProcessingWindow postprocessingWindow;
