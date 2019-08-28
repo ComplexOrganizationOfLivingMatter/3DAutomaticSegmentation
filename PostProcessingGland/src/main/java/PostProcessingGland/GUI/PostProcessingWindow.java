@@ -36,8 +36,11 @@ import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.opensphere.geometry.algorithm.ConcaveHull;
+import org.w3c.dom.Document;
 
 import com.google.common.primitives.Ints;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -71,7 +74,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private static final long serialVersionUID = 1L;
 	
 
-	public static int TRESHOLD = 5; 
+	public static int TRESHOLD = 5 ; 
 	
 	private IOXmlPlyLimeSeg OutputLimeSeg;
 	private CustomCanvas canvas;
@@ -114,7 +117,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		all3dCells = new ArrayList<Cell3D>();
 		File dir = new File(this.initialDirectory.toString() + "/OutputLimeSeg");
 		File[] files = dir.listFiles(new FilenameFilter() {
-
 			public boolean accept(File dir, String name) {
 				return name.startsWith("cell_");
 			}
@@ -191,7 +193,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		sliceSelector.setBackground(newColor);
 		leftPanel.add(canvas, "wrap");
 		leftPanel.add(sliceSelector, "growx");
-		;
+		
 
 		processingFrame.setLayout(new MigLayout());
 		processingFrame.add(leftPanel);
@@ -280,12 +282,12 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			ImagePlus imgimg= new ImagePlus("", canvas.getImage().getStack());
 			imgimg.setOverlay(canvas.getImage().getOverlay());
 			imgimg.show();
-//			this.addROI();
-//			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
-//					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, threshold);
+/*			this.addROI();
+			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
+					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, TRESHOLD);
 
-//			checkOverlay.setSelectedIndex(1);
-//			updateOverlay();
+			checkOverlay.setSelectedIndex(1);
+			updateOverlay();*/
 		}
 
 		if (e.getSource() == btnSave) {
@@ -295,7 +297,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		if (e.getSource() == btnLumen) {
 			File dirLumen = new File(this.initialDirectory.toString() + "/SegmentedLumen");
 			File[] filesLumen = dirLumen.listFiles(new FilenameFilter() {
-
 				public boolean accept(File dir, String name) {
 					return name.startsWith("SegmentedLumen");
 				}
@@ -357,7 +358,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					all3dCells, canvas.getImage(), false, lumenDots);
 			canvas.getImage().setOverlay(newOverlay);
 		}
-		
+				
 		canvas.setImageUpdated();
 		canvas.repaint();
 	}
@@ -417,7 +418,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		allCells.forEach(c -> {
 
 			// Now writes all ply files for CellT object
-
+			
 			CellT cellt = new CellT(c, 1);
 			cellt.dots = c.dotsList;
 			String pathCell = path + File.separator + "cell_" + c.id_Cell + File.separator;
@@ -487,7 +488,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	}
 
 	public ArrayList<DotN> processLimeSegOutput(ArrayList<DotN> dots, int frame) {
-		/*
+	/*	
 		Collections.sort(dots, new Comparator<DotN>() {
 
 			@Override
@@ -513,7 +514,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 	PolygonRoi prePolygon = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
 	
-	Roi[] allRoi = newCell.getRois(prePolygon .getXCoordinates(), prePolygon .getYCoordinates(), prePolygon);
+	Roi[] allRoi = newCell.getRois(prePolygon.getXCoordinates(), prePolygon.getYCoordinates(), prePolygon);
 	
 	//PolygonRoi polygon = new PolygonRoi(prePolygon.getInterpolatedPolygon(2, false),2);
 	//Roi[] allRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
@@ -544,7 +545,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
 						Roi[] overRoi = newCell.preProcessingConcaveHull(r.not(lum));
 						
-						PolygonRoi poly = newCell.getConcaveHull(overRoi,threshold);
+						PolygonRoi poly = newCell.getConcaveHull(overRoi,TRESHOLD);
 						
 //						float[] xPoints = new float[overRoi.length];
 //						float[] yPoints = new float[overRoi.length]; 
