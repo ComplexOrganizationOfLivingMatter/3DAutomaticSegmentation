@@ -74,7 +74,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private static final long serialVersionUID = 1L;
 	
 
-	public static int TRESHOLD = 5 ; 
+	public static double TRESHOLD = 5 ; 
 	
 	private IOXmlPlyLimeSeg OutputLimeSeg;
 	private CustomCanvas canvas;
@@ -520,7 +520,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	//Roi[] allRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
 		
 	PolygonRoi poly = newCell.getConcaveHull(allRoi, TRESHOLD);
-	PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(2, false),2);
+	PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(2, true),7);
 	
 	//Roi[] allRois = newCell.preProcessingConcaveHull(polygon);
     Roi[] allRois = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
