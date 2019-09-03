@@ -24,6 +24,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="C:/Users/victo/Downloads/Epigraph_-1.0.2-SNAPSHOT.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Epigraph_"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

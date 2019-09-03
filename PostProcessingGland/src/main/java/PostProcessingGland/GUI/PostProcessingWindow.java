@@ -3,6 +3,8 @@ package PostProcessingGland.GUI;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Scrollbar;
 import java.awt.event.ActionEvent;
@@ -11,6 +13,8 @@ import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -30,6 +34,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -74,7 +79,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private static final long serialVersionUID = 1L;
 	
 
-	public static double TRESHOLD = 5 ; 
+	public static double THRESHOLD = 5 ; 
 	
 	private IOXmlPlyLimeSeg OutputLimeSeg;
 	private CustomCanvas canvas;
@@ -97,6 +102,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private JComboBox<String> checkLumen;
 	private JSpinner cellSpinner;
 	private Scrollbar sliceSelector;
+	private Scrollbar zoom;
+	private JLabel slicePanel;
 
 	private PolygonRoi polyRoi;
 
@@ -146,22 +153,26 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 				return cel1.getID().compareTo(cel2.getID());
 			}
 		});
-
+		
 		canvas = (CustomCanvas) super.getCanvas();
 		PostProcessingGland.callToolbarPolygon();
 
 		sliceSelector = new Scrollbar(Scrollbar.HORIZONTAL, 1, 1, 1, (imp.getStackSize()));
 		sliceSelector.setVisible(true);
-
-		// zScale = (float) (raw_img.getFileInfo().pixelDepth /
-		// raw_img.getFileInfo().pixelWidth);
 		
-		lumenDots = new Roi[imp.getStackSize() + 1];
+		//Zoom
+		zoom = new Scrollbar(Scrollbar.VERTICAL, 1, 1, 1, 10);
+		zoom.setVisible(false);		
 
+		//zScale = (float) (raw_img.getFileInfo().pixelDepth /
+		// raw_img.getFileInfo().pixelWidth);
+	
+		lumenDots = new Roi[imp.getStackSize() + 1];
+		
 		initializeGUIItems(raw_img);
 		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false, lumenDots));
 		initGUI(raw_img);
-
+		
 	}
 
 	private void initGUI(ImagePlus raw_img) {
@@ -185,15 +196,19 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		rightPanel.add(upRightPanel, "wrap, gapy 10::50, aligny top");
 		rightPanel.add(middlePanel, "aligny center, wrap, gapy 10::50");
 		rightPanel.add(bottomRightPanel);
+		rightPanel.add(slicePanel,"aligny center, wrap, south");
 
 		leftPanel.setLayout(new MigLayout());
+		
 		canvas.setMaximumSize(new Dimension(1024, 1024));
 		canvas.setMinimumSize(new Dimension(500, 500));
+		leftPanel.setMaximumSize(new Dimension(1024, 1024));
+		leftPanel.setMinimumSize(new Dimension(500, 500));
 		Color newColor = new Color(200, 200, 255);
-		sliceSelector.setBackground(newColor);
-		leftPanel.add(canvas, "wrap");
+		sliceSelector.setBackground(newColor);		
+		leftPanel.add(canvas,"wrap");
 		leftPanel.add(sliceSelector, "growx");
-		
+		//leftPanel.add(zoom,"west, growy");
 
 		processingFrame.setLayout(new MigLayout());
 		processingFrame.add(leftPanel);
@@ -215,6 +230,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		bottomRightPanel = new JPanel();
 		rightPanel = new JPanel();
 		leftPanel = new JPanel();
+		slicePanel = new JLabel();
 
 		cellSpinner = new JSpinner();
 		cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
@@ -255,8 +271,57 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			public void adjustmentValueChanged(AdjustmentEvent e) {
 				int z = sliceSelector.getValue();
 				imp.setSlice(z);
+				int p = imp.getStackSize();
+				int s = sliceSelector.getValue();
+				String slice = "Current slice:" + Integer.toString(s) + "/" + Integer.toString(p);
+				slicePanel.setText(slice);
 				updateOverlay();
 
+			}
+		});
+		//add Zoom
+		processingFrame.addMouseWheelListener(new MouseWheelListener() {
+			public void mouseWheelMoved(MouseWheelEvent e) 
+			{
+				// TODO Auto-generated method stub
+				int rotation = e.getWheelRotation();
+				int amount = e.getScrollAmount();
+				boolean ctrl = (e.getModifiers()&Event.CTRL_MASK)!=0;
+				if (IJ.debugMode) {
+					IJ.log("mouseWheelMoved: "+e);
+					IJ.log("  type: "+e.getScrollType());
+					IJ.log("  ctrl: "+ctrl);
+					IJ.log("  rotation: "+rotation);
+					IJ.log("  amount: "+amount);
+				}
+				if (amount<1) amount=1;
+				if (rotation==0)
+					return;
+				int width = canvas.getWidth();
+				int height = canvas.getHeight();
+				Rectangle srcRect = canvas.getSrcRect();
+				int xstart = srcRect.x;
+				int ystart = srcRect.y;
+				if ((ctrl||IJ.shiftKeyDown()) && canvas!=null) {
+					Point loc = canvas.getCursorLoc();
+					int x = canvas.screenX(loc.x);
+					int y = canvas.screenY(loc.y);
+					if (rotation<0)
+						canvas.zoomIn(x, y);
+					else
+						canvas.zoomOut(x, y);
+					return;
+				} else if (IJ.spaceBarDown() || srcRect.height==height) {
+					srcRect.x += rotation*amount*Math.max(width/200, 1);
+					if (srcRect.x<0) srcRect.x = 0;
+					if (srcRect.x+srcRect.width>width) srcRect.x = width-srcRect.width;
+				} else {
+					srcRect.y += rotation*amount*Math.max(height/200, 1);
+					if (srcRect.y<0) srcRect.y = 0;
+					if (srcRect.y+srcRect.height>height) srcRect.y = height-srcRect.height;
+				}
+				if (srcRect.x!=xstart || srcRect.y!=ystart)
+					updateOverlay();
 			}
 		});
 	}
@@ -269,7 +334,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	 */
 	@Override
 	public void actionPerformed(ActionEvent e) {
-
 		if (e.getSource() == checkOverlay) {
 			updateOverlay();
 		}
@@ -279,19 +343,19 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		}
 
 		if (e.getSource() == btnInsert) {
-			ImagePlus imgimg= new ImagePlus("", canvas.getImage().getStack());
-			imgimg.setOverlay(canvas.getImage().getOverlay());
-			imgimg.show();
-/*			this.addROI();
+			this.addROI();
 			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
-					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, TRESHOLD);
+					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, (int) THRESHOLD);
 
 			checkOverlay.setSelectedIndex(1);
-			updateOverlay();*/
+			updateOverlay();
 		}
 
 		if (e.getSource() == btnSave) {
-			this.savePlyFile(all3dCells, initialDirectory);
+			//this.savePlyFile(all3dCells, initialDirectory);
+			ImagePlus imgimg= new ImagePlus("", canvas.getImage().getStack());
+			imgimg.setOverlay(canvas.getImage().getOverlay());
+			imgimg.show();
 		}
 
 		if (e.getSource() == btnLumen) {
@@ -323,7 +387,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					if (fileLumenDots.size() != 0) {
 						Roi[] sliceDots = new Roi[fileLumenDots.size()];
 						sliceDots = fileLumenDots.toArray(sliceDots);
-						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots,TRESHOLD);
+						lumenDots[zIndex] = newCell.getConcaveHull(sliceDots,THRESHOLD);
 						Color colorCurrentCell = new Color(255, 255, 255);
 						lumenDots[zIndex].setStrokeColor(colorCurrentCell);
 					}
@@ -348,7 +412,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		canvas.clearOverlay();
 		canvas.getImage().getOverlay().clear();
-
+		
 		if (checkOverlay.getSelectedItem() == "All overlays") {
 			Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1), canvas.getImage().getCurrentSlice(),
 					all3dCells, canvas.getImage(), true, lumenDots);
@@ -519,8 +583,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	//PolygonRoi polygon = new PolygonRoi(prePolygon.getInterpolatedPolygon(2, false),2);
 	//Roi[] allRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
 		
-	PolygonRoi poly = newCell.getConcaveHull(allRoi, TRESHOLD);
-	PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(2, true),7);
+	PolygonRoi poly = newCell.getConcaveHull(allRoi, THRESHOLD);
+	PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(2, false),2);
 	
 	//Roi[] allRois = newCell.preProcessingConcaveHull(polygon);
     Roi[] allRois = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
