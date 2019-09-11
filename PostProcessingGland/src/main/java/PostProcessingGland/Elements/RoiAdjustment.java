@@ -130,22 +130,25 @@ public class RoiAdjustment {
 		return overRois;
 	}
 	
+	//Order Points
+	
 	// ConcaveHull algoritm
 	public PolygonRoi getConcaveHull(Roi[] rois, double threshold) {
 	GeometryFactory geoF = new GeometryFactory();
 	com.vividsolutions.jts.geom.Point[] allPoints = new com.vividsolutions.jts.geom.Point[rois.length];
-
+	
 	for (int i = 0; i < rois.length; i++) {
 		Coordinate coordinate = new Coordinate(rois[i].getXBase(), rois[i].getYBase());
 		allPoints[i] = geoF.createPoint(coordinate);
 	}
-
+	
 	ArrayList<com.vividsolutions.jts.geom.Point> geoList = new ArrayList<com.vividsolutions.jts.geom.Point>(
 			Arrays.asList(allPoints));
+
 	Geometry geoP = geoF.buildGeometry(geoList);
-
+	
 	ConcaveHull ch = new ConcaveHull(geoP, threshold);
-
+	
 	Geometry newGeoP = ch.getConcaveHull();
 	Coordinate[] coords = newGeoP.getCoordinates();
 	int[] xPoints = new int[coords.length];
@@ -227,5 +230,291 @@ public class RoiAdjustment {
 		}
 		return dotsNewRegion;
 	}
+	
+	//Remueve los puntos más alejados en X y luego Y, no funciona para todos
+	public PolygonRoi orderConcave(PolygonRoi poly)
+	{
+		FloatPolygon p = poly.getFloatPolygon();
+		float[] x = p.xpoints;
+		float[] y = p.ypoints;
+		int dis = p.npoints;
+		float[] NewX = new float[dis];
+		float[] NewY = new float[dis];
+		double difm = 0;
+		double difM = 0;
+		//Remove X
+		for(int i = 0; i < dis; i++)
+		{
+			if (i == 0)
+			{
 
+				NewX[i] = x[i];
+				NewY[i] = y[i];
+
+			}
+			else
+			{
+				if(i == dis-1)
+				{
+
+					NewX[i] = x[i];
+					NewY[i] = y[i];
+					
+				}
+				else
+				{
+					difm = x[i] - x[i-1];
+					difM = x[i] - x[i+1];
+					double absm = Math.abs(difm);
+					double absM = Math.abs(difM);
+					if(absm > 15 || absM > 15 )
+					{
+						NewX[i] = 0;
+						NewY[i] = 0;
+					}
+					else
+					{
+						NewX[i] = x[i];
+						NewY[i] = y[i];
+					}
+				}
+				
+			}
+		}
+		
+		//Remove 0
+		int newdis = 0;
+		for(int i = 0;i < dis; i++)
+			if(NewX[i]!=0)
+				newdis = newdis+1;
+		float[] xNew = new float [newdis];
+		float[] yNew = new float [newdis];
+		int j = 0;
+		for(int i=0; i < dis; i++)
+		{
+			if(NewX[i] != 0)
+			{
+				xNew[j] = NewX[i];
+				yNew[j] = NewY[i];
+				j++;
+			}
+		}
+		
+		//Remove Y
+		float[] nX = new float[newdis];
+		float[] nY = new float[newdis];
+		for(int i = 0; i < newdis; i++)
+		{
+			if (i == 0)
+			{
+
+				nX[i] = xNew[i];
+				nY[i] = yNew[i];
+
+			}
+			else
+			{
+				if(i == newdis-1)
+				{
+					nX[i] = xNew[i];
+					nY[i] = yNew[i];
+				}
+				else
+				{
+					difm = yNew[i] - yNew[i-1];
+					difM = yNew[i] - yNew[i+1];
+					double absm = Math.abs(difm);
+					double absM = Math.abs(difM);
+					if(absm > 15 || absM > 15 )
+					{
+						nX[i] = 0;
+						nY[i] = 0;
+					}
+					else
+					{
+						nX[i] = xNew[i];
+						nY[i] = yNew[i];
+					}
+				}
+				
+			}
+		}
+		
+		//Remove 0
+		dis = 0;
+		for(int i = 0;i < newdis; i++)
+			if(nY[i]!=0)
+				dis = dis+1;
+		float[] X = new float [dis];
+		float[] Y = new float [dis];
+		j=0;
+		for(int i=0; i < newdis; i++)
+		{
+			if(nY[i] != 0)
+			{
+				X[j] = nX[i];
+				Y[j] = nY[i];
+				j++;
+			}
+		}
+		
+		PolygonRoi pol = new PolygonRoi(X,Y,dis,2);
+		PolygonRoi postPol = new PolygonRoi(pol.getInterpolatedPolygon(1, false),2);
+		FloatPolygon pet = postPol.getFloatPolygon();
+		return postPol;
+	}
+	//Ruemeve los puntos mas alejados en X y Y utilizando su distancia euclideana
+	//Los puntos más lejos al promedio de la distancia son eliminados, no funciona con todos
+	public PolygonRoi orderConcave2(PolygonRoi poly)
+	{
+		FloatPolygon p = poly.getFloatPolygon();
+		float[] x = p.xpoints;
+		float[] y = p.ypoints;
+		int dis = p.npoints;
+		float[] NewX = new float[dis];
+		float[] NewY = new float[dis];
+		float[] disEu = new float[dis];
+		float sum = 0;
+		float av = 0;
+		for (int i = 0; i < dis; i++)
+		{
+			if (i == dis-1)
+			{
+				disEu[i] = distEu(0,x[i],0,y[i]);
+				sum = sum + disEu[i];
+			}
+			else
+			{
+				disEu[i] = distEu(x[i+1],x[i],y[i+1],y[i]);
+				sum = sum + disEu[i];
+			}	
+		}
+		av = sum/dis;
+		//Remove points
+		for(int i = 0; i < dis; i++)
+		{
+			if (i == 0)
+				{
+					NewX[i] = x[i];
+					NewY[i] = y[i];
+				}
+			else
+				{
+					if(i == dis-1)
+					{
+						NewX[i] = x[i];
+						NewY[i] = y[i];	
+					}
+					else
+					{
+						if(disEu[i] > av)
+						{
+							NewX[i] = 0;
+							NewY[i] = 0;
+						}
+						else
+						{
+							NewX[i] = x[i];
+							NewY[i] = y[i];
+						}		
+					}
+				}
+		}	
+		//Remove 0
+		int newdis = 0;
+		for(int i = 0;i < dis; i++)
+			if(NewX[i]!=0)
+				newdis++;
+		float[] xNew = new float [newdis];
+		float[] yNew = new float [newdis];
+		int j = 0;
+		for(int i=0; i < dis; i++)
+			{
+				if(NewX[i] != 0)
+				{
+					xNew[j] = NewX[i];
+					yNew[j] = NewY[i];
+					j++;
+				}
+			}	
+		
+		PolygonRoi pol = new PolygonRoi(xNew,yNew,newdis,2);
+		PolygonRoi postPol = new PolygonRoi(pol.getInterpolatedPolygon(1, false),2);
+		//FloatPolygon pet = postPol.getFloatPolygon();
+		return postPol;
+	}	
+	
+	//Calcula la distancia euclideana
+	public float distEu (float x2,float x1, float y2, float y1)
+	{
+		float disEu = 0;
+			disEu = (float) Math.sqrt(Math.pow((x2-x1), 2) + Math.pow((y2-y1), 2));
+		return disEu;
+	}
+	
+	public PolygonRoi getOrderDots(PolygonRoi poly)
+	{
+		FloatPolygon p = poly.getFloatPolygon();
+		int dis = p.npoints;
+		if (dis == 0) {
+			return poly;
+		}
+		if (dis == 1) {
+			return poly;
+		}
+		if (dis == 2) {
+			return poly;
+		}
+
+		return orderDots(poly);
+	}
+	
+	
+	
+	//Ordena los puntos por su distancia euclideana
+	public PolygonRoi orderDots(PolygonRoi poly)
+	{
+		FloatPolygon p = poly.getFloatPolygon();
+		float[] x = p.xpoints;
+		float[] y = p.ypoints;
+		int dis = p.npoints;
+		float disEu[] = new float[dis];
+		float[] NAX = new float[dis];
+		float[] NAY = new float[dis];
+		int pos = 0;
+		for(int i = 0; i < dis; i++)
+		{
+			if(i == 0)
+			{
+				NAX[i] = x[i];
+				NAY[i] = y[i];
+				x[i] = 0;
+				y[i] = 0;
+			}
+			else
+			{
+				for(int k = 0; k < dis; k++)
+					disEu[k] = distEu(x[k],NAX[i-1],y[k],NAY[i-1]);
+				float men = disEu[0];
+				for(int k = 0; k < dis; k++)
+				{
+					float comp = disEu[k];
+					if(men > comp)
+					{
+						men = comp;
+						pos = k;
+					}
+				}
+				NAX[i] = x[pos];
+				NAY[i] = y[pos];
+				x[pos] = 0;
+				y[pos] = 0;
+			}
+						
+		}
+		PolygonRoi pol = new PolygonRoi(NAX,NAY,dis,2);
+		PolygonRoi postPol = new PolygonRoi(pol.getInterpolatedPolygon(1, false),2);
+		//FloatPolygon pet = postPol.getFloatPolygon();
+		return postPol;
+	}
 }

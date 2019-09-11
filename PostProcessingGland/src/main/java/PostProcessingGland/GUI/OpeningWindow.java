@@ -139,7 +139,7 @@ public class OpeningWindow extends JFrame {
 
 			if (raw_img != null) {
 				this.initialDirectory = raw_img.getOriginalFileInfo().directory;
-
+				
 				postprocessingWindow = new PostProcessingWindow(raw_img);
 				postprocessingWindow.pack();
 

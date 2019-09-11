@@ -64,10 +64,12 @@ import eu.kiaru.limeseg.struct.DotN;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.ImageWindow;
+import ij.gui.Line;
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
+import ij.process.FloatPolygon;
 import ij.gui.Overlay;
 import net.miginfocom.swing.MigLayout;
 
@@ -79,7 +81,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private static final long serialVersionUID = 1L;
 	
 
-	public static double THRESHOLD = 5 ; 
+	public static double THRESHOLD = 10 ; 
 	
 	private IOXmlPlyLimeSeg OutputLimeSeg;
 	private CustomCanvas canvas;
@@ -131,11 +133,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		for (File f : files) {
 			String path = f.toString();
 			LimeSegCell.id_Cell = path.substring(path.indexOf("_") + 1);
-			OutputLimeSeg.hydrateCellT(LimeSegCell, path);					
+			IOXmlPlyLimeSeg.hydrateCellT(LimeSegCell, path);					
 			Cell3D PostProcessCellCopy = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
 			PostProcessCell = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
 			PostProcessCell.clearCell();
-			for (int i = 0; i < raw_img.getStackSize(); i++) {
+			for (int i = 0; i < imp.getStackSize(); i++) {
 				if (PostProcessCellCopy.getCell3DAt(i).size() != 0) {
 					PostProcessCell.addDotsList(processLimeSegOutput(PostProcessCellCopy.getCell3DAt(i), i));
 				}
@@ -156,11 +158,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		
 		canvas = (CustomCanvas) super.getCanvas();
 		PostProcessingGland.callToolbarPolygon();
-
+		
 		sliceSelector = new Scrollbar(Scrollbar.HORIZONTAL, 1, 1, 1, (imp.getStackSize()));
 		sliceSelector.setVisible(true);
 		
-		//Zoom
+		//Zoom, create an invisible scrollbar to limit the canvas zone (I don't understand why)
 		zoom = new Scrollbar(Scrollbar.VERTICAL, 1, 1, 1, 10);
 		zoom.setVisible(false);		
 
@@ -202,13 +204,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		
 		canvas.setMaximumSize(new Dimension(1024, 1024));
 		canvas.setMinimumSize(new Dimension(500, 500));
-		leftPanel.setMaximumSize(new Dimension(1024, 1024));
-		leftPanel.setMinimumSize(new Dimension(500, 500));
 		Color newColor = new Color(200, 200, 255);
 		sliceSelector.setBackground(newColor);		
 		leftPanel.add(canvas,"wrap");
 		leftPanel.add(sliceSelector, "growx");
-		//leftPanel.add(zoom,"west, growy");
+		leftPanel.add(zoom,"west, growy");
 
 		processingFrame.setLayout(new MigLayout());
 		processingFrame.add(leftPanel);
@@ -321,7 +321,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					if (srcRect.y+srcRect.height>height) srcRect.y = height-srcRect.height;
 				}
 				if (srcRect.x!=xstart || srcRect.y!=ystart)
-					updateOverlay();
+					canvas.repaint();
 			}
 		});
 	}
@@ -575,16 +575,18 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		xPoints[i] = (int) dots.get(i).pos.x;
 		yPoints[i] = (int) dots.get(i).pos.y;
 	}
-
-	PolygonRoi prePolygon = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
+	PolygonRoi PrePolygon = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
+	
+	PolygonRoi prePolygon = newCell.getOrderDots(PrePolygon);
 	
 	Roi[] allRoi = newCell.getRois(prePolygon.getXCoordinates(), prePolygon.getYCoordinates(), prePolygon);
 	
 	//PolygonRoi polygon = new PolygonRoi(prePolygon.getInterpolatedPolygon(2, false),2);
 	//Roi[] allRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
-		
-	PolygonRoi poly = newCell.getConcaveHull(allRoi, THRESHOLD);
-	PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(2, false),2);
+	
+	PolygonRoi poly = newCell.getConcaveHull(allRoi, THRESHOLD); 
+
+	PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(1,false),2);
 	
 	//Roi[] allRois = newCell.preProcessingConcaveHull(polygon);
     Roi[] allRois = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
@@ -640,5 +642,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			}
 		}
 	}*/
-
+	
+	
 }
