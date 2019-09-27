@@ -114,7 +114,14 @@ public class RoiAdjustment {
 	 * @return
 	 */
 	public Roi[] preProcessingConcaveHull(ShapeRoi shape) {
-		PolygonRoi polygon = new PolygonRoi(shape.getContainedFloatPoints(),2);
+		PolygonRoi polygon = new PolygonRoi(shape.getContainedFloatPoints(),6);
+		
+		/*System.out.println("S not");
+		FloatPolygon p = polygon.getFloatPolygon();
+		for(int i=0; i<p.npoints;i++)
+		{
+			System.out.println(p.xpoints[i]+" "+p.ypoints[i]);
+		}*/
 		ArrayList<Roi> overRoiList = new ArrayList<Roi>();
 		Rectangle mask = new Rectangle(polygon.getBounds());
 

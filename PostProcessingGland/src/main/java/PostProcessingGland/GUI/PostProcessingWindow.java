@@ -454,20 +454,20 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 							PolygonRoi poly = new PolygonRoi(xPoints, yPoints,pos, 6);
 							PolygonRoi poly2 = new PolygonRoi(x, y,6);
 							
-							Roi[] roiDots = newCell.getRois(poly.getXCoordinates(), poly.getYCoordinates(), poly);
-							Roi[] roiDots2 = newCell.getRois(poly2.getXCoordinates(), poly2.getYCoordinates(), poly2);
+							//Roi[] roiDots = newCell.getRois(poly.getXCoordinates(), poly.getYCoordinates(), poly);
+							//Roi[] roiDots2 = newCell.getRois(poly2.getXCoordinates(), poly2.getYCoordinates(), poly2);
 							
-							PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
-							PolygonRoi lum2 = newCell.getConcaveHull(roiDots2, THRESHOLD);
-							lumenDots[zIndex][0] = lum;
-							lumenDots[zIndex][1] = lum2;
+							//PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
+							//PolygonRoi lum2 = newCell.getConcaveHull(roiDots2, THRESHOLD);
+							lumenDots[zIndex][0] = poly;
+							lumenDots[zIndex][1] = poly2;
 						}
 						else
 						{
 							PolygonRoi poly = new PolygonRoi(xPoints, yPoints, 6);							
-							Roi[] roiDots = newCell.getRois(poly.getXCoordinates(), poly.getYCoordinates(), poly);							
-							PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
-							lumenDots[zIndex][0] = lum;
+							//Roi[] roiDots = newCell.getRois(poly.getXCoordinates(), poly.getYCoordinates(), poly);							
+							//PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
+							lumenDots[zIndex][0] = poly;
 						}
 						
 						
@@ -488,7 +488,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			//removeCellLumenOverlap();
+			removeCellLumenOverlap();
 			updateOverlay();
 		}
 
@@ -686,24 +686,101 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	return newDots;
 	}
 	
-/*	public void removeCellLumenOverlap() {
-		for (int nFrame = 1; nFrame < imp.getStackSize()+1; nFrame++) {
-			for (int nCell = 0; nCell < all3dCells.size(); nCell++) {
-				if (lumenDots[nFrame-1] != null & all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) {
+	public void removeCellLumenOverlap() 
+	{
+		for (int nFrame = 30; nFrame < imp.getStackSize()+1; nFrame++) 
+		{
+			for (int nCell = 1; nCell < all3dCells.size(); nCell++) 
+			{
+				if (lumenDots[nFrame-1] != null & all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) 
+				{
 
 					float[] xCell = all3dCells.get(nCell).getCoordinate("x", all3dCells.get(nCell).getCell3DAt(nFrame));
 					float[] yCell = all3dCells.get(nCell).getCoordinate("y", all3dCells.get(nCell).getCell3DAt(nFrame));
-
-					PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 2);
+								
+					PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
 					ShapeRoi r = new ShapeRoi(overlappingCell);
 					ShapeRoi s = new ShapeRoi(overlappingCell);
-					ShapeRoi lum = new ShapeRoi(lumenDots[nFrame-1]);
-					s.and(lum);
-					if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
-						Roi[] overRoi = newCell.preProcessingConcaveHull(r.not(lum));
+					ShapeRoi s2 = new ShapeRoi(overlappingCell);
+					
+					if(lumenDots[nFrame-1][1] != null)
+					{
+						java.awt.Polygon l = lumenDots[nFrame-1][0].getPolygon();
+						ShapeRoi lum = new ShapeRoi(l);
+						s.and(lum);
+						java.awt.Polygon l2 = lumenDots[nFrame-1][1].getPolygon();
+						ShapeRoi lum2 = new ShapeRoi(l2);
 						
-						PolygonRoi poly = newCell.getConcaveHull(overRoi,THRESHOLD);
+						s2.and(lum2);					
+						if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) 
+							{
+								
+								PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(),6);					
+								
+								Roi[] overRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
+																						
+								PolygonRoi poly = newCell.getConcaveHull(overRoi,1);	
+								
+								/*System.out.println("ConcaveHull");
+								FloatPolygon p = poly.getFloatPolygon();
+								for(int i=0; i<p.npoints;i++)
+								{
+									System.out.println(p.xpoints[i]+" "+p.ypoints[i]);
+								}*/
+								
+								ArrayList<DotN> dotsNewRegion = newCell.setNewRegion(nFrame, poly);
+								ArrayList<DotN> integratedDots = newCell.integrateNewRegion(dotsNewRegion,
+										all3dCells.get(nCell).dotsList, nFrame);
+									
+								Cell3D newCell = new Cell3D(all3dCells.get(nCell).id_Cell, integratedDots);
+								all3dCells.set(nCell, newCell);
+								
+							}
+						if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0)
+								{
+									PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(),6);	
+									
+									Roi[] overRoi2 = newCell.getRois(polygon2.getXCoordinates(), polygon2.getYCoordinates(), polygon2);
+									
+									PolygonRoi poly2 = newCell.getConcaveHull(overRoi2,1);
+									
+									ArrayList<DotN> dotsNewRegion2 = newCell.setNewRegion(nFrame, poly2);
+									ArrayList<DotN> integratedDots2 = newCell.integrateNewRegion(dotsNewRegion2,
+											all3dCells.get(nCell).dotsList, nFrame);
+									
+									Cell3D newCell2 = new Cell3D(all3dCells.get(nCell).id_Cell, integratedDots2);
+									all3dCells.set(nCell, newCell2);
+								}
 						
+					}	
+					else if(lumenDots[nFrame-1][0] != null)
+					{
+						java.awt.Polygon l1 = lumenDots[nFrame-1][0].getPolygon();											
+						ShapeRoi lum1 = new ShapeRoi(l1);
+						s.and(lum1);
+						
+						if ((s.getFloatWidth() != 0 | s.getFloatHeight() != 0)) 
+						{
+							
+							//Roi[] overRoi = newCell.preProcessingConcaveHull(r.not(lum1));
+														
+							PolygonRoi polygon = new PolygonRoi(r.not(lum1).getContainedFloatPoints(),6);
+					
+							Roi[] overRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
+							
+							PolygonRoi poly = newCell.getConcaveHull(overRoi,1);							
+							
+							ArrayList<DotN> dotsNewRegion = newCell.setNewRegion(nFrame, poly);
+							
+							ArrayList<DotN> integratedDots = newCell.integrateNewRegion(dotsNewRegion,
+									all3dCells.get(nCell).dotsList, nFrame);
+															
+
+							Cell3D newCell = new Cell3D(all3dCells.get(nCell).id_Cell, integratedDots);
+							all3dCells.set(nCell, newCell);
+
+						}	
+					}
 //						float[] xPoints = new float[overRoi.length];
 //						float[] yPoints = new float[overRoi.length]; 
 //						for (int i = 0; i < yPoints.length; i++) { 
@@ -721,18 +798,21 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 							// Later, replace the selected cell by the cell with
 							// the new
 							// region
-							ArrayList<DotN> dotsNewRegion = newCell.setNewRegion(nFrame, poly);
+							/*ArrayList<DotN> dotsNewRegion = newCell.setNewRegion(nFrame, poly);
 							ArrayList<DotN> integratedDots = newCell.integrateNewRegion(dotsNewRegion,
+									all3dCells.get(nCell).dotsList, nFrame);
+							ArrayList<DotN> dotsNewRegion2 = newCell.setNewRegion(nFrame, poly2);
+							ArrayList<DotN> integratedDots2 = newCell.integrateNewRegion(dotsNewRegion2,
 									all3dCells.get(nCell).dotsList, nFrame);
 
 							Cell3D newCell = new Cell3D(all3dCells.get(nCell).id_Cell, integratedDots);
 							all3dCells.set(nCell, newCell);
+							Cell3D newCell2 = new Cell3D(all3dCells.get(nCell).id_Cell, integratedDots2);
+							all3dCells.set(nCell, newCell2);*/
 					}
 
 				}
 			}
-		}
-	}
-*/	
+		}	
 	
 }
