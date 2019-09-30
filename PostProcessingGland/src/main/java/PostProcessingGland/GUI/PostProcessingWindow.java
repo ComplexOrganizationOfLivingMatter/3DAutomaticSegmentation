@@ -180,7 +180,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		// raw_img.getFileInfo().pixelWidth);
 	
 		lumenDots = new PolygonRoi[imp.getStackSize()+1][2];
-		
+		loadLumen();
+		removeCellLumenOverlap();
 		initializeGUIItems(raw_img);
 		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false, lumenDots));
 		initGUI(raw_img);
@@ -356,8 +357,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		if (e.getSource() == btnInsert) {
 			this.addROI();
 			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
-					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, (int) THRESHOLD);
-
+					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, lumenDots);
 			checkOverlay.setSelectedIndex(1);
 			updateOverlay();
 		}
@@ -370,127 +370,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		}
 
 		if (e.getSource() == btnLumen) {
-			File dirLumen = new File(this.initialDirectory.toString() + "/SegmentedLumen");
-			File[] filesLumen = dirLumen.listFiles(new FilenameFilter() {
-				public boolean accept(File dir, String name) {
-					return name.startsWith("SegmentedLumen");
-				}
-			});
-			int zIndex = 0;
-
-			try {
-				for (File f : filesLumen) {
-					FileInputStream lumen = new FileInputStream(f);
-					BufferedImage lumen_img = ImageIO.read(lumen);
-					ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
-					
-					ImageProcessor lumImg = lumenImg.getProcessor();
-					ImageProcessor lumImg2 = lumImg.duplicate();
-					lumImg2.findEdges();
-					ImagePlus lumEd = new ImagePlus ("LumenEdge",lumImg2);	
-
-					ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
-					
-					for (int y = 0; y < lumEd.getProcessor().getWidth(); y++) {
-						for (int x = 0; x < lumEd.getProcessor().getHeight(); x++) {
-							if (lumEd.getProcessor().getPixel(x,y) == 65535) {
-								PointRoi dot = new PointRoi(x, y);
-								fileLumenDots.add(dot);
-							}
-						}
-					}
-								
-					
-					if (fileLumenDots.size() != 0) {		
-						Roi[] sliceDots = new Roi[fileLumenDots.size()];
-						sliceDots = fileLumenDots.toArray(sliceDots);	
-																
-						float[] xPoints = new float[sliceDots.length];
-						float[] yPoints = new float[sliceDots.length];
-						int dis = sliceDots.length;
-						float disEu[] = new float[dis];
-
-						for (int i = 0; i < sliceDots.length; i++) {
-							xPoints[i] = (float) sliceDots[i].getXBase();
-							yPoints[i] = (float) sliceDots[i].getYBase();
-						}
-										
-						for (int i = 0; i < dis; i++)
-						{
-							if (i == dis-1)
-							{
-								disEu[i] = newCell.distEu(xPoints[i],xPoints[i],yPoints[i],yPoints[i]);
-							}
-							else
-							{
-								disEu[i] = newCell.distEu(xPoints[i+1],xPoints[i],yPoints[i+1],yPoints[i]);	
-							}
-						}
-						
-						int pos = dis;
-						int rest = 0;
-						
-						for (int i = 0; i < dis; i++)
-						{
-							if(disEu[i] > 100)
-							{
-								pos = i;
-								rest = dis-i;
-							}
-						}
-					
-						if(rest!= 0)
-						{
-							float x[] = new float [rest-1];
-							float y[] = new float [rest-1];
-							int j = 0;
-							for(int i = pos+1; i < dis; i++)
-							{
-								x[j] = xPoints[i];
-								y[j] = yPoints[i];
-								j++;
-							}
-														
-							PolygonRoi poly = new PolygonRoi(xPoints, yPoints,pos, 6);
-							PolygonRoi poly2 = new PolygonRoi(x, y,2);
-							
-							PolygonRoi postpol = new PolygonRoi(poly2.getInterpolatedPolygon(2,false),2);
-							
-							Roi[] roiDots = newCell.getRois(poly.getXCoordinates(), poly.getYCoordinates(), poly);
-							Roi[] roiDots2 = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(), postpol);
-							
-							PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
-							PolygonRoi lum2 = newCell.getConcaveHull(roiDots2, THRESHOLD);
-							lumenDots[zIndex][0] = lum;
-							lumenDots[zIndex][1] = lum2;
-						}
-						else
-						{
-							PolygonRoi poly = new PolygonRoi(xPoints, yPoints, 6);
-							PolygonRoi postpol = new PolygonRoi(poly.getInterpolatedPolygon(2,false),2);
-							Roi[] roiDots = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(), postpol);							
-							PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
-							lumenDots[zIndex][0] = lum;
-						}
-						
-						
-						//lumenDots[zIndex] = poly;	
-						
-						//lumenDots[zIndex] = newCell.getConcaveHull(sliceDots, THRESHOLD);
-						Color colorCurrentCell = new Color(255, 255, 255);
-						lumenDots[zIndex][0].setStrokeColor(colorCurrentCell);
-						if(lumenDots[zIndex][1]!=null)
-							lumenDots[zIndex][1].setStrokeColor(colorCurrentCell);
-								
-					}
-
-					zIndex++;
-				}
-
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
+			loadLumen();
 			removeCellLumenOverlap();
 			updateOverlay();
 		}
@@ -808,5 +688,123 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 				}
 			}
 		}	
-	
+	public void loadLumen ()
+	{
+		File dirLumen = new File(this.initialDirectory.toString() + "/SegmentedLumen");
+		File[] filesLumen = dirLumen.listFiles(new FilenameFilter() {
+			public boolean accept(File dir, String name) {
+				return name.startsWith("SegmentedLumen");
+			}
+		});
+		int zIndex = 0;
+
+		try {
+			for (File f : filesLumen) {
+				FileInputStream lumen = new FileInputStream(f);
+				BufferedImage lumen_img = ImageIO.read(lumen);
+				ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
+				
+				ImageProcessor lumImg = lumenImg.getProcessor();
+				ImageProcessor lumImg2 = lumImg.duplicate();
+				lumImg2.findEdges();
+				ImagePlus lumEd = new ImagePlus ("LumenEdge",lumImg2);	
+
+				ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
+				
+				for (int y = 0; y < lumEd.getProcessor().getWidth(); y++) {
+					for (int x = 0; x < lumEd.getProcessor().getHeight(); x++) {
+						if (lumEd.getProcessor().getPixel(x,y) == 65535) {
+							PointRoi dot = new PointRoi(x, y);
+							fileLumenDots.add(dot);
+						}
+					}
+				}
+							
+				
+				if (fileLumenDots.size() != 0) {		
+					Roi[] sliceDots = new Roi[fileLumenDots.size()];
+					sliceDots = fileLumenDots.toArray(sliceDots);	
+															
+					float[] xPoints = new float[sliceDots.length];
+					float[] yPoints = new float[sliceDots.length];
+					int dis = sliceDots.length;
+					float disEu[] = new float[dis];
+
+					for (int i = 0; i < sliceDots.length; i++) {
+						xPoints[i] = (float) sliceDots[i].getXBase();
+						yPoints[i] = (float) sliceDots[i].getYBase();
+					}
+									
+					for (int i = 0; i < dis; i++)
+					{
+						if (i == dis-1)
+						{
+							disEu[i] = newCell.distEu(xPoints[i],xPoints[i],yPoints[i],yPoints[i]);
+						}
+						else
+						{
+							disEu[i] = newCell.distEu(xPoints[i+1],xPoints[i],yPoints[i+1],yPoints[i]);	
+						}
+					}
+					
+					int pos = dis;
+					int rest = 0;
+					
+					for (int i = 0; i < dis; i++)
+					{
+						if(disEu[i] > 100)
+						{
+							pos = i;
+							rest = dis-i;
+						}
+					}
+				
+					if(rest!= 0)
+					{
+						float x[] = new float [rest-1];
+						float y[] = new float [rest-1];
+						int j = 0;
+						for(int i = pos+1; i < dis; i++)
+						{
+							x[j] = xPoints[i];
+							y[j] = yPoints[i];
+							j++;
+						}
+													
+						PolygonRoi poly = new PolygonRoi(xPoints, yPoints,pos, 6);
+						PolygonRoi poly2 = new PolygonRoi(x, y,2);
+						
+						PolygonRoi postpol = new PolygonRoi(poly2.getInterpolatedPolygon(2,false),2);
+						
+						Roi[] roiDots = newCell.getRois(poly.getXCoordinates(), poly.getYCoordinates(), poly);
+						Roi[] roiDots2 = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(), postpol);
+						
+						PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
+						PolygonRoi lum2 = newCell.getConcaveHull(roiDots2, THRESHOLD);
+						lumenDots[zIndex][0] = lum;
+						lumenDots[zIndex][1] = lum2;
+					}
+					else
+					{
+						PolygonRoi poly = new PolygonRoi(xPoints, yPoints, 6);
+						PolygonRoi postpol = new PolygonRoi(poly.getInterpolatedPolygon(2,false),2);
+						Roi[] roiDots = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(), postpol);							
+						PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
+						lumenDots[zIndex][0] = lum;
+					}
+					Color colorCurrentCell = new Color(255, 255, 255);
+					lumenDots[zIndex][0].setStrokeColor(colorCurrentCell);
+					if(lumenDots[zIndex][1]!=null)
+						lumenDots[zIndex][1].setStrokeColor(colorCurrentCell);
+							
+				}
+
+				zIndex++;
+			}
+
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
 }
