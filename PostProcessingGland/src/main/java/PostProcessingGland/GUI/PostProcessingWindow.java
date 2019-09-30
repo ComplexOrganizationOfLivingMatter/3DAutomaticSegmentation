@@ -391,7 +391,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 					ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
 					
-					for (int y = 0; y < lumEd.getProcessor().getWidth()-1; y++) {
+					for (int y = 0; y < lumEd.getProcessor().getWidth(); y++) {
 						for (int x = 0; x < lumEd.getProcessor().getHeight(); x++) {
 							if (lumEd.getProcessor().getPixel(x,y) == 65535) {
 								PointRoi dot = new PointRoi(x, y);
