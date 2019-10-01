@@ -357,8 +357,6 @@ public class RoiAdjustment {
 				}
 			}
 		}
-		//for(int i = 0; i < dis; i++)
-		//	System.out.println(NAX[i] + " " + NAY[i]);
 		PolygonRoi pol = new PolygonRoi(NAX,NAY,dis,2);
 		PolygonRoi postPol = new PolygonRoi(pol.getInterpolatedPolygon(2, true),2);
 		return postPol;

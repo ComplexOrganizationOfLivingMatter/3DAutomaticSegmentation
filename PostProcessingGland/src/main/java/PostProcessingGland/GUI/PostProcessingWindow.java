@@ -175,19 +175,16 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		zoom = new Scrollbar(Scrollbar.VERTICAL, 1, 1, 1, 1024);	
 		zoom.setVisible(false);
 
-		//zScale = (float) (raw_img.getFileInfo().pixelDepth /
-		// raw_img.getFileInfo().pixelWidth);
-	
 		lumenDots = new PolygonRoi[imp.getStackSize()+1][2];
 		loadLumen();
 		removeCellLumenOverlap();
-		initializeGUIItems(raw_img);
+		initializeGUIItems();
 		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false, lumenDots));
-		initGUI(raw_img);
+		initGUI();
 		
 	}
 
-	private void initGUI(ImagePlus raw_img) {
+	private void initGUI() {
 
 		upRightPanel.setLayout(new MigLayout());
 		upRightPanel.setBorder(BorderFactory.createTitledBorder("ID Cell"));
@@ -229,7 +226,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 	}
 
-	private void initializeGUIItems(ImagePlus raw_img) {
+	private void initializeGUIItems() {
 
 		// Init attributes.
 		newCell = new RoiAdjustment();
@@ -363,9 +360,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		if (e.getSource() == btnSave) {
 			this.savePlyFile(all3dCells, initialDirectory);
-			/*ImagePlus imgimg= new ImagePlus("", canvas.getImage().getStack());
-			imgimg.setOverlay(canvas.getImage().getOverlay());
-			imgimg.show();*/
 		}
 
 		if (e.getSource() == btnLumen) {
@@ -525,22 +519,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	}
 
 	public ArrayList<DotN> processLimeSegOutput(ArrayList<DotN> dots, int frame) {
-	/*	
-		Collections.sort(dots, new Comparator<DotN>() {
 
-			@Override
-			public int compare(DotN o1, DotN o2) {
-				// TODO Auto-generated method stub
-				int x = Integer.compare((int) o1.pos.x, (int) o2.pos.x);
-				if (x != 0) {
-					return x;
-				} 
-					return Integer.compare((int) o1.pos.y, (int) o2.pos.y);
-			}
-			
-			
-		});
-	*/
 	int[] xPoints = new int[dots.size()];
 	int[] yPoints = new int[dots.size()];
 
@@ -553,15 +532,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	PolygonRoi prePolygon = newCell.getOrderDots(PrePolygon);
 	
 	Roi[] allRoi = newCell.getRois(prePolygon.getXCoordinates(), prePolygon.getYCoordinates(), prePolygon);
-	
-	//PolygonRoi polygon = new PolygonRoi(prePolygon.getInterpolatedPolygon(2, false),2);
-	//Roi[] allRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
-	
+		
 	PolygonRoi poly = newCell.getConcaveHull(allRoi, THRESHOLD); 
 
 	PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(1,false),2);
 	
-	//Roi[] allRois = newCell.preProcessingConcaveHull(polygon);
     Roi[] allRois = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
 	ArrayList<DotN> newDots = newCell.RoisToDots(frame, allRois);
 	
@@ -635,7 +610,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 						
 						if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0)
 						{
-							//Roi[] overRoi = newCell.preProcessingConcaveHull(r.not(lum1));
 							PolygonRoi polygon = new PolygonRoi(r.not(lum1).getContainedFloatPoints(),6);
 								
 							Roi[] overRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
@@ -654,39 +628,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 						
 						}	
 					}
-//						float[] xPoints = new float[overRoi.length];
-//						float[] yPoints = new float[overRoi.length]; 
-//						for (int i = 0; i < yPoints.length; i++) { 
-//							xPoints[i] =(float) (overRoi[i].getXBase() + overRoi[i].getFloatWidth()); 
-//							yPoints[i] = (float) (overRoi[i].getYBase() + overRoi[i].getFloatHeight()); 
-//							}
-//						PolygonRoi poly = new PolygonRoi(xPoints, yPoints,2);
-//						Color colorCurrentCell = new Color(255, 255, 255);
-//						poly.setStrokeColor(colorCurrentCell);
-				
-							// Convert the PolygonRoi in Dots and integrate with
-							// the
-							// dots of
-							// the other frames.
-							// Later, replace the selected cell by the cell with
-							// the new
-							// region
-							/*ArrayList<DotN> dotsNewRegion = newCell.setNewRegion(nFrame, poly);
-							ArrayList<DotN> integratedDots = newCell.integrateNewRegion(dotsNewRegion,
-									all3dCells.get(nCell).dotsList, nFrame);
-							ArrayList<DotN> dotsNewRegion2 = newCell.setNewRegion(nFrame, poly2);
-							ArrayList<DotN> integratedDots2 = newCell.integrateNewRegion(dotsNewRegion2,
-									all3dCells.get(nCell).dotsList, nFrame);
-
-							Cell3D newCell = new Cell3D(all3dCells.get(nCell).id_Cell, integratedDots);
-							all3dCells.set(nCell, newCell);
-							Cell3D newCell2 = new Cell3D(all3dCells.get(nCell).id_Cell, integratedDots2);
-							all3dCells.set(nCell, newCell2);*/
-					}
-
 				}
+
 			}
 		}
+	}
 	//Time 37 seconds
 	public void loadLumen ()
 	{
