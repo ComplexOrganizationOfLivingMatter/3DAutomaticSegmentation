@@ -352,14 +352,24 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		if (e.getSource() == btnInsert) {
 			this.addROI();
-			newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
-					all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, lumenDots);
-			checkOverlay.setSelectedIndex(1);
-			updateOverlay();
+			if(polyRoi != null)
+			{
+				newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
+						all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, lumenDots);
+				checkOverlay.setSelectedIndex(1);
+				updateOverlay();
+				polyRoi = null;
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(middlePanel.getParent(),"You must select a new Region.");
+			}
+			
 		}
 
 		if (e.getSource() == btnSave) {
 			this.savePlyFile(all3dCells, initialDirectory);
+			JOptionPane.showMessageDialog(middlePanel.getParent(),"Saved results.");
 		}
 
 		if (e.getSource() == btnLumen) {
