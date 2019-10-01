@@ -174,7 +174,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		//Zoom, create an invisible scrollbar to limit the canvas zone (I don't understand why)
 		zoom = new Scrollbar(Scrollbar.VERTICAL, 1, 1, 1, 1024);	
 		zoom.setVisible(false);
-
+		
+		//Initialize lumenDots as matrix [x][2] to split the lumen in 2 polygons
 		lumenDots = new PolygonRoi[imp.getStackSize()+1][2];
 		loadLumen();
 		removeCellLumenOverlap();
@@ -352,14 +353,17 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		if (e.getSource() == btnInsert) {
 			this.addROI();
+			//Check if polyRoi is different to null, if is do the modify cell 
 			if(polyRoi != null)
 			{
 				newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
 						all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, lumenDots);
 				checkOverlay.setSelectedIndex(1);
 				updateOverlay();
+				//After modify cell return poly to null, clean the roi
 				polyRoi = null;
 			}
+			//If polyRoi is null show a message to prevent errors
 			else
 			{
 				JOptionPane.showMessageDialog(middlePanel.getParent(),"You must select a new Region.");
@@ -367,13 +371,18 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			
 		}
 
-		if (e.getSource() == btnSave) {
+		if (e.getSource() == btnSave) 
+		{
 			this.savePlyFile(all3dCells, initialDirectory);
+			//After saved the plyFiles show a message to inform the user
 			JOptionPane.showMessageDialog(middlePanel.getParent(),"Saved results.");
 		}
 
-		if (e.getSource() == btnLumen) {
+		if (e.getSource() == btnLumen)
+		{
+			//read the lumen
 			loadLumen();
+			//remove the overlaps cells
 			removeCellLumenOverlap();
 			updateOverlay();
 		}
@@ -538,13 +547,13 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		yPoints[i] = (int) dots.get(i).pos.y;
 	}
 	PolygonRoi PrePolygon = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
-	
+	//order the dots according the nearest dots 
 	PolygonRoi prePolygon = newCell.getOrderDots(PrePolygon);
-	
+	//create a Roi with the polygon from orderDots
 	Roi[] allRoi = newCell.getRois(prePolygon.getXCoordinates(), prePolygon.getYCoordinates(), prePolygon);
-		
+	//Calculate the boarder with concave hull	
 	PolygonRoi poly = newCell.getConcaveHull(allRoi, THRESHOLD); 
-
+	//Full fill the border with dots
 	PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(1,false),2);
 	
     Roi[] allRois = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
@@ -552,6 +561,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	
 	return newDots;
 	}
+	
 	//Time 53 seconds
 	public void removeCellLumenOverlap() 
 	{
@@ -559,34 +569,42 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		{
 			for (int nCell = 0; nCell < all3dCells.size(); nCell++) 
 			{
+				//Check if the frame have lumen and the cell is not empty
 				if (lumenDots[nFrame-1] != null & all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) 
 				{
-
+					//Get the cell points
 					float[] xCell = all3dCells.get(nCell).getCoordinate("x", all3dCells.get(nCell).getCell3DAt(nFrame));
 					float[] yCell = all3dCells.get(nCell).getCoordinate("y", all3dCells.get(nCell).getCell3DAt(nFrame));
-								
+					//Points to polygon to shape			
 					PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
 					ShapeRoi r = new ShapeRoi(overlappingCell);
 					ShapeRoi s = new ShapeRoi(overlappingCell);
 					ShapeRoi s2 = new ShapeRoi(overlappingCell);
-					
+					//Check if lumen has two polygon
 					if(lumenDots[nFrame-1][1] != null)
 					{
+						//Transform the lumens to polygon and shapes
 						java.awt.Polygon l = lumenDots[nFrame-1][0].getPolygon();
 						ShapeRoi lum = new ShapeRoi(l);
+						//Verify if the lumen cross with cell
 						s.and(lum);
 						java.awt.Polygon l2 = lumenDots[nFrame-1][1].getPolygon();
 						ShapeRoi lum2 = new ShapeRoi(l2);
 						s2.and(lum2);	
-						
+						//If lumen cross with cell width or height must to be different to 0, if is 0 go to other cell
 						if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) 
 							{
+								//use fuction not to get all the points out of the lumen and save in polygon
 								PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(),6);					
 									
 								Roi[] overRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
-																							
+								//get the border of polygon without lumen parts with concavehull function															
 								PolygonRoi poly = newCell.getConcaveHull(overRoi,1);	
-
+								
+								// Convert the PolygonRoi in Dots and integrate with the dots of
+								// the other frames.
+								// Later, replace the selected cell by the cell with the new
+								// region
 								ArrayList<DotN> dotsNewRegion = newCell.setNewRegion(nFrame, poly);
 								ArrayList<DotN> integratedDots = newCell.integrateNewRegion(dotsNewRegion,
 										all3dCells.get(nCell).dotsList, nFrame);
@@ -595,6 +613,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 								all3dCells.set(nCell, newCell);
 								
 							}
+						//do the same for the second polygon
 						if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0)
 								{						
 									PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(),6);	
@@ -612,6 +631,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 								}
 						
 					}	
+					//if lumen only have one polygon do the same as before but only once
 					else if(lumenDots[nFrame-1][0] != null)
 					{
 						java.awt.Polygon l1 = lumenDots[nFrame-1][0].getPolygon();											
@@ -655,17 +675,19 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		int zIndex = 0;
 
 		try {
+			//read the Lumen Directory
 			for (File f : filesLumen) {
 				FileInputStream lumen = new FileInputStream(f);
 				BufferedImage lumen_img = ImageIO.read(lumen);
 				ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
-				
+				//Get the image and find the Edge of the lumen
 				ImageProcessor lumImg = lumenImg.getProcessor();
 				lumImg.findEdges();
+				//Create a new image with lumen edges (edges are white)
 				ImagePlus lumEd = new ImagePlus ("LumenEdge",lumImg);	
 
 				ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
-				
+				//Read all the pixel and save the white (65535) pixels
 				for (int y = 0; y < lumEd.getProcessor().getWidth(); y++) {
 					for (int x = 0; x < lumEd.getProcessor().getHeight(); x++) {
 						if (lumEd.getProcessor().getPixel(x,y) == 65535) {
@@ -679,7 +701,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 				if (fileLumenDots.size() != 0) {		
 					Roi[] sliceDots = new Roi[fileLumenDots.size()];
 					sliceDots = fileLumenDots.toArray(sliceDots);	
-															
+					//get the x, y points from the array										
 					float[] xPoints = new float[sliceDots.length];
 					float[] yPoints = new float[sliceDots.length];
 					int dis = sliceDots.length;
@@ -689,7 +711,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 						xPoints[i] = (float) sliceDots[i].getXBase();
 						yPoints[i] = (float) sliceDots[i].getYBase();
 					}
-									
+					//calculate the distance between each point				
 					for (int i = 0; i < dis; i++)
 					{
 						if (i == dis-1)
@@ -704,16 +726,17 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					
 					int pos = dis;
 					int rest = 0;
-					
+					//check if the distance between is less than 100 to split in two polygons
 					for (int i = 0; i < dis; i++)
 					{
 						if(disEu[i] > 100)
 						{
+							//if distance more than 100 save the position and the qty of points after the position
 							pos = i;
 							rest = dis-i;
 						}
 					}
-				
+					//if the qty is different to 0 split the roi in two polygons
 					if(rest!= 0)
 					{
 						float x[] = new float [rest-1];
