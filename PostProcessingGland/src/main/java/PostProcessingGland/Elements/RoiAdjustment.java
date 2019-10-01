@@ -71,9 +71,10 @@ public class RoiAdjustment {
 				allCells.set(nCell, newCell);
 			} 
 			else if (allCells.get(nCell).id_Cell == id)
+			{
 				selectedCell = nCell;
+			}
 		}
-		
 		// Replace the cell with the mistaken overlay by the new cell.
 		ArrayList<DotN> dotsNewRegion = setNewRegion(frame, newPolygonInterpolated);
 		ArrayList<DotN> integratedDots = integrateNewRegion(dotsNewRegion, allCells.get(selectedCell).dotsList, frame);

@@ -126,7 +126,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 	public PostProcessingWindow(ImagePlus raw_img) {
 		super(raw_img, new CustomCanvas(raw_img));
-
+		//time 6 seconds
 		this.initialDirectory = raw_img.getOriginalFileInfo().directory;
 		limeSeg = new LimeSeg();
 		newCell = new RoiAdjustment();
@@ -148,7 +148,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			PostProcessCell.clearCell();
 			for (int i = 0; i < imp.getStackSize(); i++) {
 				if (PostProcessCellCopy.getCell3DAt(i).size() != 0) {
-					//System.out.println(i);
 					PostProcessCell.addDotsList(processLimeSegOutput(PostProcessCellCopy.getCell3DAt(i), i));
 				}
 				
@@ -568,7 +567,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	
 	return newDots;
 	}
-	
+	//Time 53 seconds
 	public void removeCellLumenOverlap() 
 	{
 		for (int nFrame = 1; nFrame < imp.getStackSize()+1; nFrame++) 
@@ -687,7 +686,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 				}
 			}
-		}	
+		}
+	//Time 37 sec
 	public void loadLumen ()
 	{
 		File dirLumen = new File(this.initialDirectory.toString() + "/SegmentedLumen");
@@ -705,9 +705,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 				ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
 				
 				ImageProcessor lumImg = lumenImg.getProcessor();
-				ImageProcessor lumImg2 = lumImg.duplicate();
-				lumImg2.findEdges();
-				ImagePlus lumEd = new ImagePlus ("LumenEdge",lumImg2);	
+				lumImg.findEdges();
+				ImagePlus lumEd = new ImagePlus ("LumenEdge",lumImg);	
 
 				ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
 				
@@ -769,12 +768,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 							x[j] = xPoints[i];
 							y[j] = yPoints[i];
 							j++;
-						}
-													
+						}										
 						PolygonRoi poly = new PolygonRoi(xPoints, yPoints,pos, 6);
-						PolygonRoi poly2 = new PolygonRoi(x, y,2);
+						PolygonRoi poly2 = new PolygonRoi(x, y,6);
 						
-						PolygonRoi postpol = new PolygonRoi(poly2.getInterpolatedPolygon(2,false),2);
+						PolygonRoi postpol = new PolygonRoi(poly2.getInterpolatedPolygon(2,false),6);
 						
 						Roi[] roiDots = newCell.getRois(poly.getXCoordinates(), poly.getYCoordinates(), poly);
 						Roi[] roiDots2 = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(), postpol);
@@ -787,7 +785,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					else
 					{
 						PolygonRoi poly = new PolygonRoi(xPoints, yPoints, 6);
-						PolygonRoi postpol = new PolygonRoi(poly.getInterpolatedPolygon(2,false),2);
+						PolygonRoi postpol = new PolygonRoi(poly.getInterpolatedPolygon(2,false),6);
 						Roi[] roiDots = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(), postpol);							
 						PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
 						lumenDots[zIndex][0] = lum;
