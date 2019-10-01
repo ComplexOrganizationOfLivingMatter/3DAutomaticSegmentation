@@ -687,7 +687,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 				}
 			}
 		}
-	//Time 37 sec
+	//Time 37 seconds
 	public void loadLumen ()
 	{
 		File dirLumen = new File(this.initialDirectory.toString() + "/SegmentedLumen");
