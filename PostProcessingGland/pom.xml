@@ -143,7 +143,11 @@
 			<artifactId>jai-imageio-core</artifactId>
 			<version>1.4.0</version>
 		</dependency>
-
+		
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>3D_Viewer</artifactId>
+		</dependency>
 
 		
 	</dependencies>

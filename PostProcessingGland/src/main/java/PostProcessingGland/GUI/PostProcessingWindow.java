@@ -80,7 +80,9 @@ import ij.gui.ShapeRoi;
 import ij.process.FloatPolygon;
 import ij.gui.Overlay;
 import ij.process.ImageProcessor;
+import ij3d.Image3DUniverse;
 import net.miginfocom.swing.MigLayout;
+
 
 public class PostProcessingWindow extends ImageWindow implements ActionListener {
 
@@ -182,6 +184,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		initializeGUIItems();
 		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false, lumenDots));
 		initGUI();
+		
+		Image3DUniverse C3D = new Image3DUniverse (1024,1024);
 		
 	}
 
@@ -583,7 +587,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					//Check if lumen has two polygon
 					if(lumenDots[nFrame-1][1] != null)
 					{
-						//Transform the lumens to polygon and shapes
+						//Transform the lumens to polygons and shapes
 						java.awt.Polygon l = lumenDots[nFrame-1][0].getPolygon();
 						ShapeRoi lum = new ShapeRoi(l);
 						//Verify if the lumen cross with cell
@@ -591,10 +595,10 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 						java.awt.Polygon l2 = lumenDots[nFrame-1][1].getPolygon();
 						ShapeRoi lum2 = new ShapeRoi(l2);
 						s2.and(lum2);	
-						//If lumen cross with cell width or height must to be different to 0, if is 0 go to other cell
+						//If lumen cross with cell width or height must be different to 0, if is 0 go to other cell
 						if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) 
 							{
-								//use fuction not to get all the points out of the lumen and save in polygon
+								//use not function to get all the points out of the lumen and save in polygon
 								PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(),6);					
 									
 								Roi[] overRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
@@ -739,6 +743,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					//if the qty is different to 0 split the roi in two polygons
 					if(rest!= 0)
 					{
+						//save the points after position, this points are the 2nd polygon
 						float x[] = new float [rest-1];
 						float y[] = new float [rest-1];
 						int j = 0;
@@ -747,30 +752,35 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 							x[j] = xPoints[i];
 							y[j] = yPoints[i];
 							j++;
-						}										
+						}	
+						//create polygon one with the point until pos
 						PolygonRoi poly = new PolygonRoi(xPoints, yPoints,pos, 6);
+						//create polygon two with the rest of the points
 						PolygonRoi poly2 = new PolygonRoi(x, y,6);
-						
+						//fill the second polygon with points to get the correct border
 						PolygonRoi postpol = new PolygonRoi(poly2.getInterpolatedPolygon(2,false),6);
-						
+					
 						Roi[] roiDots = newCell.getRois(poly.getXCoordinates(), poly.getYCoordinates(), poly);
 						Roi[] roiDots2 = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(), postpol);
-						
+						//find the border with ConcavHull
 						PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
 						PolygonRoi lum2 = newCell.getConcaveHull(roiDots2, THRESHOLD);
-						lumenDots[zIndex][0] = lum;
-						lumenDots[zIndex][1] = lum2;
+						lumenDots[zIndex][0] = lum; //save the border in matrix position 0
+						lumenDots[zIndex][1] = lum2; //save the border in position 1
 					}
 					else
 					{
+						//if is only one polygon, get the polygon, border and save
 						PolygonRoi poly = new PolygonRoi(xPoints, yPoints, 6);
 						PolygonRoi postpol = new PolygonRoi(poly.getInterpolatedPolygon(2,false),6);
 						Roi[] roiDots = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(), postpol);							
 						PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
 						lumenDots[zIndex][0] = lum;
 					}
+					//set the color of lumen in this case white
 					Color colorCurrentCell = new Color(255, 255, 255);
 					lumenDots[zIndex][0].setStrokeColor(colorCurrentCell);
+					//if the 1 position is not empty set the color
 					if(lumenDots[zIndex][1]!=null)
 						lumenDots[zIndex][1].setStrokeColor(colorCurrentCell);
 							
