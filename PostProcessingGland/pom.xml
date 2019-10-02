@@ -14,6 +14,60 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>plugins/PostProcessingGland_</name>
 	<description></description>
+	<url>http://scutoids.es/</url>
+	<inceptionYear>2019</inceptionYear>
+	<organization>
+		<name>University of Seville - IBiS</name>
+		<url>http://www.us.es</url>
+	</organization>
+	
+	<licenses>
+		<license>
+			<name>GNU General Public License v3+</name>
+			<url>https://www.gnu.org/licenses/gpl.html</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+	
+	<mailingLists>
+		<mailingList>
+			<name>Image.sc Forum</name>
+			<archive>https://forum.image.sc/tags/fiji</archive>
+		</mailingList>
+	</mailingLists>
+
+	<scm>
+		<connection>scm:git:git://github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentation</connection>
+		<developerConnection>scm:git:git@github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentationn</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentation</url>
+	</scm>
+
+	<ciManagement>
+		<system>Travis CI</system>
+	</ciManagement>
+
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>https://github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentation/issues</url>
+	</issueManagement>
+	
+	<properties>
+		<main-class>PostProcessingGland</main-class>
+		<license.licenseName>gpl_v3</license.licenseName>
+		<license.copyrightOwners>Luis M. Escudero</license.copyrightOwners>
+	</properties>
+	
+	
+	<contributors>
+		<contributor>
+			<name>Luis M. Escudero</name>
+			<url>https://imagej.net/User:LMEscudero</url>
+			<roles>
+				<role>founder</role>
+			</roles>
+		</contributor>
+	</contributors>
 
 	<developers>
 		<developer>

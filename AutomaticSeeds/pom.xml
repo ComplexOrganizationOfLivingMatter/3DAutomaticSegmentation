@@ -13,7 +13,7 @@
 	<artifactId>AutomaticSegmentation3D_</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>plugins/AutomaticSegmentation3D_.jar</name>
-	<description></description>
+	<description>Machine learning-based project</description>
 	<url>http://scutoids.es/</url>
 	<inceptionYear>2019</inceptionYear>
 	<organization>
@@ -66,6 +66,31 @@
 			</roles>
 			<timezone>+1</timezone>
 		</developer>
+		<developer>
+			<id>vArriaga</id>
+			<name>Victor Hugo Arriaga Salgado</name>
+			<email>vichuarr@hotmail.com</email>
+			<url>http://scutoids.es/</url>
+			<organization>University of Seville - IBiS</organization>
+			<organizationUrl>http://www.us.es</organizationUrl>
+			<roles>
+				<role>developer</role>
+			</roles>
+			<timezone>-5</timezone>
+		</developer>
+		
+		<developer>
+			<id>atagua</id>
+			<name>Antonio J. Tagua Janez</name>
+			<email>antonio.tagua@hotmail.es</email>
+			<url>http://lmescudero.blogspot.com.es/</url>
+			<organization>University of Seville - IBiS</organization>
+			<organizationUrl>http://www.us.es</organizationUrl>
+			<roles>
+				<role>developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>		
 	</developers>
 	<contributors>
 		<contributor>
