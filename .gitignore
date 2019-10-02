@@ -26,5 +26,9 @@ hs_err_pid*
 workspace
 LimeSeg
 
+LimeSeg/
+
 # Data folder
 PostProcessingGland/data/
+
+workspace

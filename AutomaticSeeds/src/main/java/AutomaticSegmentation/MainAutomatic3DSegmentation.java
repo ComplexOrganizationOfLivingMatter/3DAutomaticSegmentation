@@ -5,13 +5,12 @@ package AutomaticSegmentation;
 
 import javax.swing.SwingUtilities;
 
-
-import AutomaticSegmentation3D.GUI.MainWindow;
+import AutomaticSegmentation.gui.MainWindow;
 import ij.IJ;
 import ij.ImageJ;
 import ij.plugin.PlugIn;
 
-public class AutomaticSegmentation implements PlugIn {
+public class MainAutomatic3DSegmentation implements PlugIn {
 
 	// Window
 	MainWindow mainWindow;
@@ -19,19 +18,20 @@ public class AutomaticSegmentation implements PlugIn {
 	/**
 	 * Constructor by default
 	 */
-	public AutomaticSegmentation() {
+	public MainAutomatic3DSegmentation() {
 		super();
 	}
 
 	/**
 	 * Debug mode
 	 * 
-	 * @param args default arguments
+	 * @param args
+	 *            default arguments
 	 */
 	public static void main(String[] args) {
 		// set the plugins.dir property to make the plugin appear in the Plugins
 		// menu
-		Class<?> clazz = AutomaticSegmentation.class;
+		Class<?> clazz = MainAutomatic3DSegmentation.class;
 		String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
 		String pluginsDir = url.substring("file:".length(),
 				url.length() - clazz.getName().length() - ".class".length() - "classes".length());
@@ -42,10 +42,13 @@ public class AutomaticSegmentation implements PlugIn {
 
 		// run the plugin
 		IJ.runPlugIn(clazz.getName(), "");
+		
+		
 	}
 
 	/*
 	 * Plugin run method (non-Javadoc)
+	 * 
 	 * @see ij.plugin.PlugIn#run(java.lang.String)
 	 */
 	public void run(String arg) {

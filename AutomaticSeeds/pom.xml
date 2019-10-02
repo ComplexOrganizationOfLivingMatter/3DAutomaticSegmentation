@@ -1,20 +1,39 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.scijava</groupId>
-    <artifactId>pom-scijava</artifactId>
-    <version>26.0.0</version>
-  </parent>
-  <groupId>sc.fiji</groupId>
-  <artifactId>AutomaticSegmentation3D_</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>plugins/AutomaticSegmentation3D_</name>
-  <developers>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>sc.fiji</groupId>
+		<artifactId>pom-fiji</artifactId>
+		<version>26.1.1</version>
+		<relativePath />
+	</parent>
+
+	<artifactId>AutomaticSegmentation3D_</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>plugins/AutomaticSegmentation3D_.jar</name>
+	<description></description>
+	<url>http://scutoids.es/</url>
+	<inceptionYear>2019</inceptionYear>
+	<organization>
+		<name>University of Seville - IBiS</name>
+		<url>http://www.us.es</url>
+	</organization>
+	<licenses>
+		<license>
+			<name>GNU General Public License v3+</name>
+			<url>https://www.gnu.org/licenses/gpl.html</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<developers>
 		<developer>
 			<id>pvicente1</id>
 			<name>Pablo Vicente-Munuera</name>
 			<email>pvicente1@us.es</email>
-			<url>http://lmescudero.blogspot.com.es/</url>
+			<url>http://scutoids.es/</url>
 			<organization>University of Seville - IBiS</organization>
 			<organizationUrl>http://www.us.es</organizationUrl>
 			<roles>
@@ -27,7 +46,7 @@
 			<id>pgomez</id>
 			<name>Pedro Gomez-Galvez</name>
 			<email>pgomez-ibis@us.es</email>
-			<url>http://lmescudero.blogspot.com.es/</url>
+			<url>http://scutoids.es/</url>
 			<organization>University of Seville - IBiS</organization>
 			<organizationUrl>http://www.us.es</organizationUrl>
 			<roles>
@@ -35,11 +54,11 @@
 			</roles>
 			<timezone>+1</timezone>
 		</developer>
-<developer>
+		<developer>
 			<id>prodriguez</id>
 			<name>Pedro Rodriguez Hiruela</name>
 			<email>pedrodhir@gmail.com</email>
-			<url>http://lmescudero.blogspot.com.es/</url>
+			<url>http://scutoids.es/</url>
 			<organization>University of Seville - IBiS</organization>
 			<organizationUrl>http://www.us.es</organizationUrl>
 			<roles>
@@ -47,14 +66,47 @@
 			</roles>
 			<timezone>+1</timezone>
 		</developer>
-
 	</developers>
+	<contributors>
+		<contributor>
+			<name>Luis M. Escudero</name>
+			<url>https://imagej.net/User:LMEscudero</url>
+			<roles>
+				<role>founder</role>
+			</roles>
+		</contributor>
+	</contributors>
+
 	<properties>
-		<main-class>AutomaticSegmentation</main-class>
+		<main-class>MainAutomaticNucleiSegmentation</main-class>
+		<license.licenseName>gpl_v3</license.licenseName>
+		<license.copyrightOwners>Luis M. Escudero</license.copyrightOwners>
 	</properties>
 
-	<dependencies>
+	<mailingLists>
+		<mailingList>
+			<name>Image.sc Forum</name>
+			<archive>https://forum.image.sc/tags/fiji</archive>
+		</mailingList>
+	</mailingLists>
 
+	<scm>
+		<connection>scm:git:git://github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentation</connection>
+		<developerConnection>scm:git:git@github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentationn</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentation</url>
+	</scm>
+
+	<ciManagement>
+		<system>Travis CI</system>
+	</ciManagement>
+
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>https://github.com/ComplexOrganizationOfLivingMatter/3DAutomaticSegmentation/issues</url>
+	</issueManagement>
+
+	<dependencies>
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>Fiji_Plugins</artifactId>
@@ -66,10 +118,6 @@
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>fiji-lib</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>sc.fiji</groupId>
-			<artifactId>legacy-imglib1</artifactId>
 		</dependency>
 
 		<!-- ImageJ dependencies -->
@@ -83,6 +131,7 @@
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-ij</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
@@ -98,16 +147,59 @@
 		<dependency>
 			<groupId>fr.inra.ijpb</groupId>
 			<artifactId>MorphoLibJ_</artifactId>
-			<version>1.3.2</version>
+			<version>1.4.1</version>
 		</dependency>
-		
+
 		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math3 -->
 		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>commons-math3</artifactId>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>3D_Objects_Counter</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>3D_Viewer</artifactId>
+		</dependency>
 
+		<!-- Java 3D dependencies -->
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>j3dcore</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>j3dutils</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>vecmath</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>eu.kiaru</groupId>
+			<artifactId>limeseg</artifactId>
+			<version>0.4.3-SNAPSHOT</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>net.haesleinhuepf</groupId>
+			<artifactId>clij_</artifactId>
+			<version>1.0.7</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>bridj</artifactId>
+					<groupId>com.nativelibs4java</groupId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.nativelibs4java</groupId>
+					<artifactId>javacl</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
@@ -136,10 +228,21 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.0.0</version>
+				<version>3.1.0</version>
 				<configuration>
 					<artifactSet>
-						
+						<excludes>
+							<exclude>sc.fiji:Fiji_Plugins</exclude>
+							<exclude>sc.fiji:VIB-lib</exclude>
+							<exclude>sc.fiji:pal-optimization</exclude>
+							<exclude>sc.fiji:fiji-lib</exclude>
+							<exclude>ome:*</exclude>
+							<exclude>sc.fiji:legacy-imglib1</exclude>
+							<exclude>net.imagej:*</exclude>
+							<exclude>net.imglib2:*</exclude>
+							<exclude>org.jogamp.*:*</exclude>
+							<exclude>org.apache.commons:*</exclude>
+						</excludes>
 					</artifactSet>
 					<archive>
 						<manifest>
@@ -158,6 +261,42 @@
 				</executions>
 			</plugin>
 		</plugins>
+		<pluginManagement>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.apache.maven.plugins
+										</groupId>
+										<artifactId>
+											maven-compiler-plugin
+										</artifactId>
+										<versionRange>
+											[3.7.0,)
+										</versionRange>
+										<goals>
+											<goal>compile</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 	<repositories>
 		<!-- NB: for project parent -->
@@ -165,13 +304,18 @@
 			<id>imagej.public</id>
 			<url>http://maven.imagej.net/content/groups/public</url>
 		</repository>
-	
+
 		<repository>
 			<id>swt-repo</id>
 			<url>https://raw.githubusercontent.com/maven-eclipse/swt-repo/master/</url>
 		</repository>
+
+		<repository>
+			<id>clij</id>
+			<url>http://dl.bintray.com/haesleinhuepf/clij</url>
+		</repository>
 	</repositories>
-		<profiles>
+	<profiles>
 		<!-- The alt-ui profile adds alternative user interfaces to the runtime 
 			classpath if the scijava.ui system property is set. This enables launching 
 			ImageJ with an alternative UI; see: http://imagej.net/Developing_ImageJ_on_the_command_line -->
@@ -217,8 +361,8 @@
 					<name>!java.awt.headless</name>
 				</property>
 			</activation>
-			<dependencies>
-			</dependencies>
+			<dependencies />
+
 		</profile>
 		<profile>
 			<id>only-eclipse</id>
@@ -275,5 +419,5 @@
 			</build>
 		</profile>
 	</profiles>
-  
+
 </project>
