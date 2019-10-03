@@ -78,4 +78,10 @@ public class MainAutomatic3DSegmentation implements PlugIn {
 	public static void callToolbarRectangle() {
 		ij.gui.Toolbar.getInstance().setTool(ij.gui.Toolbar.RECTANGLE);
 	}
+	/**
+	 * Static method to enable polygon selection It is mainly used to create ROIs
+	 */
+	public static void callToolbarPolygon() {
+		ij.gui.Toolbar.getInstance().setTool(ij.gui.Toolbar.POLYGON);
+	}
 }

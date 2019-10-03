@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -78,7 +79,7 @@
 			</roles>
 			<timezone>-5</timezone>
 		</developer>
-		
+
 		<developer>
 			<id>atagua</id>
 			<name>Antonio J. Tagua Janez</name>
@@ -90,7 +91,7 @@
 				<role>developer</role>
 			</roles>
 			<timezone>+1</timezone>
-		</developer>		
+		</developer>
 	</developers>
 	<contributors>
 		<contributor>
@@ -145,6 +146,11 @@
 			<artifactId>fiji-lib</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>legacy-imglib1</artifactId>
+		</dependency>
+
 		<!-- ImageJ dependencies -->
 		<dependency>
 			<groupId>net.imagej</groupId>
@@ -180,6 +186,7 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>3D_Objects_Counter</artifactId>
@@ -209,7 +216,39 @@
 			<artifactId>limeseg</artifactId>
 			<version>0.4.3-SNAPSHOT</version>
 		</dependency>
-		
+
+		<!-- https://github.com/smurn/jPLY -->
+		<dependency>
+			<groupId>org.smurn</groupId>
+			<artifactId>jply</artifactId>
+			<version>0.2.0</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.vividsolutions/jts -->
+		<dependency>
+			<groupId>com.vividsolutions</groupId>
+			<artifactId>jts</artifactId>
+			<version>1.13</version>
+		</dependency>
+
+		<!-- https://github.com/atolcd/pentaho-gis-plugins -->
+		<dependency>
+			<groupId>concave-hull</groupId>
+			<artifactId>core</artifactId>
+			<version>20170808</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.jai-imageio</groupId>
+			<artifactId>jai-imageio-core</artifactId>
+			<version>1.4.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>3D_Viewer</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>net.haesleinhuepf</groupId>
 			<artifactId>clij_</artifactId>
@@ -338,6 +377,11 @@
 		<repository>
 			<id>clij</id>
 			<url>http://dl.bintray.com/haesleinhuepf/clij</url>
+		</repository>
+
+		<repository>
+			<id>magsilva</id>
+			<url>dav:http://magsilva.pro.br/repo/maven2</url>
 		</repository>
 	</repositories>
 	<profiles>

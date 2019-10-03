@@ -12,7 +12,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
-//import PostProcessingGland.GUI.PostProcessingWindow;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.commands.SphereSegAdvanced;
 import ij.IJ;
@@ -55,7 +54,7 @@ public class MainWindow extends JFrame {
 	/**
 	 * 
 	 */
-	//private PostProcessingWindow postprocessingWindow;
+	private PostProcessingWindow postprocessingWindow;
 	
 	/**
 	 * 
@@ -240,9 +239,9 @@ public class MainWindow extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				
-				/*postprocessingWindow = new PostProcessingWindow(originalImp);
+				postprocessingWindow = new PostProcessingWindow(originalImp);
 				postprocessingWindow.pack();
-				postprocessingWindow.setVisible(true);*/
+				postprocessingWindow.setVisible(true);
 			}
 		});
 		

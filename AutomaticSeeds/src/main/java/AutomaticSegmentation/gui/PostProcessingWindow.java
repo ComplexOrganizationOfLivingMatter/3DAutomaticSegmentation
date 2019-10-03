@@ -1,5 +1,5 @@
 
-package PostProcessingGland.GUI;
+package AutomaticSegmentation.gui;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -59,9 +59,9 @@ import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
 
-import PostProcessingGland.PostProcessingGland;
-import PostProcessingGland.Elements.Cell3D;
-import PostProcessingGland.Elements.RoiAdjustment;
+import AutomaticSegmentation.MainAutomatic3DSegmentation;
+import AutomaticSegmentation.Elements.Cell3D;
+import AutomaticSegmentation.Elements.RoiAdjustment;
 import epigraph.GUI.CustomElements.CustomCanvas;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
@@ -168,7 +168,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		});
 		
 		canvas = (CustomCanvas) super.getCanvas();
-		PostProcessingGland.callToolbarPolygon();
+		MainAutomatic3DSegmentation.callToolbarPolygon();
 		
 		sliceSelector = new Scrollbar(Scrollbar.HORIZONTAL, 1, 1, 1, (imp.getStackSize()));
 		sliceSelector.setVisible(true);
@@ -794,4 +794,5 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			e1.printStackTrace();
 		}
 	}
+	
 }
