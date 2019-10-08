@@ -236,7 +236,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		// Init attributes.
 		newCell = new RoiAdjustment();
 
-		processingFrame = new JFrame("PostProcessingGland");
+		processingFrame = new JFrame();
 		upRightPanel = new JPanel();
 		middlePanel = new JPanel();
 		bottomRightPanel = new JPanel();
@@ -673,7 +673,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		File dirLumen = new File(this.initialDirectory.toString() + "/SegmentedLumen");
 		File[] filesLumen = dirLumen.listFiles(new FilenameFilter() {
 			public boolean accept(File dir, String name) {
-				return name.startsWith("SegmentedLumen");
+				return name.startsWith("");
 			}
 		});
 		int zIndex = 0;

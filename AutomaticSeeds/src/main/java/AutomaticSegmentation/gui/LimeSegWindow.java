@@ -3,20 +3,45 @@
  */
 package AutomaticSegmentation.gui;
 
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
 import java.awt.HeadlessException;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.UIManager;
 
+import org.scijava.plugin.Parameter;
+import org.scijava.util.ColorRGB;
+
+import eu.kiaru.limeseg.LimeSeg;
+import eu.kiaru.limeseg.commands.CommandHelper;
 import eu.kiaru.limeseg.commands.SphereSegAdvanced;
+import eu.kiaru.limeseg.struct.CellT;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.gui.OvalRoi;
+import ij.gui.Roi;
+import ij.plugin.frame.RoiManager;
+import net.miginfocom.swing.MigLayout;
+
+import java.lang.Thread;
 
 /**
  * @author Pablo Vicente-Munuera
  *
  */
+
 public class LimeSegWindow extends JFrame {
 
 	/**
@@ -33,8 +58,11 @@ public class LimeSegWindow extends JFrame {
 	private float range_D_0;
 	
 	private JButton btStopOptimisation;
-	
+	private JPanel Panel;
+	private JButton btnSavePly;
 	private JButton btRunSegmentation;
+	
+	private String initialDirectory;
 
 	/**
 	 * @throws HeadlessException
@@ -43,6 +71,71 @@ public class LimeSegWindow extends JFrame {
 		// TODO Auto-generated constructor stub
 		this.workingImp = workingImp;
 		
+		this.initialDirectory = workingImp.getOriginalFileInfo().directory;
+			
+		//processingFrame = new JFrame("LimeSeg");
+		Panel = new JPanel();
+		Panel.setLayout(new MigLayout());
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		
+		btStopOptimisation = new JButton("Stop");
+		Panel.add(btStopOptimisation, "right");
+		
+		//btRunSegmentation = new JButton("Start");
+		//Panel.add(btRunSegmentation, "right");
+		
+		btnSavePly = new JButton("Saved");
+		Panel.add(btnSavePly, "left");
+		
+		getContentPane().add(Panel);
+		
+		ExecutorService executor1 = Executors.newSingleThreadExecutor();
+		executor1.submit(() -> {
+			
+			btStopOptimisation.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					LimeSeg.stopOptimisation();
+				}
+			});
+
+			btnSavePly.addActionListener(new ActionListener() {
+		
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					String path = initialDirectory + "/OutputLimeSeg";
+					File dir = new File(path);
+					if (!dir.isDirectory()) {
+						System.out.println("New folder created");
+						dir.mkdir();
+					}
+					LimeSeg.saveStateToXmlPly(path);
+					System.out.println("Saved");
+				}
+			});
+			executor1.shutdown();
+		
+		});
+		
+		ExecutorService executor2 = Executors.newSingleThreadExecutor();
+		executor2.submit(() -> {
+			SphereSegAdvanced cf = new SphereSegAdvanced();
+			cf.run();
+			System.out.println("Finish");
+			
+			executor2.shutdown();
+		});
+		
+		//btRunSegmentation.addActionListener(new ActionListener() {
+			
+			//@Override
+			//public void actionPerformed(ActionEvent e) {
+			//	SphereSegAdvanced cf = new SphereSegAdvanced();
+			//	cf.run();
+			//	System.out.println("Finish");
+			//}
+		//});
 		
 		//WHEN CLICKING BUTTON RUNSEGMENTATION
 //		
@@ -56,12 +149,11 @@ public class LimeSegWindow extends JFrame {
 //		
 //		JPanelLimeSeg jp = new JPanelLimeSeg(ls);
 //		jp.setVisible(true);
-//		jp.repaint();
+//		jp.repaint();	
 		
-		SphereSegAdvanced cf = new SphereSegAdvanced();
-		cf.run();
-	}
-
+	}	
+	
+	
 	/**
 	 * @return the f_pressure
 	 */

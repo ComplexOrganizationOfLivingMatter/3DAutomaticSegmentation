@@ -176,7 +176,7 @@ public class MainWindow extends JFrame {
 				try {
 					cellOutlineChannel = IJ.openImage();
 					lbCellOutlinesFileName.setText(cellOutlineChannel.getOriginalFileInfo().fileName);
-					cbSegmentableChannel.setSelectedIndex(0);
+					//cbSegmentableChannel.setSelectedIndex(0);
 				} catch (Exception ex) {
 					
 				}
@@ -228,7 +228,10 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				originalImp.setC(cbSegmentableChannel.getSelectedIndex());
 				
-				limeSegWindow = new LimeSegWindow(cellOutlineChannel.duplicate());
+				limeSegWindow = new LimeSegWindow(cellOutlineChannel);
+				//send the original image to get the directory and save the cells
+				//cellOutline.duplicate() send a null directory
+				//limeSegWindow = new LimeSegWindow(originalImp); 	
 				limeSegWindow.pack();
 				limeSegWindow.setVisible(true);
 			}
@@ -239,7 +242,7 @@ public class MainWindow extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				
-				postprocessingWindow = new PostProcessingWindow(originalImp);
+				postprocessingWindow = new PostProcessingWindow(cellOutlineChannel);
 				postprocessingWindow.pack();
 				postprocessingWindow.setVisible(true);
 			}

@@ -85,6 +85,7 @@ public class DefaultSegmentation implements genericSegmentation {
 		ImageStack imgFilled = imp_segmented.getStack().duplicate();
 		for (int i = 1; i <= imp_segmented.getStackSize(); i++) {
 			
+			System.out.println(i);
 			ImageProcessor processor = imp_segmented.getStack().getProcessor(i);
 			processor = Morphology.closing(processor, shape2D);
 			processor = BinaryImages.binarize(processor);
