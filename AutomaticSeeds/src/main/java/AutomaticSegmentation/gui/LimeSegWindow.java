@@ -89,6 +89,7 @@ public class LimeSegWindow extends JFrame {
 		
 		getContentPane().add(Panel);
 		
+		//execute the listener in parallel with run to stop if is necessary
 		ExecutorService executor1 = Executors.newSingleThreadExecutor();
 		executor1.submit(() -> {
 			
@@ -118,6 +119,7 @@ public class LimeSegWindow extends JFrame {
 		
 		});
 		
+		//execute run in parallel with bottom to stop if is necessary
 		ExecutorService executor2 = Executors.newSingleThreadExecutor();
 		executor2.submit(() -> {
 			SphereSegAdvanced cf = new SphereSegAdvanced();

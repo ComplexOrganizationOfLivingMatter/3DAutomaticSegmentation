@@ -492,5 +492,5 @@ public class RoiAdjustment {
 			}
 		}
 	}
-	
+		
 }

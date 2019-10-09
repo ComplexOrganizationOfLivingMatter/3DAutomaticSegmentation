@@ -180,6 +180,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		//Initialize lumenDots as matrix [x][2] to split the lumen in 2 polygons
 		lumenDots = new PolygonRoi[imp.getStackSize()+1][2];
 		loadLumen();
+		removeCellOverlap(all3dCells);
 		removeCellLumenOverlap();
 		initializeGUIItems();
 		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false, lumenDots));
@@ -667,6 +668,58 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			}
 		}
 	}
+	
+	public void removeCellOverlap(ArrayList<Cell3D> allCells) 
+	{
+		for (int nFrame = 1; nFrame < imp.getStackSize()+1; nFrame++) 
+		{
+			for (int nCell = 0; nCell < allCells.size(); nCell++) 
+			{
+				//Check if the cell is not empty
+				if ( allCells.get(nCell).getCell3DAt(nFrame).size() > 0) 
+					{
+					//Get the cell points
+					float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).getCell3DAt(nFrame));
+					float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).getCell3DAt(nFrame));
+					//Points to polygon to shape			
+					PolygonRoi currentCell = new PolygonRoi(xCell, yCell, 6);
+					ShapeRoi s = new ShapeRoi(currentCell);
+					ShapeRoi r = new ShapeRoi(currentCell);
+					
+					for (int nC = 0; nC < allCells.size(); nC++) 
+					{	
+						//if the cell is not empty in the frame do the calculation
+						if (allCells.get(nC).getCell3DAt(nFrame).size() > 0)
+						{
+							//get the x,y points of the cell
+							float[] xC = allCells.get(nC).getCoordinate("x", allCells.get(nC).getCell3DAt(nFrame));
+							float[] yC = allCells.get(nC).getCoordinate("y", allCells.get(nC).getCell3DAt(nFrame));
+							
+							PolygonRoi overlappingCell = new PolygonRoi(xC, yC, 6);
+							ShapeRoi sNewPolygon = new ShapeRoi(overlappingCell);
+							ShapeRoi sOverlappingCell = new ShapeRoi(overlappingCell);
+							ShapeRoi overlappingZone = new ShapeRoi(sNewPolygon.and(s));
+							
+ 							if ((overlappingZone.getFloatWidth() != 0 | overlappingZone.getFloatHeight() != 0)
+									& allCells.get(nC).id_Cell != allCells.get(nCell).id_Cell) 
+							{
+								PolygonRoi polygon = new PolygonRoi(sOverlappingCell.not(r).getContainedFloatPoints(),6);					
+								
+								Roi[] overRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);														
+								PolygonRoi poly = newCell.getConcaveHull(overRoi,1);	
+								ArrayList<DotN> dotsNewRegion = newCell.setNewRegion(nFrame, poly);	
+								ArrayList<DotN> integratedDots = newCell.integrateNewRegion(dotsNewRegion, allCells.get(nC).dotsList, nFrame);
+				
+								Cell3D newCell = new Cell3D(allCells.get(nC).id_Cell, integratedDots);
+								allCells.set(nC, newCell);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
 	//Time 37 seconds
 	public void loadLumen ()
 	{
@@ -794,5 +847,5 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			e1.printStackTrace();
 		}
 	}
-	
+
 }

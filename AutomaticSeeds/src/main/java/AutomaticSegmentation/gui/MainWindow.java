@@ -228,10 +228,10 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				originalImp.setC(cbSegmentableChannel.getSelectedIndex());
 				
-				limeSegWindow = new LimeSegWindow(cellOutlineChannel);
+				//limeSegWindow = new LimeSegWindow(cellOutlineChannel.duplicate());
 				//send the original image to get the directory and save the cells
 				//cellOutline.duplicate() send a null directory
-				//limeSegWindow = new LimeSegWindow(originalImp); 	
+				limeSegWindow = new LimeSegWindow(originalImp); 	
 				limeSegWindow.pack();
 				limeSegWindow.setVisible(true);
 			}
@@ -241,7 +241,7 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				
+				//cellOutline will show in the postProcessingWindow
 				postprocessingWindow = new PostProcessingWindow(cellOutlineChannel);
 				postprocessingWindow.pack();
 				postprocessingWindow.setVisible(true);
