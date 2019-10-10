@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.Set;
 
 import javax.imageio.ImageIO;
@@ -161,7 +162,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			PostProcessCell.clearCell();
 			for (int i = 0; i < imp.getStackSize(); i++) {
 				if (PostProcessCellCopy.getCell3DAt(i).size() != 0) {
-					//System.out.println("Frame: "+i);
 					PostProcessCell.addDotsList(processLimeSegOutput(PostProcessCellCopy.getCell3DAt(i), i));
 				}
 				
@@ -897,21 +897,27 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 				channel.appendChild(domCell.createTextNode(Integer.toString(c.cellChannel)));
 				cellParams.appendChild(channel);
 				// Cell color
+				//create random light colors for each cell
+				Random rand = new Random();
+				float R = (float) (rand.nextFloat() / 2f + 0.5);
+				float G = (float) (rand.nextFloat() / 2f + 0.5);
+				float B = (float) (rand.nextFloat() / 2f + 0.5);
+				
 				Element color = domCell.createElement("color");
 				Element r = domCell.createElement("R");
-				r.appendChild(domCell.createTextNode(Float.toString(c.color[0])));
+				r.appendChild(domCell.createTextNode(Float.toString(R)));
 				color.appendChild(r);
 
 				Element g = domCell.createElement("G");
-				g.appendChild(domCell.createTextNode(Float.toString(c.color[1])));
+				g.appendChild(domCell.createTextNode(Float.toString(G)));
 				color.appendChild(g);
 
 				Element b = domCell.createElement("B");
-				b.appendChild(domCell.createTextNode(Float.toString(c.color[2])));
+				b.appendChild(domCell.createTextNode(Float.toString(B)));
 				color.appendChild(b);
 
 				Element a = domCell.createElement("A");
-				a.appendChild(domCell.createTextNode(Float.toString(c.color[3])));
+				a.appendChild(domCell.createTextNode(Float.toString(1)));
 				color.appendChild(a);
 				cellParams.appendChild(color);
 				
