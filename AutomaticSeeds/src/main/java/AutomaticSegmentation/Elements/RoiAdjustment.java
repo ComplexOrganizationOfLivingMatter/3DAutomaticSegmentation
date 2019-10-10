@@ -37,7 +37,7 @@ public class RoiAdjustment {
 	 * @param id
 	 */
 	
-	public void removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame, String id, PolygonRoi[][] lumen) 
+	public ArrayList<Cell3D> removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame, String id, PolygonRoi[][] lumen) 
 	{
 		//fill the selection with points
 		PolygonRoi newPolygonInterpolated = new PolygonRoi(newPolygon.getInterpolatedPolygon(2, false), 2);
@@ -98,6 +98,7 @@ public class RoiAdjustment {
 		//verify if the frame has lumen and do the fuction to remove lumen overlaps
 		if (lumen[frame-1] != null)
 			removeLumenOverlap(allCells, frame, lumen);	
+		return allCells;
 	}
 	 
 	/**

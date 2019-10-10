@@ -22,8 +22,11 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,9 +49,17 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.opensphere.geometry.algorithm.ConcaveHull;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import com.google.common.primitives.Ints;
 import com.vividsolutions.jts.geom.Coordinate;
@@ -150,6 +161,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			PostProcessCell.clearCell();
 			for (int i = 0; i < imp.getStackSize(); i++) {
 				if (PostProcessCellCopy.getCell3DAt(i).size() != 0) {
+					//System.out.println("Frame: "+i);
 					PostProcessCell.addDotsList(processLimeSegOutput(PostProcessCellCopy.getCell3DAt(i), i));
 				}
 				
@@ -180,7 +192,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		//Initialize lumenDots as matrix [x][2] to split the lumen in 2 polygons
 		lumenDots = new PolygonRoi[imp.getStackSize()+1][2];
 		loadLumen();
-		removeCellOverlap(all3dCells);
+		removeCellOverlap();
 		removeCellLumenOverlap();
 		initializeGUIItems();
 		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false, lumenDots));
@@ -361,7 +373,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			//Check if polyRoi is different to null, if is do the modify cell 
 			if(polyRoi != null)
 			{
-				newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
+				all3dCells = newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
 						all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, lumenDots);
 				checkOverlay.setSelectedIndex(1);
 				updateOverlay();
@@ -378,7 +390,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		if (e.getSource() == btnSave) 
 		{
-			this.savePlyFile(all3dCells, initialDirectory);
+			this.savePlyFiles(all3dCells, initialDirectory);
 			//After saved the plyFiles show a message to inform the user
 			JOptionPane.showMessageDialog(middlePanel.getParent(),"Saved results.");
 		}
@@ -449,7 +461,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	 * @param allCells
 	 * @param path_in
 	 */
-
+	//Only save the PlyFile, also works
 	public void savePlyFile(ArrayList<Cell3D> allCells, String path_in) {
 		if (!path_in.endsWith(File.separator)) {
 			path_in = path_in + File.separator;
@@ -556,7 +568,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	PolygonRoi prePolygon = newCell.getOrderDots(PrePolygon);
 	//create a Roi with the polygon from orderDots
 	Roi[] allRoi = newCell.getRois(prePolygon.getXCoordinates(), prePolygon.getYCoordinates(), prePolygon);
-	//Calculate the boarder with concave hull	
+	//Calculate the boarder with concave hull
 	PolygonRoi poly = newCell.getConcaveHull(allRoi, THRESHOLD); 
 	//Full fill the border with dots
 	PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(1,false),2);
@@ -669,31 +681,31 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		}
 	}
 	
-	public void removeCellOverlap(ArrayList<Cell3D> allCells) 
+	public void removeCellOverlap() 
 	{
 		for (int nFrame = 1; nFrame < imp.getStackSize()+1; nFrame++) 
 		{
-			for (int nCell = 0; nCell < allCells.size(); nCell++) 
+			for (int nCell = 0; nCell < all3dCells.size(); nCell++) 
 			{
 				//Check if the cell is not empty
-				if ( allCells.get(nCell).getCell3DAt(nFrame).size() > 0) 
+				if ( all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) 
 					{
 					//Get the cell points
-					float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).getCell3DAt(nFrame));
-					float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).getCell3DAt(nFrame));
+					float[] xCell = all3dCells.get(nCell).getCoordinate("x", all3dCells.get(nCell).getCell3DAt(nFrame));
+					float[] yCell = all3dCells.get(nCell).getCoordinate("y", all3dCells.get(nCell).getCell3DAt(nFrame));
 					//Points to polygon to shape			
 					PolygonRoi currentCell = new PolygonRoi(xCell, yCell, 6);
 					ShapeRoi s = new ShapeRoi(currentCell);
 					ShapeRoi r = new ShapeRoi(currentCell);
 					
-					for (int nC = 0; nC < allCells.size(); nC++) 
+					for (int nC = 0; nC < all3dCells.size(); nC++) 
 					{	
 						//if the cell is not empty in the frame do the calculation
-						if (allCells.get(nC).getCell3DAt(nFrame).size() > 0)
+						if (all3dCells.get(nC).getCell3DAt(nFrame).size() > 0)
 						{
 							//get the x,y points of the cell
-							float[] xC = allCells.get(nC).getCoordinate("x", allCells.get(nC).getCell3DAt(nFrame));
-							float[] yC = allCells.get(nC).getCoordinate("y", allCells.get(nC).getCell3DAt(nFrame));
+							float[] xC = all3dCells.get(nC).getCoordinate("x", all3dCells.get(nC).getCell3DAt(nFrame));
+							float[] yC = all3dCells.get(nC).getCoordinate("y", all3dCells.get(nC).getCell3DAt(nFrame));
 							
 							PolygonRoi overlappingCell = new PolygonRoi(xC, yC, 6);
 							ShapeRoi sNewPolygon = new ShapeRoi(overlappingCell);
@@ -701,17 +713,17 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 							ShapeRoi overlappingZone = new ShapeRoi(sNewPolygon.and(s));
 							
  							if ((overlappingZone.getFloatWidth() != 0 | overlappingZone.getFloatHeight() != 0)
-									& allCells.get(nC).id_Cell != allCells.get(nCell).id_Cell) 
+									& all3dCells.get(nC).id_Cell != all3dCells.get(nCell).id_Cell) 
 							{
 								PolygonRoi polygon = new PolygonRoi(sOverlappingCell.not(r).getContainedFloatPoints(),6);					
 								
 								Roi[] overRoi = newCell.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);														
 								PolygonRoi poly = newCell.getConcaveHull(overRoi,1);	
 								ArrayList<DotN> dotsNewRegion = newCell.setNewRegion(nFrame, poly);	
-								ArrayList<DotN> integratedDots = newCell.integrateNewRegion(dotsNewRegion, allCells.get(nC).dotsList, nFrame);
+								ArrayList<DotN> integratedDots = newCell.integrateNewRegion(dotsNewRegion, all3dCells.get(nC).dotsList, nFrame);
 				
-								Cell3D newCell = new Cell3D(allCells.get(nC).id_Cell, integratedDots);
-								allCells.set(nC, newCell);
+								Cell3D newCell = new Cell3D(all3dCells.get(nC).id_Cell, integratedDots);
+								all3dCells.set(nC, newCell);
 							}
 						}
 					}
@@ -847,5 +859,144 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			e1.printStackTrace();
 		}
 	}
+	//Save ply files, xml and copy limeSegParams from original LimeSeg Output
+	public void savePlyFiles(ArrayList<Cell3D> allCells, String path_in) 
+	{
+		if (!path_in.endsWith(File.separator)) {
+			path_in = path_in + File.separator;
+		}
+		String path = path_in + "/newOutputLimeSeg";
+		// instance of a DocumentBuilderFactory
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		try {
 
+			File dir = new File(path);
+			if (!dir.isDirectory()) {
+				System.out.println("New folder created");
+				dir.mkdir();
+			}
+			// By default removes all files in the folder
+			// But ask for confirmation if the folder is not empty...
+			if (dir.listFiles().length != 0) {
+				System.out.println("Saving will remove the content of the folder " + path + " that contains "
+						+ dir.listFiles().length + " files and folders.");
+			}
+			purgeDirectory(dir, 1);
+			
+			DocumentBuilder db = dbf.newDocumentBuilder();
+			
+			String fromFile = path_in + "/OutputLimeSeg/LimeSegParams.xml";
+	        String toFile = path_in + "/newOutputLimeSeg/LimeSegParams.xml";
+	        copyFile(fromFile, toFile);
+
+			allCells.forEach(c -> {
+				// Cell Channel
+				Document domCell = db.newDocument();
+				Element cellParams = domCell.createElement("CellParameters");
+				Element channel = domCell.createElement("channel");
+				channel.appendChild(domCell.createTextNode(Integer.toString(c.cellChannel)));
+				cellParams.appendChild(channel);
+				// Cell color
+				Element color = domCell.createElement("color");
+				Element r = domCell.createElement("R");
+				r.appendChild(domCell.createTextNode(Float.toString(c.color[0])));
+				color.appendChild(r);
+
+				Element g = domCell.createElement("G");
+				g.appendChild(domCell.createTextNode(Float.toString(c.color[1])));
+				color.appendChild(g);
+
+				Element b = domCell.createElement("B");
+				b.appendChild(domCell.createTextNode(Float.toString(c.color[2])));
+				color.appendChild(b);
+
+				Element a = domCell.createElement("A");
+				a.appendChild(domCell.createTextNode(Float.toString(c.color[3])));
+				color.appendChild(a);
+				cellParams.appendChild(color);
+				
+				// Now writes all ply files for CellT object
+				String pathCell = path + File.separator + "cell_" + c.id_Cell + File.separator;
+				File dirCell = new File(pathCell);
+				dirCell.mkdir(); // attempt to create the directory here
+				domCell.appendChild(cellParams);
+				saveXmlFile(pathCell + "CellParams.xml", domCell);
+
+				CellT cellt = new CellT(c, 1);
+				cellt.dots = c.dotsList;
+      	        if (dirCell.exists()) 
+	        	{
+      	        	IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
+	        	}
+			});
+		} catch (ParserConfigurationException pce) {
+			System.out.println("Save State: Error trying to instantiate DocumentBuilder " + pce);
+		}
+	}
+	//functions from LimeSeg to clean the files and save XML
+	static void purgeDirectory(File dir, int height)
+	{
+		// no need to clean below level 
+		if (height>=0) 
+		{
+			for (File file: dir.listFiles()) 
+			{
+		        if (file.isDirectory()) purgeDirectory(file, height-1);
+		        file.delete();
+		    }
+		 }
+	}
+	
+	static void saveXmlFile(String path, Document dom) 
+	{
+		try 
+		{
+			Transformer tr = TransformerFactory.newInstance().newTransformer();
+	        tr.setOutputProperty(OutputKeys.INDENT, "yes");
+	        tr.setOutputProperty(OutputKeys.METHOD, "xml");
+	        tr.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+	        tr.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+	        // send DOM to file
+	           
+	        FileOutputStream fos = new FileOutputStream(path); 
+	        tr.transform(new DOMSource(dom), new StreamResult(fos));
+	        fos.close();
+	    } 
+		catch (TransformerException te) 
+		{
+			System.out.println(te.getMessage());
+	    } 
+		catch (IOException ioe) 
+		{
+			System.out.println(ioe.getMessage());
+	    }
+	}
+
+	//function to copyFiles
+	public boolean copyFile(String fromFile, String toFile)
+	{
+        File origin = new File(fromFile);
+        File destination = new File(toFile);
+        if (origin.exists()) {
+            try {
+                InputStream in = new FileInputStream(origin);
+                OutputStream out = new FileOutputStream(destination);
+                // We use a buffer for the copy (Usamos un buffer para la copia).
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+                in.close();
+                out.close();
+                return true;
+            } catch (IOException ioe) {
+                ioe.printStackTrace();
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+	
 }
