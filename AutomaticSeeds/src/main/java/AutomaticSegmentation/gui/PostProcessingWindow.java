@@ -222,9 +222,9 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		
 		//Initialize lumenDots as matrix [x][2] to split the lumen in 2 polygons
 		lumenDots = new PolygonRoi[imp.getStackSize()+1][2];
-		//loadLumen();
-		//removeCellOverlap();
-		//removeCellLumenOverlap();
+		loadLumen();
+		removeCellOverlap();
+		removeCellLumenOverlap();
 		initializeGUIItems();
 		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false, lumenDots));
 		initGUI();
