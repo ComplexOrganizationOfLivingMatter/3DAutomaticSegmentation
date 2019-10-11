@@ -1,6 +1,16 @@
 
 package AutomaticSegmentation.gui;
 
+import static com.jogamp.opengl.GL.GL_ARRAY_BUFFER;
+import static com.jogamp.opengl.GL.GL_COLOR_BUFFER_BIT;
+import static com.jogamp.opengl.GL.GL_DEPTH_BUFFER_BIT;
+import static com.jogamp.opengl.GL.GL_ELEMENT_ARRAY_BUFFER;
+import static com.jogamp.opengl.GL.GL_FLOAT;
+import static com.jogamp.opengl.GL.GL_POINTS;
+import static com.jogamp.opengl.GL.GL_STATIC_DRAW;
+import static com.jogamp.opengl.GL.GL_TRIANGLES;
+import static com.jogamp.opengl.GL.GL_UNSIGNED_INT;
+
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Event;
@@ -27,6 +37,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -63,6 +75,19 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.google.common.primitives.Ints;
+import com.jogamp.newt.Display;
+import com.jogamp.newt.NewtFactory;
+import com.jogamp.newt.Screen;
+import com.jogamp.newt.event.KeyListener;
+import com.jogamp.newt.event.MouseListener;
+import com.jogamp.newt.opengl.GLWindow;
+import com.jogamp.opengl.GL2;
+import com.jogamp.opengl.GLAutoDrawable;
+import com.jogamp.opengl.GLCapabilities;
+import com.jogamp.opengl.GLEventListener;
+import com.jogamp.opengl.GLProfile;
+import com.jogamp.opengl.util.FPSAnimator;
+import com.jogamp.opengl.util.GLBuffers;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.CoordinateSequence;
 import com.vividsolutions.jts.geom.Geometry;
@@ -76,10 +101,15 @@ import AutomaticSegmentation.Elements.Cell3D;
 import AutomaticSegmentation.Elements.RoiAdjustment;
 import epigraph.GUI.CustomElements.CustomCanvas;
 import eu.kiaru.limeseg.LimeSeg;
+import eu.kiaru.limeseg.gui.JOGL3DCellRenderer;
 import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
+import eu.kiaru.limeseg.struct.Vector3D;
+import glm.mat._4.Mat4;
+import glm.vec._2.i.Vec2i;
+import glm.vec._3.Vec3;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.ImageRoi;
@@ -123,6 +153,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private JButton btnSave;
 	private JButton btnInsert;
 	private JButton btnLumen;
+	private JButton btn3DDisplay;
 	private JComboBox<String> checkOverlay;
 	private JComboBox<String> checkLumen;
 	private JSpinner cellSpinner;
@@ -191,9 +222,9 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		
 		//Initialize lumenDots as matrix [x][2] to split the lumen in 2 polygons
 		lumenDots = new PolygonRoi[imp.getStackSize()+1][2];
-		loadLumen();
-		removeCellOverlap();
-		removeCellLumenOverlap();
+		//loadLumen();
+		//removeCellOverlap();
+		//removeCellLumenOverlap();
 		initializeGUIItems();
 		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false, lumenDots));
 		initGUI();
@@ -224,6 +255,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		rightPanel.add(middlePanel, "aligny center, wrap, gapy 10::50");
 		rightPanel.add(bottomRightPanel);
 		rightPanel.add(slicePanel,"aligny center, wrap, south");
+		rightPanel.add(btn3DDisplay,"aligny center, south");
 
 		leftPanel.setLayout(new MigLayout());
 		
@@ -282,6 +314,9 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 		btnLumen = new JButton("Update Lumen");
 		btnLumen.addActionListener(this);
+		
+		btn3DDisplay = new JButton("Show 3D Cell");
+		btn3DDisplay.addActionListener(this);
 
 		canvas.addComponentListener(new ComponentAdapter() {
 
@@ -403,6 +438,14 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			removeCellLumenOverlap();
 			updateOverlay();
 		}
+		
+		if (e.getSource() == btn3DDisplay) {
+			String path_in = initialDirectory + "OutputLimeSeg";
+			LimeSeg.loadStateFromXmlPly(path_in); 
+			LimeSeg.make3DViewVisible();
+			LimeSeg.putAllCellsTo3DDisplay();	
+			System.out.println("READY");
+		}
 
 	}
 
@@ -454,50 +497,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		}
 		this.getImagePlus().deleteRoi();
 
-	}
-
-	/**
-	 * 
-	 * @param allCells
-	 * @param path_in
-	 */
-	//Only save the PlyFile, also works
-	public void savePlyFile(ArrayList<Cell3D> allCells, String path_in) {
-		if (!path_in.endsWith(File.separator)) {
-			path_in = path_in + File.separator;
-		}
-		String path = path_in + "/newOutputLimeSeg";
-		File dir = new File(path);
-		if (!dir.isDirectory()) {
-			System.out.println("New folder created");
-			dir.mkdir();
-		}
-		// By default removes all files in the folder
-		// But ask for confirmation if the folder is not empty...
-		if (dir.listFiles().length != 0) {
-			System.out.println("Saving will remove the content of the folder " + path + " that contains "
-					+ dir.listFiles().length + " files and folders.");
-		}
-
-		// create the optimizer parameter element
-		allCells.forEach(c -> {
-
-			// Now writes all ply files for CellT object
-			
-			CellT cellt = new CellT(c, 1);
-			cellt.dots = c.dotsList;
-			String pathCell = path + File.separator + "cell_" + c.id_Cell + File.separator;
-			File dirCell = new File(pathCell);
-			// attempt to create the directory here
-			if (dirCell.mkdir()) {
-				IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
-			} else {
-				if (dirCell.exists()) {
-					IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
-				}
-
-			}
-		});
 	}
 
 	/**
@@ -917,7 +916,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 				color.appendChild(b);
 
 				Element a = domCell.createElement("A");
-				a.appendChild(domCell.createTextNode(Float.toString(1)));
+				a.appendChild(domCell.createTextNode(Float.toString(100)));
 				color.appendChild(a);
 				cellParams.appendChild(color);
 				
@@ -1004,5 +1003,5 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
             return false;
         }
     }
-	
+
 }
