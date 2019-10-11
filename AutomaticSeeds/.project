@@ -3,6 +3,7 @@
 	<name>AutomaticSegmentation3D_</name>
 	<comment></comment>
 	<projects>
+		<project>PostProcessingGland_</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
