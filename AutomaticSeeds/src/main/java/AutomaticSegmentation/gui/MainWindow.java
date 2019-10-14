@@ -161,8 +161,11 @@ public class MainWindow extends JFrame {
 				// TODO Auto-generated method stub
 				try {
 					nucleiChannel = IJ.openImage();
+					if (lbNucleiFileName.getText().length() <= 2) {
 					lbNucleiFileName.setText(nucleiChannel.getOriginalFileInfo().fileName);
-					cbNucleiChannel.setSelectedIndex(0);
+					cbNucleiChannel.addItem(nucleiChannel.getTitle());
+					//cbNucleiChannel.setSelectedIndex(0);
+					}
 				} catch (Exception ex) {
 					
 				}
@@ -175,8 +178,11 @@ public class MainWindow extends JFrame {
 				// TODO Auto-generated method stub
 				try {
 					cellOutlineChannel = IJ.openImage();
+					if (lbCellOutlinesFileName.getText().length() <= 2) {
 					lbCellOutlinesFileName.setText(cellOutlineChannel.getOriginalFileInfo().fileName);
+					cbSegmentableChannel.addItem(cellOutlineChannel.getTitle());
 					//cbSegmentableChannel.setSelectedIndex(0);
+					}
 				} catch (Exception ex) {
 					
 				}
@@ -201,11 +207,11 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (((String) cbNucleiChannel.getSelectedItem()).equals("")){
 					nucleiChannel = null;
-				} else {
+				} else if ((boolean) ((String) cbNucleiChannel.getSelectedItem()).contains("Original file - C=")) {
 					nucleiChannel = extractChannelOfStack(cbNucleiChannel.getSelectedIndex(), originalImp);
+					//lbNucleiFileName.setText("");
+				} 
 					
-					lbNucleiFileName.setText("");
-				}
 			}
 		});
 		
@@ -215,9 +221,9 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (((String) cbSegmentableChannel.getSelectedItem()).equals("")){
 					cellOutlineChannel = null;
-				} else {
+				} else if ((boolean) ((String) cbNucleiChannel.getSelectedItem()).contains("Original file - C=")) {
 					cellOutlineChannel = extractChannelOfStack(cbSegmentableChannel.getSelectedIndex(), originalImp);
-					lbCellOutlinesFileName.setText("");
+					//lbCellOutlinesFileName.setText("");
 				}
 			}
 		});
