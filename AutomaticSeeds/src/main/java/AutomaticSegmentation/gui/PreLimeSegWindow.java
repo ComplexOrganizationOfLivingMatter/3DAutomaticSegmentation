@@ -251,8 +251,10 @@ public class PreLimeSegWindow extends JFrame {
 			break;
 		}
 		imp_segmented.show();
+		RoiManager rm = getNucleiROIs(imp_segmented);
 		cbPredefinedTypeSegmentation.setEnabled(true);
 		
+		btRun.setEnabled(true);
 		return imp_segmented;
 	}
 

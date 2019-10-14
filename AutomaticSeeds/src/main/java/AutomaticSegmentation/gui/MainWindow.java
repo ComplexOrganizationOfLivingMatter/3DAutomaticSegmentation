@@ -221,7 +221,7 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (((String) cbSegmentableChannel.getSelectedItem()).equals("")){
 					cellOutlineChannel = null;
-				} else if ((boolean) ((String) cbNucleiChannel.getSelectedItem()).contains("Original file - C=")) {
+				} else if ((boolean) ((String) cbSegmentableChannel.getSelectedItem()).contains("Original file - C=")) {
 					cellOutlineChannel = extractChannelOfStack(cbSegmentableChannel.getSelectedIndex(), originalImp);
 					//lbCellOutlinesFileName.setText("");
 				}
@@ -350,7 +350,7 @@ public class MainWindow extends JFrame {
 		ImageStack newChannelStack = new ImageStack(originalImage.getWidth(), originalImage.getHeight());
 		
 		int indexToAdd = 0;
-		for (int numZ = 0; numZ < originalImage.getStackSize(); numZ++) {
+		for (int numZ = 0; numZ < originalImage.getStackSize()/originalImage.getNChannels(); numZ++) {
 			indexToAdd = originalImage.getStackIndex(numChannel, numZ, originalImage.getFrame());
 			newChannelStack.addSlice(originalImage.getStack().getProcessor(indexToAdd));
 		}
