@@ -4,11 +4,7 @@ package AutomaticSegmentation.Elements;
 import java.awt.Point;
 import java.util.ArrayList;
 
-import AutomaticSegmentation.gui.PostProcessingWindow;
-import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
-import ij.gui.PointRoi;
-import ij.gui.Roi;
 
 public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 

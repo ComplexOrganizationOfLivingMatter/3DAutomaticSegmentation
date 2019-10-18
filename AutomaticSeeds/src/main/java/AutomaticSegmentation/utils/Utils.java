@@ -6,8 +6,6 @@ package AutomaticSegmentation.utils;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import inra.ijpb.measure.region3d.Centroid3D;
-
 /**
  * @author PhD-Student
  *

@@ -3,39 +3,15 @@
  */
 package AutomaticSegmentation.gui;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.GraphicsConfiguration;
 import java.awt.HeadlessException;
-import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
 
-import org.scijava.plugin.Parameter;
-import org.scijava.util.ColorRGB;
-
-import eu.kiaru.limeseg.LimeSeg;
-import eu.kiaru.limeseg.commands.CommandHelper;
 import eu.kiaru.limeseg.commands.SphereSegAdvanced;
-import eu.kiaru.limeseg.struct.CellT;
-import ij.IJ;
 import ij.ImagePlus;
-import ij.gui.OvalRoi;
-import ij.gui.Roi;
-import ij.plugin.frame.RoiManager;
 import net.miginfocom.swing.MigLayout;
-
-import java.lang.Thread;
 
 /**
  * @author Pablo Vicente-Munuera
@@ -89,45 +65,49 @@ public class LimeSegWindow extends JFrame {
 		
 		getContentPane().add(Panel);
 		
-		//execute the listener in parallel with run to stop if is necessary
-		ExecutorService executor1 = Executors.newSingleThreadExecutor();
-		executor1.submit(() -> {
-			
-			btStopOptimisation.addActionListener(new ActionListener() {
-				
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					LimeSeg.stopOptimisation();
-				}
-			});
-
-			btnSavePly.addActionListener(new ActionListener() {
+//		//execute the listener in parallel with run to stop if is necessary
+//		ExecutorService executor1 = Executors.newSingleThreadExecutor();
+//		executor1.submit(() -> {
+//			
+//			btStopOptimisation.addActionListener(new ActionListener() {
+//				
+//				@Override
+//				public void actionPerformed(ActionEvent e) {
+//					LimeSeg.stopOptimisation();
+//				}
+//			});
+//
+//			btnSavePly.addActionListener(new ActionListener() {
+//		
+//				@Override
+//				public void actionPerformed(ActionEvent e) {
+//					String path = initialDirectory + "/OutputLimeSeg";
+//					File dir = new File(path);
+//					if (!dir.isDirectory()) {
+//						System.out.println("New folder created");
+//						dir.mkdir();
+//					}
+//					LimeSeg.saveStateToXmlPly(path);
+//					System.out.println("Saved");
+//				}
+//			});
+//			executor1.shutdown();
+//		
+//		});
 		
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					String path = initialDirectory + "/OutputLimeSeg";
-					File dir = new File(path);
-					if (!dir.isDirectory()) {
-						System.out.println("New folder created");
-						dir.mkdir();
-					}
-					LimeSeg.saveStateToXmlPly(path);
-					System.out.println("Saved");
-				}
-			});
-			executor1.shutdown();
+//		//execute run in parallel with bottom to stop if is necessary
+//		ExecutorService executor2 = Executors.newSingleThreadExecutor();
+//		executor2.submit(() -> {
+//			SphereSegAdvanced cf = new SphereSegAdvanced();
+//			cf.run();
+//			System.out.println("Finish");
+//			
+//			executor2.shutdown();
+//		});
 		
-		});
-		
-		//execute run in parallel with bottom to stop if is necessary
-		ExecutorService executor2 = Executors.newSingleThreadExecutor();
-		executor2.submit(() -> {
-			SphereSegAdvanced cf = new SphereSegAdvanced();
-			cf.run();
-			System.out.println("Finish");
-			
-			executor2.shutdown();
-		});
+		SphereSegAdvanced cf = new SphereSegAdvanced();
+		cf.run();
+		System.out.println("Finish");
 		
 		//btRunSegmentation.addActionListener(new ActionListener() {
 			

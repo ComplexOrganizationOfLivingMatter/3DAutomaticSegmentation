@@ -3,33 +3,21 @@
  */
 package AutomaticSegmentation.gui;
 
-import java.awt.Component;
 import java.awt.GraphicsConfiguration;
+import java.awt.GridLayout;
 import java.awt.HeadlessException;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
-import eu.kiaru.limeseg.LimeSeg;
-import eu.kiaru.limeseg.commands.SphereSegAdvanced;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
-import io.scif.img.ImgOpener;
-import net.imagej.patcher.LegacyInjector;
-
-import java.awt.GridLayout;
-
-import javax.swing.ComboBoxModel;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-
-import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.awt.event.ActionEvent;
 
 /**
  * @author Pablo Vicente-Munuera, Pedro Gómez-Gálvez
@@ -237,7 +225,7 @@ public class MainWindow extends JFrame {
 				//limeSegWindow = new LimeSegWindow(cellOutlineChannel.duplicate());
 				//send the original image to get the directory and save the cells
 				//cellOutline.duplicate() send a null directory
-				limeSegWindow = new LimeSegWindow(originalImp); 	
+				limeSegWindow = new LimeSegWindow(cellOutlineChannel); 	
 				limeSegWindow.pack();
 				limeSegWindow.setVisible(true);
 			}
@@ -354,7 +342,9 @@ public class MainWindow extends JFrame {
 			indexToAdd = originalImage.getStackIndex(numChannel, numZ, originalImage.getFrame());
 			newChannelStack.addSlice(originalImage.getStack().getProcessor(indexToAdd));
 		}
-		return new ImagePlus("", newChannelStack);
+		ImagePlus oneChannelStack = new ImagePlus("", newChannelStack); 
+		oneChannelStack.setFileInfo(originalImage.getFileInfo());
+		return oneChannelStack;
 	}
 
 

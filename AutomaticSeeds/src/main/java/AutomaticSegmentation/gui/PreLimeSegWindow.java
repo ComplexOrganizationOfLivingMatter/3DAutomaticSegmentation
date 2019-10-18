@@ -26,15 +26,12 @@ import ij.gui.OvalRoi;
 import ij.gui.ProgressBar;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
-import ij.process.ImageProcessor;
 import ij3d.ContentConstants;
 import ij3d.Image3DUniverse;
 import inra.ijpb.geometry.Box3D;
-import inra.ijpb.geometry.Ellipsoid;
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.region3d.BoundingBox3D;
 import inra.ijpb.measure.region3d.Centroid3D;
-import inra.ijpb.measure.region3d.EquivalentEllipsoid;
 import net.haesleinhuepf.clij.CLIJ;
 import net.miginfocom.swing.MigLayout;
 
@@ -253,7 +250,6 @@ public class PreLimeSegWindow extends JFrame {
 		imp_segmented.show();
 		RoiManager rm = getNucleiROIs(imp_segmented);
 		cbPredefinedTypeSegmentation.setEnabled(true);
-		
 		btRun.setEnabled(true);
 		return imp_segmented;
 	}
