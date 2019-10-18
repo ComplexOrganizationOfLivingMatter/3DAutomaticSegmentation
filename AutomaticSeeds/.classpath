@@ -24,6 +24,5 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/limeseg"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/Epigraph_"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

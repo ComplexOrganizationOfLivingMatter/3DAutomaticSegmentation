@@ -164,27 +164,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.apache.poi</groupId>
-			<artifactId>poi</artifactId>
-			<version>3.8</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.eclipse.swt</groupId>
-			<artifactId>org.eclipse.swt.win32.win32.x86_64</artifactId>
-			<version>4.4</version>
-		</dependency>
-
-		<dependency>
 			<groupId>fr.inra.ijpb</groupId>
 			<artifactId>MorphoLibJ_</artifactId>
 			<version>1.4.1</version>
-		</dependency>
-
-		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math3 -->
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-math3</artifactId>
 		</dependency>
 
 		<dependency>
@@ -236,6 +218,12 @@
 			<artifactId>jai-imageio-core</artifactId>
 			<version>1.4.0</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>es.escudero</groupId>
+			<artifactId>Epigraph_</artifactId>
+			<version>1.0.2</version>
+		</dependency>
 
 		<dependency>
 			<groupId>net.haesleinhuepf</groupId>
@@ -284,16 +272,24 @@
 				<configuration>
 					<artifactSet>
 						<excludes>
-							<exclude>sc.fiji:Fiji_Plugins</exclude>
-							<exclude>sc.fiji:VIB-lib</exclude>
-							<exclude>sc.fiji:pal-optimization</exclude>
-							<exclude>sc.fiji:fiji-lib</exclude>
+							<exclude>sc.fiji:*</exclude>
 							<exclude>ome:*</exclude>
-							<exclude>sc.fiji:legacy-imglib1</exclude>
 							<exclude>net.imagej:*</exclude>
 							<exclude>net.imglib2:*</exclude>
 							<exclude>org.jogamp.*:*</exclude>
 							<exclude>org.apache.commons:*</exclude>
+							<exclude>log4j:log4j</exclude>
+							<exclude>gov.nist.math:*</exclude>
+							<exclude>org.javassist:*</exclude>
+							<exclude>org.openmicroscopy:*</exclude>
+							<exclude>org.slf4j:*</exclude>
+							<exclude>org.openmicroscopy:*</exclude>
+							<exclude>org.scijava:*</exclude>
+							<exclude>mpicbg:*</exclude>
+							<exclude>org.jfree:*</exclude>
+							<exclude>net.sf.trove4j:*</exclude>
+							<exclude>org.bushe:*</exclude>
+							<exclude>fr.inra.ijpb:*</exclude>
 						</excludes>
 					</artifactSet>
 					<archive>
@@ -372,6 +368,7 @@
 			<url>dav:http://magsilva.pro.br/repo/maven2</url>
 		</repository>
 	</repositories>
+	
 	<profiles>
 		<!-- The alt-ui profile adds alternative user interfaces to the runtime 
 			classpath if the scijava.ui system property is set. This enables launching 
