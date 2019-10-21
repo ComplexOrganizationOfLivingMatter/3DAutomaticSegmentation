@@ -153,7 +153,9 @@
 		<dependency>
 			<groupId>eu.kiaru</groupId>
 			<artifactId>limeseg</artifactId>
-			<version>0.4.3-SNAPSHOT</version>
+			<version>0.4.4-SNAPSHOT</version>
+			<scope>system</scope>
+      		<systemPath>D:\Github\LimeSeg\target\limeseg-0.4.4-SNAPSHOT.jar</systemPath>
 			<exclusions>
 				<exclusion>
 					<groupId>org.smurn</groupId>
