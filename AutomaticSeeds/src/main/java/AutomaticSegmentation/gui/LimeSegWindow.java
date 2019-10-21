@@ -14,9 +14,11 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import AutomaticSegmentation.limeSeg.SphereSegAdapted;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.commands.ClearAll;
 import eu.kiaru.limeseg.commands.SphereSegAdvanced;
+import eu.kiaru.limeseg.opt.Optimizer;
 import ij.ImagePlus;
 import ij.io.OpenDialog;
 import ij.plugin.frame.RoiManager;
@@ -74,6 +76,43 @@ public class LimeSegWindow extends JFrame {
 		
 		getContentPane().add(Panel);
 		
+		SphereSegAdapted cf = new SphereSegAdapted();
+		cf.setZ_scale(4.06);
+		cf.setD_0(5);
+		cf.setF_pressure((float)0.015);
+		cf.setImp(this.workingImp);
+		
+        RoiManager roiManager = RoiManager.getRoiManager();
+        if (roiManager==null) {
+        	System.err.println("No roi manager found - command aborted.");
+        } 
+        if (roiManager.getRoisAsArray().length == 0) {
+        	roiManager.runCommand("Open", new OpenDialog("Open Roi set").getPath());
+        }
+		
+		cf.run();
+		
+		
+//		//ClearAll clear = new ClearAll();
+//		SphereSegAdvanced cf = new SphereSegAdvanced();
+//		
+//		
+//		//clear.run();
+//		LimeSeg ls = new LimeSeg();
+//		ls.initialize();
+//		ls.opt.setWorkingImage(this.workingImp, 1, 1);
+//		LimeSeg.setWorkingImage(this.workingImp, 1, 1);
+//        RoiManager roiManager = RoiManager.getRoiManager();
+//        if (roiManager==null) {
+//        	System.err.println("No roi manager found - command aborted.");
+//        } 
+//        if (roiManager.getRoisAsArray().length == 0) {
+//        	roiManager.runCommand("Open", new OpenDialog("Open Roi set").getPath());
+//        }
+//        
+//		cf.run();
+//		System.out.println("Finish");
+		
 		//execute the listener in parallel with run to stop if is necessary
 		ExecutorService executor1 = Executors.newSingleThreadExecutor();
 		executor1.submit(() -> {
@@ -102,29 +141,6 @@ public class LimeSegWindow extends JFrame {
 			});
 			executor1.shutdown();
 		});
-		
-		//execute run in parallel with bottom to stop if is necessary
-		ExecutorService executor2 = Executors.newSingleThreadExecutor();
-		executor2.submit(() -> {
-			ClearAll clear = new ClearAll();
-			SphereSegAdvanced cf = new SphereSegAdvanced();
-			clear.run();
-			//LimeSeg.setWorkingImage(this.workingImp, LimeSeg.currentChannel, LimeSeg.currentFrame);
-	        RoiManager roiManager = RoiManager.getRoiManager();
-	        if (roiManager==null) {
-	        	System.err.println("No roi manager found - command aborted.");
-	        	executor2.shutdown();
-	        } 
-	        if (roiManager.getRoisAsArray().length == 0) {
-	        	roiManager.runCommand("Open", new OpenDialog("Open Roi set").getPath());
-	        }
-			cf.run();
-			System.out.println("Finish");
-			
-			executor2.shutdown();
-		});
-		
-
 		
 		//btRunSegmentation.addActionListener(new ActionListener() {
 			
