@@ -56,8 +56,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import AutomaticSegmentation.MainAutomatic3DSegmentation;
-import AutomaticSegmentation.Elements.Cell3D;
-import AutomaticSegmentation.Elements.RoiAdjustment;
+import AutomaticSegmentation.elements.Cell3D;
+import AutomaticSegmentation.elements.RoiAdjustment;
 import epigraph.GUI.CustomElements.CustomCanvas;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
