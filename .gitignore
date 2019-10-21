@@ -24,9 +24,6 @@ hs_err_pid*
 */target/
 *.tif
 workspace
-LimeSeg
-
-LimeSeg/
 
 # Data folder
 PostProcessingGland/data/
