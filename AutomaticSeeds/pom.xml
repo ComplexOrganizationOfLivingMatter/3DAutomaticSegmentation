@@ -166,7 +166,12 @@
 			</exclusions>
 		</dependency>
 
-		<!-- https://github.com/smurn/jPLY -->
+		<!-- https://mvnrepository.com/artifact/com.vividsolutions/jts-core -->
+		<dependency>
+			<groupId>com.vividsolutions</groupId>
+			<artifactId>jts-core</artifactId>
+			<version>1.14.0</version>
+		</dependency>
 
 		<!-- https://github.com/atolcd/pentaho-gis-plugins -->
 		<dependency>
@@ -185,7 +190,7 @@
 			<artifactId>clij-clearcl</artifactId>
 			<version>0.8.0</version>
 			<exclusions>
-			<exclusion>
+				<exclusion>
 					<artifactId>bridj</artifactId>
 					<groupId>com.nativelibs4java</groupId>
 				</exclusion>
@@ -195,7 +200,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>net.haesleinhuepf</groupId>
 			<artifactId>clij-core</artifactId>
