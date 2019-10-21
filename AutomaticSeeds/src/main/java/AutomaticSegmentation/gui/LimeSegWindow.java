@@ -4,13 +4,22 @@
 package AutomaticSegmentation.gui;
 
 import java.awt.HeadlessException;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import eu.kiaru.limeseg.LimeSeg;
+import eu.kiaru.limeseg.commands.ClearAll;
 import eu.kiaru.limeseg.commands.SphereSegAdvanced;
 import ij.ImagePlus;
+import ij.io.OpenDialog;
+import ij.plugin.frame.RoiManager;
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -65,49 +74,57 @@ public class LimeSegWindow extends JFrame {
 		
 		getContentPane().add(Panel);
 		
-//		//execute the listener in parallel with run to stop if is necessary
-//		ExecutorService executor1 = Executors.newSingleThreadExecutor();
-//		executor1.submit(() -> {
-//			
-//			btStopOptimisation.addActionListener(new ActionListener() {
-//				
-//				@Override
-//				public void actionPerformed(ActionEvent e) {
-//					LimeSeg.stopOptimisation();
-//				}
-//			});
-//
-//			btnSavePly.addActionListener(new ActionListener() {
-//		
-//				@Override
-//				public void actionPerformed(ActionEvent e) {
-//					String path = initialDirectory + "/OutputLimeSeg";
-//					File dir = new File(path);
-//					if (!dir.isDirectory()) {
-//						System.out.println("New folder created");
-//						dir.mkdir();
-//					}
-//					LimeSeg.saveStateToXmlPly(path);
-//					System.out.println("Saved");
-//				}
-//			});
-//			executor1.shutdown();
-//		
-//		});
+		//execute the listener in parallel with run to stop if is necessary
+		ExecutorService executor1 = Executors.newSingleThreadExecutor();
+		executor1.submit(() -> {
+			
+			btStopOptimisation.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					LimeSeg.stopOptimisation();
+				}
+			});
+
+			btnSavePly.addActionListener(new ActionListener() {
 		
-//		//execute run in parallel with bottom to stop if is necessary
-//		ExecutorService executor2 = Executors.newSingleThreadExecutor();
-//		executor2.submit(() -> {
-//			SphereSegAdvanced cf = new SphereSegAdvanced();
-//			cf.run();
-//			System.out.println("Finish");
-//			
-//			executor2.shutdown();
-//		});
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					String path = initialDirectory + "/OutputLimeSeg";
+					File dir = new File(path);
+					if (!dir.isDirectory()) {
+						System.out.println("New folder created");
+						dir.mkdir();
+					}
+					LimeSeg.saveStateToXmlPly(path);
+					System.out.println("Saved");
+				}
+			});
+			executor1.shutdown();
+		});
 		
-		SphereSegAdvanced cf = new SphereSegAdvanced();
-		cf.run();
-		System.out.println("Finish");
+		//execute run in parallel with bottom to stop if is necessary
+		ExecutorService executor2 = Executors.newSingleThreadExecutor();
+		executor2.submit(() -> {
+			ClearAll clear = new ClearAll();
+			SphereSegAdvanced cf = new SphereSegAdvanced();
+			clear.run();
+			//LimeSeg.setWorkingImage(this.workingImp, LimeSeg.currentChannel, LimeSeg.currentFrame);
+	        RoiManager roiManager = RoiManager.getRoiManager();
+	        if (roiManager==null) {
+	        	System.err.println("No roi manager found - command aborted.");
+	        	executor2.shutdown();
+	        } 
+	        if (roiManager.getRoisAsArray().length == 0) {
+	        	roiManager.runCommand("Open", new OpenDialog("Open Roi set").getPath());
+	        }
+			cf.run();
+			System.out.println("Finish");
+			
+			executor2.shutdown();
+		});
+		
+
 		
 		//btRunSegmentation.addActionListener(new ActionListener() {
 			
