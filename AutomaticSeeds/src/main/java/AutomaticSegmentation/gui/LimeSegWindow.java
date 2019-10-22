@@ -76,11 +76,15 @@ public class LimeSegWindow extends JFrame {
 		
 		getContentPane().add(Panel);
 		
+		//We have created a class based on SphereSegAdvanced to mimick it but adding some new behaviours.
+		// Pablo: It could be done in another way, but I don't know any
+		ClearAll clear = new ClearAll();
 		SphereSegAdapted cf = new SphereSegAdapted();
-		cf.setZ_scale(4.06);
+		cf.setImp(this.workingImp);
+		cf.setZ_scale(this.workingImp.getOriginalFileInfo().pixelDepth/this.workingImp.getOriginalFileInfo().pixelWidth);
 		cf.setD_0(5);
 		cf.setF_pressure((float)0.015);
-		cf.setImp(this.workingImp);
+		cf.setRange_in_d0_units((float) 2); 
 		
         RoiManager roiManager = RoiManager.getRoiManager();
         if (roiManager==null) {
@@ -90,28 +94,8 @@ public class LimeSegWindow extends JFrame {
         	roiManager.runCommand("Open", new OpenDialog("Open Roi set").getPath());
         }
 		
+        clear.run();
 		cf.run();
-		
-		
-//		//ClearAll clear = new ClearAll();
-//		SphereSegAdvanced cf = new SphereSegAdvanced();
-//		
-//		
-//		//clear.run();
-//		LimeSeg ls = new LimeSeg();
-//		ls.initialize();
-//		ls.opt.setWorkingImage(this.workingImp, 1, 1);
-//		LimeSeg.setWorkingImage(this.workingImp, 1, 1);
-//        RoiManager roiManager = RoiManager.getRoiManager();
-//        if (roiManager==null) {
-//        	System.err.println("No roi manager found - command aborted.");
-//        } 
-//        if (roiManager.getRoisAsArray().length == 0) {
-//        	roiManager.runCommand("Open", new OpenDialog("Open Roi set").getPath());
-//        }
-//        
-//		cf.run();
-//		System.out.println("Finish");
 		
 		//execute the listener in parallel with run to stop if is necessary
 		ExecutorService executor1 = Executors.newSingleThreadExecutor();
