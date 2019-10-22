@@ -4,27 +4,34 @@
 package AutomaticSegmentation.gui;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
 import java.awt.GridLayout;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.File;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.text.MaskFormatter;
 
+import AutomaticSegmentation.limeSeg.SphereSegAdapted;
 import AutomaticSegmentation.preProcessing.DefaultSegmentation;
 import AutomaticSegmentation.preProcessing.SegmZebrafish;
 import AutomaticSegmentation.preProcessing.SegmentingNucleiGlands;
 import AutomaticSegmentation.preProcessing.ThresholdMethod;
 import AutomaticSegmentation.utils.Utils;
+import eu.kiaru.limeseg.LimeSeg;
+import eu.kiaru.limeseg.commands.ClearAll;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -32,6 +39,7 @@ import ij.Prefs;
 import ij.gui.OvalRoi;
 import ij.gui.ProgressBar;
 import ij.gui.Roi;
+import ij.io.OpenDialog;
 import ij.plugin.frame.RoiManager;
 import ij3d.ContentConstants;
 import ij3d.Image3DUniverse;
@@ -63,37 +71,40 @@ public class MainWindow extends JFrame {
 	private JButton btCreateROIs;
 	private ImagePlus imp_segmented;
 	/**
-	 * 
+	 * LimeSeg attributes
 	 */
-	private LimeSegWindow limeSegWindow;
-	private ImagePlus workingImp;
-	private float d_0;
-	private float f_pressure;
-	private float range_D_0;
 	private JButton btStopOptimisation;
-	private JPanel Panel;
 	private JButton btnSavePly;
-	private JButton btRunSegmentation;
+	private JButton btLimeSeg;
+	private JFormattedTextField tf_D0;
+	private JFormattedTextField tf_fPressure;
+	private JFormattedTextField tf_zScale;
+	private JFormattedTextField tf_rangeD0;
+	private JLabel label_D0;
+	private JLabel label_fPressure;
+	private JLabel label_zScale;
+	private JLabel label_rangeD0;
+
 	/**
-	 * 
+	 * PostLimeSeg attributes
 	 */
 	private PostProcessingWindow postprocessingWindow;
-	
+	private JButton btPostLimeSeg;
+
 	/**
-	 * 
+	 * MainWindow attributes
 	 */
 	private JPanel imageChannelsPanel;
-	private JPanel buttonsPanel;
 	private JComboBox<String> cbNucleiChannel;
 	private JComboBox<String> cbSegmentableChannel;
 	private JLabel lbNucleiChannel;
 	private JLabel lbSegmentableChannel;
-	
-	private JTabbedPane tabbedPane;	
+
+	private JTabbedPane tabbedPane;
 	private JPanel tpPreLimeSeg;
 	private JPanel tpLimeSeg;
 	private JPanel tpPostLimeSeg;
-	
+
 	private ImagePlus originalImp;
 	private ImagePlus nucleiChannel;
 	private ImagePlus cellOutlineChannel;
@@ -110,42 +121,40 @@ public class MainWindow extends JFrame {
 	 * @throws HeadlessException
 	 */
 	public MainWindow() throws HeadlessException {
-		
+
 		cellOutlineChannel = null;
 		nucleiChannel = null;
-		
+
 		/*
-		 * MAIN WINDOW
-		 * DESCRIPTION
+		 * MAIN WINDOW DESCRIPTION
 		 */
-		
+
 		// Init GUI elements
 		getContentPane().setLayout(new GridLayout(2, 0, 0, 0));
-		
+
 		imageChannelsPanel = new JPanel(new GridLayout(3, 4));
 		tabbedPane = new JTabbedPane();
 		getContentPane().add(imageChannelsPanel);
 		getContentPane().add(tabbedPane);
 		tabbedPane.setEnabled(false);
 
-		//Row 1: Original image
+		// Row 1: Original image
 		lbOriginalImage = new JLabel("Original image");
 		lbOriginalFileName = new JLabel("");
 		btOpenOriginalImage = new JButton("Open");
 		lbEmptyLabel = new JLabel("");
-		
+
 		imageChannelsPanel.add(lbOriginalImage);
 		imageChannelsPanel.add(lbOriginalFileName);
 		imageChannelsPanel.add(lbEmptyLabel);
 		imageChannelsPanel.add(btOpenOriginalImage);
-		
-		//Row 2: Nuclei channel
+
+		// Row 2: Nuclei channel
 		cbNucleiChannel = new JComboBox<String>();
-		
+
 		lbNucleiChannel = new JLabel("Nuclei channel");
 		lbNucleiChannel.setLabelFor(cbNucleiChannel);
-		
-		
+
 		lbNucleiFileName = new JLabel("");
 		btNucleiOpenFile = new JButton("Open");
 
@@ -153,28 +162,28 @@ public class MainWindow extends JFrame {
 		imageChannelsPanel.add(cbNucleiChannel);
 		imageChannelsPanel.add(lbNucleiFileName);
 		imageChannelsPanel.add(btNucleiOpenFile);
-		
-		//Row 3: Cell outline channel
+
+		// Row 3: Cell outline channel
 		cbSegmentableChannel = new JComboBox<String>();
 		lbSegmentableChannel = new JLabel("Cell outline channel");
 		lbSegmentableChannel.setLabelFor(cbSegmentableChannel);
-		
+
 		lbCellOutlinesFileName = new JLabel("");
 		btCellOutlinesOpenFile = new JButton("Open");
-		
+
 		imageChannelsPanel.add(lbSegmentableChannel);
 		imageChannelsPanel.add(cbSegmentableChannel);
 		imageChannelsPanel.add(lbCellOutlinesFileName);
 		imageChannelsPanel.add(btCellOutlinesOpenFile);
-		
-		/* PRELIMESEG PANEL
-		 * DESCRIPTION
+
+		/*
+		 * PRELIMESEG PANEL DESCRIPTION
 		 */
-		
+
 		tpPreLimeSeg = new JPanel();
 		tpPreLimeSeg.setLayout(new MigLayout());
 		imp_segmented = new ImagePlus();
-		
+
 		// Init GUI elements
 		btPreLimeSeg = new JButton("Run!");
 		btCreateROIs = new JButton("Create ROIs");
@@ -201,50 +210,73 @@ public class MainWindow extends JFrame {
 
 		// Associate this panel to the TabPanel
 		tabbedPane.addTab("PreLimeSeg", tpPreLimeSeg);
-		this.setEnablePanels(false,tpPreLimeSeg);	
-		//tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
+		this.setEnablePanels(false, tpPreLimeSeg);
+		// tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 
-		
-		
-		/* LIMESEG PANEL
-		 * DESCRIPTION
+		/*
+		 * LIMESEG PANEL DESCRIPTION
 		 */
 
-		tpLimeSeg = new JPanel(new GridLayout(3, 4));
+		tpLimeSeg = new JPanel();
 		tpLimeSeg.setEnabled(false);
+		tpLimeSeg.setLayout(new MigLayout("fill"));
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+		label_D0 = new JLabel("D_0:");
+		tf_D0 = new JFormattedTextField();
+		tf_D0.setValue((float) 2);
+		tf_D0.setMinimumSize(new Dimension(100, 10));
+		tpLimeSeg.add(label_D0, "align center");
+		tpLimeSeg.add(tf_D0, "wrap, align center");
+
+		label_fPressure = new JLabel("F_Pressure:");
+		tf_fPressure = new JFormattedTextField();
+		tf_fPressure.setValue((float) 0.015);
+		tf_fPressure.setMinimumSize(new Dimension(100, 10));
+		tpLimeSeg.add(label_fPressure, "align center");
+		tpLimeSeg.add(tf_fPressure, "wrap, align center");
+
+		label_zScale = new JLabel("Z scale:");
+		tf_zScale = new JFormattedTextField();
+		tf_zScale.setValue((float) 1);
+		tf_zScale.setMinimumSize(new Dimension(100, 10));
+		tpLimeSeg.add(label_zScale, "align center");
+		tpLimeSeg.add(tf_zScale, "wrap, align center");
+
+		label_rangeD0 = new JLabel("Range in D0 units:");
+		tf_rangeD0 = new JFormattedTextField();
+		tf_rangeD0.setValue((float) 2);
+		tf_rangeD0.setMinimumSize(new Dimension(100, 10));
+		tpLimeSeg.add(label_rangeD0, "align center");
+		tpLimeSeg.add(tf_rangeD0, "wrap, align center");
+
+		btLimeSeg = new JButton("Start");
+		tpLimeSeg.add(new JLabel(""));
+		tpLimeSeg.add(btLimeSeg, "wrap, align center");
+
+		btStopOptimisation = new JButton("Stop");
+		tpLimeSeg.add(new JLabel(""));
+		tpLimeSeg.add(btStopOptimisation, "wrap, align center");
+
+		btnSavePly = new JButton("Saved");
+		tpLimeSeg.add(new JLabel(""));
+		tpLimeSeg.add(btnSavePly, "align center");
+
 		tabbedPane.addTab("LimeSeg", tpLimeSeg);
-		//tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
-		
-		
-		/* POSTLIMESEG PANEL
-		 * DESCRIPTION
+		// tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
+
+		/*
+		 * POSTLIMESEG PANEL DESCRIPTION
 		 */
 
-		tpPostLimeSeg = new JPanel();
+		tpPostLimeSeg = new JPanel(new MigLayout("fill"));
+		btPostLimeSeg = new JButton("Run PostProcessing");
+		tpPostLimeSeg.add(btPostLimeSeg, "align center");
 		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
-		//tabbedPane.setMnemonicAt(2, KeyEvent.VK_3);
-		
-		//Buttons panel
-//		JButton btPreLimeSeg = new JButton("Preprocess to LimeSeg");
-//		buttonsPanel.add(btPreLimeSeg);
-//		
-//		JButton btLimeSeg = new JButton("LimeSeg");
-//		buttonsPanel.add(btLimeSeg);
-//		
-//		JButton btPostLimeSeg = new JButton("Postprocess LimeSeg's output");
-//		buttonsPanel.add(btPostLimeSeg);
-//		
-		
-		
-		//Functions
-//		btPreLimeSeg.addActionListener(new ActionListener() {
-//			public void actionPerformed(ActionEvent arg0) {
-//				preLimeSeg = new PreLimeSegWindow(nucleiChannel.getStack());
-//				preLimeSeg.pack();
-//				preLimeSeg.setVisible(true);
-//			}
-//		});
-		
+		// tabbedPane.setMnemonicAt(2, KeyEvent.VK_3);
+
+		// MAIN WINDOW FUNCTIONS
+
 		btNucleiOpenFile.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -252,16 +284,16 @@ public class MainWindow extends JFrame {
 				try {
 					nucleiChannel = IJ.openImage();
 					if (lbNucleiFileName.getText().length() <= 2) {
-					lbNucleiFileName.setText(nucleiChannel.getOriginalFileInfo().fileName);
-					cbNucleiChannel.addItem(nucleiChannel.getTitle());
-					//cbNucleiChannel.setSelectedIndex(0);
+						lbNucleiFileName.setText(nucleiChannel.getOriginalFileInfo().fileName);
+						cbNucleiChannel.addItem(nucleiChannel.getTitle());
+						// cbNucleiChannel.setSelectedIndex(0);
 					}
 				} catch (Exception ex) {
-					
+
 				}
 			}
 		});
-		
+
 		btCellOutlinesOpenFile.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -269,18 +301,18 @@ public class MainWindow extends JFrame {
 				try {
 					cellOutlineChannel = IJ.openImage();
 					if (lbCellOutlinesFileName.getText().length() <= 2) {
-					lbCellOutlinesFileName.setText(cellOutlineChannel.getOriginalFileInfo().fileName);
-					cbSegmentableChannel.addItem(cellOutlineChannel.getTitle());
-					//cbSegmentableChannel.setSelectedIndex(0);
+						lbCellOutlinesFileName.setText(cellOutlineChannel.getOriginalFileInfo().fileName);
+						cbSegmentableChannel.addItem(cellOutlineChannel.getTitle());
+						// cbSegmentableChannel.setSelectedIndex(0);
 					}
 				} catch (Exception ex) {
-					
+
 				}
 			}
 		});
-		
+
 		btOpenOriginalImage.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				try {
@@ -291,28 +323,28 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
-		
+
 		cbNucleiChannel.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (((String) cbNucleiChannel.getSelectedItem()).equals("")){
+				if (((String) cbNucleiChannel.getSelectedItem()).equals("")) {
 					nucleiChannel = null;
 				} else if ((boolean) ((String) cbNucleiChannel.getSelectedItem()).contains("Original file - C=")) {
 					nucleiChannel = extractChannelOfStack(cbNucleiChannel.getSelectedIndex(), originalImp);
-					//lbNucleiFileName.setText("");
+					// lbNucleiFileName.setText("");
 					setEnablePanels(true, tpPreLimeSeg);
 					btPreLimeSeg.setEnabled(false);
-				} 
-					
+				}
+
 			}
 		});
-		
+
 		cbSegmentableChannel.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (((String) cbSegmentableChannel.getSelectedItem()).equals("")){
+				if (((String) cbSegmentableChannel.getSelectedItem()).equals("")) {
 					cellOutlineChannel = null;
 				} else if ((boolean) ((String) cbSegmentableChannel.getSelectedItem()).contains("Original file - C=")) {
 					cellOutlineChannel = extractChannelOfStack(cbSegmentableChannel.getSelectedIndex(), originalImp);
@@ -320,36 +352,9 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
-		
-//		btLimeSeg.addActionListener(new ActionListener() {
-//
-//			@Override
-//			public void actionPerformed(ActionEvent e) {
-//				originalImp.setC(cbSegmentableChannel.getSelectedIndex());
-//				
-//				//limeSegWindow = new LimeSegWindow(cellOutlineChannel.duplicate());
-//				//send the original image to get the directory and save the cells
-//				//cellOutline.duplicate() send a null directory
-//				limeSegWindow = new LimeSegWindow(cellOutlineChannel); 	
-//				limeSegWindow.pack();
-//				limeSegWindow.setVisible(true);
-//			}
-//		});
-//		
-//		btPostLimeSeg.addActionListener(new ActionListener() {
-//
-//			@Override
-//			public void actionPerformed(ActionEvent e) {
-//				//cellOutline will show in the postProcessingWindow
-//				postprocessingWindow = new PostProcessingWindow(cellOutlineChannel);
-//				postprocessingWindow.pack();
-//				postprocessingWindow.setVisible(true);
-//			}
-//		});
-		
-		
+
 		// FUNCTIONS PRELIMESEG
-		
+
 		cbPredefinedTypeSegmentation.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
@@ -364,9 +369,9 @@ public class MainWindow extends JFrame {
 
 		btPreLimeSeg.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				setEnablePanels(false,tpPreLimeSeg);	
+				setEnablePanels(false, tpPreLimeSeg);
 				imp_segmented = null;
-				
+
 				CLIJ clij = null;
 				jcbGPUEnable.setSelected(false);
 				if (jcbGPUEnable.isSelected())
@@ -392,102 +397,102 @@ public class MainWindow extends JFrame {
 				}
 				imp_segmented.show();
 				RoiManager rm = getNucleiROIs(imp_segmented);
-				setEnablePanels(true,tpPreLimeSeg);
+				setEnablePanels(true, tpPreLimeSeg);
 				// visualization3D (imp_segmented);
 			}
-				
+
 		});
-		
+
 		btCreateROIs.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
-				if (imp_segmented == null){
+				if (imp_segmented == null) {
 					imp_segmented = IJ.openImage();
 					imp_segmented.show();
 				}
-				
+
 				RoiManager rm = getNucleiROIs(imp_segmented);
 			}
 		});
 
+		// LIMESEG FUNCTIONS
+		btLimeSeg.addActionListener(new ActionListener() {
 
-		
-		
-		
-//		
-//		this.addWindowListener(new WindowListener() {
-//
-//			@Override
-//			public void windowClosing(WindowEvent e) {
-//				// TODO Auto-generated method stub
-//			}
-//
-//			@Override
-//			public void windowActivated(WindowEvent e) {
-//				// TODO Auto-generated method stub
-//
-//			}
-//
-//			@Override
-//			public void windowClosed(WindowEvent e) {
-//				// TODO Auto-generated method stub
-//
-//			}
-//
-//			@Override
-//			public void windowDeactivated(WindowEvent e) {
-//				// TODO Auto-generated method stub
-//
-//			}
-//
-//			@Override
-//			public void windowDeiconified(WindowEvent e) {
-//				// TODO Auto-generated method stub
-//
-//			}
-//
-//			@Override
-//			public void windowIconified(WindowEvent e) {
-//				// TODO Auto-generated method stub
-//
-//			}
-//
-//			@Override
-//			public void windowOpened(WindowEvent e) {
-//				// TODO Auto-generated method stub
-//				
-//				int response;
-//				
-//				while (originalImp == null) {
-//					response = JOptionPane.showConfirmDialog(getParent(), "Do you want to use the open stack or another one?", "Confirm",
-//					        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-//					
-//					if (response == JOptionPane.NO_OPTION) {
-//						IJ.open();
-//						try {
-//							originalImp = IJ.getImage();
-//						} catch (Exception ex) {
-//							// TODO: handle exception
-//						}
-//					} else if (response == JOptionPane.YES_OPTION) {
-//						try {
-//							originalImp = IJ.getImage();
-//						} catch (Exception ex) {
-//							// TODO: handle exception
-//						}
-//					}
-//				}
-//				
-//				newOriginalFileName();
-//				
-//				originalImp.show();
-//			}
-//		});
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				btLimeSeg.setEnabled(false);
+				ClearAll clear = new ClearAll();
+				SphereSegAdapted cf = new SphereSegAdapted();
+				cf.setImp(cellOutlineChannel);
+				cf.setZ_scale(cellOutlineChannel.getOriginalFileInfo().pixelDepth
+						/ cellOutlineChannel.getOriginalFileInfo().pixelWidth);
+				cf.setD_0((float) tf_D0.getValue());
+				cf.setF_pressure((float) tf_fPressure.getValue());
+				cf.setRange_in_d0_units((float) tf_rangeD0.getValue());
+
+				RoiManager roiManager = RoiManager.getRoiManager();
+				if (roiManager == null) {
+					System.err.println("No roi manager found - command aborted.");
+				}
+				if (roiManager.getRoisAsArray().length == 0) {
+					roiManager.runCommand("Open", new OpenDialog("Open Roi set").getPath());
+				}
+
+				clear.run();
+				cf.run();
+				btLimeSeg.setEnabled(true);
+			}
+		});
+
+		btnSavePly.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				String path = cellOutlineChannel.getOriginalFileInfo().directory + "/OutputLimeSeg";
+				File dir = new File(path);
+				if (!dir.isDirectory()) {
+					System.out.println("New folder created");
+					dir.mkdir();
+				}
+				LimeSeg.saveStateToXmlPly(path);
+				System.out.println("Saved");
+			}
+		});
+
+		btStopOptimisation.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				LimeSeg.stopOptimisation();
+			}
+		});
+
+		// POSTLIMESEG FUNCTIONS
+
+		btPostLimeSeg.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				btPostLimeSeg.setEnabled(false);
+				// cellOutline will show in the postProcessingWindow
+				postprocessingWindow = new PostProcessingWindow(cellOutlineChannel);
+				postprocessingWindow.pack();
+				postprocessingWindow.setVisible(true);
+				btPostLimeSeg.setEnabled(true);
+			}
+		});
+
 	}
 
+	// GENERIC METHODS
 
+	protected void setEnablePanels(boolean enabled, JPanel panel) {
+		for (Component c : panel.getComponents()) {
+			c.setEnabled(enabled);
+		}
+	}
 
 	/**
 	 * 
@@ -511,18 +516,16 @@ public class MainWindow extends JFrame {
 	 */
 	public ImagePlus extractChannelOfStack(int numChannel, ImagePlus originalImage) {
 		ImageStack newChannelStack = new ImageStack(originalImage.getWidth(), originalImage.getHeight());
-		
+
 		int indexToAdd = 0;
-		for (int numZ = 0; numZ < originalImage.getStackSize()/originalImage.getNChannels(); numZ++) {
+		for (int numZ = 0; numZ < originalImage.getStackSize() / originalImage.getNChannels(); numZ++) {
 			indexToAdd = originalImage.getStackIndex(numChannel, numZ, originalImage.getFrame());
 			newChannelStack.addSlice(originalImage.getStack().getProcessor(indexToAdd));
 		}
-		ImagePlus oneChannelStack = new ImagePlus("", newChannelStack); 
+		ImagePlus oneChannelStack = new ImagePlus("", newChannelStack);
 		oneChannelStack.setFileInfo(originalImage.getFileInfo());
 		return oneChannelStack;
 	}
-
-
 
 	/**
 	 * @param gc
@@ -549,7 +552,7 @@ public class MainWindow extends JFrame {
 		super(title, gc);
 		// TODO Auto-generated constructor stub
 	}
-	
+
 	// METHODS PRELIMESEG
 	public RoiManager getNucleiROIs(ImagePlus imp_segmented) {
 		// 3D-OC options settings
@@ -557,16 +560,18 @@ public class MainWindow extends JFrame {
 
 		int[] labels = LabelImages.findAllLabels(imp_segmented.getImageStack());
 		// deprecatedGeometricMeasures3D - investigate about the new region3D
-		
+
 		double[][] centroidList = Centroid3D.centroids(imp_segmented.getImageStack(), labels);
 		// double[][] centroidList = Centroid3D.centroids();
 		// 0 0 1 2
 		// | | | |
 		// centroid -> [id][x,y,z]
 
-//		Ellipsoid[] ellipsoid = EquivalentEllipsoid.equivalentEllipsoids(imp_segmented.getImageStack(), labels,
-//				imp_segmented.getCalibration());
-		
+		// Ellipsoid[] ellipsoid =
+		// EquivalentEllipsoid.equivalentEllipsoids(imp_segmented.getImageStack(),
+		// labels,
+		// imp_segmented.getCalibration());
+
 		Box3D[] bboxes = BoundingBox3D.boundingBoxes(imp_segmented.getImageStack(), labels,
 				imp_segmented.getCalibration());
 
@@ -579,8 +584,9 @@ public class MainWindow extends JFrame {
 			// Get the slice to create the ROI
 			int z = (int) Math.round(centroidList[i][2]);
 			// Get the area and radius of the index i nuclei
-			double[] radii = {bboxes[i].height(), bboxes[i].width()};
-			double[] calibrations = {imp_segmented.getCalibration().pixelHeight, imp_segmented.getCalibration().pixelWidth};
+			double[] radii = { bboxes[i].height(), bboxes[i].width() };
+			double[] calibrations = { imp_segmented.getCalibration().pixelHeight,
+					imp_segmented.getCalibration().pixelWidth };
 			double majorRadius = 1.2 * Utils.getMean(radii) / Utils.getMean(calibrations);
 			int r = (int) Math.round(majorRadius);
 			imp_segmented.setSlice(z);
@@ -615,15 +621,7 @@ public class MainWindow extends JFrame {
 		Image3DUniverse univ = new Image3DUniverse();
 		univ.addContent(imp, ContentConstants.VOLUME);
 		univ.show();
-	
+
 	}
-	
-	// GENERIC METHODS
-	
-	protected void setEnablePanels(boolean enabled, JPanel panel) {
-		for (Component c : panel.getComponents()) {
-			c.setEnabled(enabled);
-		}
-	}
-		
+
 }
