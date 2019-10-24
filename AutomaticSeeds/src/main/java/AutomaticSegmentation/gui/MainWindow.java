@@ -356,7 +356,8 @@ public class MainWindow extends JFrame {
 					cellOutlineChannel = null;
 				} else if ((boolean) ((String) cbSegmentableChannel.getSelectedItem()).contains("Original file - C=")) {
 					cellOutlineChannel = extractChannelOfStack(cbSegmentableChannel.getSelectedIndex(), originalImp);
-					tpLimeSeg.setEnabled(true);
+					setEnablePanels(true, tpPostLimeSeg);
+					setEnablePanels(true, tpLimeSeg);
 					js_zScale.setValue((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
 							/ cellOutlineChannel.getOriginalFileInfo().pixelWidth);
 
@@ -466,7 +467,10 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				cellOutlineChannel.show();
+//				ImagePlus imgDisplayed;
+//				imgDisplayed = cellOutlineChannel.duplicate();
+//				imgDisplayed.show();
+				cellOutlineChannel.duplicate().show();
 			}
 		});
 
