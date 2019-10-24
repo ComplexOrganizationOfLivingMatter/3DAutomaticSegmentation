@@ -220,11 +220,9 @@ public class MainWindow extends JFrame {
 		 */
 
 		tpLimeSeg = new JPanel();
-		tpLimeSeg.setEnabled(false);
 		tpLimeSeg.setLayout(new MigLayout("fill"));
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		
-		
+
 		// Init GUI
 		cf = new SphereSegAdapted();
 		label_D0 = new JLabel("D_0:");
@@ -233,7 +231,7 @@ public class MainWindow extends JFrame {
 		js_D0.setMinimumSize(new Dimension(100, 10));
 		tpLimeSeg.add(label_D0, "align center");
 		tpLimeSeg.add(js_D0, "wrap, align center");
-		
+
 		label_fPressure = new JLabel("F_Pressure:");
 		js_fPressure = new JSpinner(new SpinnerNumberModel(0.015, -0.04, 0.04, 0.001));
 		js_fPressure.setMinimumSize(new Dimension(100, 10));
@@ -254,13 +252,13 @@ public class MainWindow extends JFrame {
 
 		btRoiManager = new JButton("Open Roi Manager");
 		tpLimeSeg.add(btRoiManager, "align center");
-		
+
 		btLimeSeg = new JButton("Start");
 		tpLimeSeg.add(btLimeSeg, "wrap, align center");
-		
+
 		btShowImg = new JButton("Show Stack");
 		tpLimeSeg.add(btShowImg, "align center");
-		
+
 		btStopOptimisation = new JButton("Stop");
 		tpLimeSeg.add(btStopOptimisation, "wrap, align center");
 
@@ -269,16 +267,20 @@ public class MainWindow extends JFrame {
 		tpLimeSeg.add(btnSavePly, "align center");
 
 		tabbedPane.addTab("LimeSeg", tpLimeSeg);
+		this.setEnablePanels(false, tpLimeSeg);
 		// tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
 
 		/*
 		 * POSTLIMESEG PANEL DESCRIPTION
 		 */
-
+		// Init GUI items
 		tpPostLimeSeg = new JPanel(new MigLayout("fill"));
 		btPostLimeSeg = new JButton("Run PostProcessing");
 		tpPostLimeSeg.add(btPostLimeSeg, "align center");
+		
+		// Add to the tab
 		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
+		this.setEnablePanels(false, tpPostLimeSeg);
 		// tabbedPane.setMnemonicAt(2, KeyEvent.VK_3);
 
 		// MAIN WINDOW FUNCTIONS
@@ -355,8 +357,9 @@ public class MainWindow extends JFrame {
 				} else if ((boolean) ((String) cbSegmentableChannel.getSelectedItem()).contains("Original file - C=")) {
 					cellOutlineChannel = extractChannelOfStack(cbSegmentableChannel.getSelectedIndex(), originalImp);
 					tpLimeSeg.setEnabled(true);
-					js_zScale.setValue((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth/cellOutlineChannel.getOriginalFileInfo().pixelWidth);
-					
+					js_zScale.setValue((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
+							/ cellOutlineChannel.getOriginalFileInfo().pixelWidth);
+
 				}
 			}
 		});
@@ -426,7 +429,7 @@ public class MainWindow extends JFrame {
 		});
 
 		// LIMESEG FUNCTIONS
-		
+
 		btnSavePly.addActionListener(new ActionListener() {
 
 			@Override
@@ -450,50 +453,56 @@ public class MainWindow extends JFrame {
 				cf.setClearOptimizer(true);
 			}
 		});
-		
+
 		btRoiManager.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				RoiManager roiManager = RoiManager.getRoiManager();
 			}
 		});
-		
+
 		btShowImg.addActionListener(new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				cellOutlineChannel.show();
 			}
 		});
-	
+
 		btLimeSeg.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				ExecutorService executor1 = Executors.newSingleThreadExecutor();
 				executor1.submit(() -> {
-				btLimeSeg.setEnabled(false);
-				ClearAll clear = new ClearAll();
-				cf.setImp(cellOutlineChannel);
-				cf.setZ_scale(Double.valueOf(js_zScale.getValue().toString()).floatValue());
-				cf.setD_0(Double.valueOf(js_D0.getValue().toString()).floatValue());
-				cf.setF_pressure(Double.valueOf(js_fPressure.getValue().toString()).floatValue());
-				cf.setRange_in_d0_units(Double.valueOf(js_rangeD0.getValue().toString()).floatValue());
+					btLimeSeg.setEnabled(false);
+					ClearAll clear = new ClearAll();
+					cf.setImp(cellOutlineChannel);
+					cf.setZ_scale(Double.valueOf(js_zScale.getValue().toString()).floatValue());
+					cf.setD_0(Double.valueOf(js_D0.getValue().toString()).floatValue());
+					cf.setF_pressure(Double.valueOf(js_fPressure.getValue().toString()).floatValue());
+					cf.setRange_in_d0_units(Double.valueOf(js_rangeD0.getValue().toString()).floatValue());
 
-				RoiManager roiManager = RoiManager.getRoiManager();
-				if (roiManager.getRoisAsArray().length == 0) {
-					roiManager.runCommand("Open", new OpenDialog("Open Roi set").getPath());
-				}
-
-				clear.run();
-				cf.run();
-				btLimeSeg.setEnabled(true);
-				executor1.shutdown();
+					RoiManager roiManager = RoiManager.getRoiManager();
+					if (roiManager.getRoisAsArray().length == 0) {
+						roiManager.runCommand("Open", cellOutlineChannel.getOriginalFileInfo().directory);
+					}
+					if (roiManager.getRoisAsArray().length != 0) {
+						roiManager.getRoisAsArray();
+						clear.run();
+						cf.run();
+					}
+						else{
+							IJ.log("Error. Any Roi set selected");
+						
+					}
+					
+					btLimeSeg.setEnabled(true);
+					executor1.shutdown();
 				});
 			}
 		});
-
 
 		// POSTLIMESEG FUNCTIONS
 
@@ -648,6 +657,6 @@ public class MainWindow extends JFrame {
 		univ.addContent(imp, ContentConstants.VOLUME);
 		univ.show();
 
-	}	
+	}
 
 }
