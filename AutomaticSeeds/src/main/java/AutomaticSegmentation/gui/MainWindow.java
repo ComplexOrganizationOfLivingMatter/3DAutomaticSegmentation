@@ -10,19 +10,17 @@ import java.awt.GridLayout;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.io.File;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
-import javax.swing.text.MaskFormatter;
+import javax.swing.SpinnerNumberModel;
 
 import AutomaticSegmentation.limeSeg.SphereSegAdapted;
 import AutomaticSegmentation.preProcessing.DefaultSegmentation;
@@ -76,10 +74,12 @@ public class MainWindow extends JFrame {
 	private JButton btStopOptimisation;
 	private JButton btnSavePly;
 	private JButton btLimeSeg;
-	private JFormattedTextField tf_D0;
-	private JFormattedTextField tf_fPressure;
-	private JFormattedTextField tf_zScale;
-	private JFormattedTextField tf_rangeD0;
+	private JButton btRoiManager;
+	private JButton btShowImg;
+	private JSpinner tf_D0;
+	private JSpinner tf_fPressure;
+	private JSpinner tf_zScale;
+	private JSpinner tf_rangeD0;
 	private JLabel label_D0;
 	private JLabel label_fPressure;
 	private JLabel label_zScale;
@@ -221,41 +221,44 @@ public class MainWindow extends JFrame {
 		tpLimeSeg.setEnabled(false);
 		tpLimeSeg.setLayout(new MigLayout("fill"));
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
+		
+		
+		// Init GUI
 		label_D0 = new JLabel("D_0:");
-		tf_D0 = new JFormattedTextField();
-		tf_D0.setValue((float) 2);
+		tf_D0 = new JSpinner(new SpinnerNumberModel(5.5, null, null, 0.1));
+
 		tf_D0.setMinimumSize(new Dimension(100, 10));
 		tpLimeSeg.add(label_D0, "align center");
 		tpLimeSeg.add(tf_D0, "wrap, align center");
-
+		
 		label_fPressure = new JLabel("F_Pressure:");
-		tf_fPressure = new JFormattedTextField();
-		tf_fPressure.setValue((float) 0.015);
+		tf_fPressure = new JSpinner(new SpinnerNumberModel(0.015, -0.04, 0.04, 0.001));
 		tf_fPressure.setMinimumSize(new Dimension(100, 10));
 		tpLimeSeg.add(label_fPressure, "align center");
 		tpLimeSeg.add(tf_fPressure, "wrap, align center");
 
 		label_zScale = new JLabel("Z scale:");
-		tf_zScale = new JFormattedTextField();
-		tf_zScale.setValue((float) 1);
+		tf_zScale = new JSpinner(new SpinnerNumberModel(1.0, null, null, 0.1));
 		tf_zScale.setMinimumSize(new Dimension(100, 10));
 		tpLimeSeg.add(label_zScale, "align center");
 		tpLimeSeg.add(tf_zScale, "wrap, align center");
 
 		label_rangeD0 = new JLabel("Range in D0 units:");
-		tf_rangeD0 = new JFormattedTextField();
-		tf_rangeD0.setValue((float) 2);
+		tf_rangeD0 = new JSpinner(new SpinnerNumberModel(2, null, null, 1));
 		tf_rangeD0.setMinimumSize(new Dimension(100, 10));
 		tpLimeSeg.add(label_rangeD0, "align center");
 		tpLimeSeg.add(tf_rangeD0, "wrap, align center");
 
+		btRoiManager = new JButton("Open Roi Manager");
+		tpLimeSeg.add(btRoiManager, "align center");
+		
 		btLimeSeg = new JButton("Start");
-		tpLimeSeg.add(new JLabel(""));
 		tpLimeSeg.add(btLimeSeg, "wrap, align center");
-
+		
+		btShowImg = new JButton("Show Stack");
+		tpLimeSeg.add(btShowImg, "align center");
+		
 		btStopOptimisation = new JButton("Stop");
-		tpLimeSeg.add(new JLabel(""));
 		tpLimeSeg.add(btStopOptimisation, "wrap, align center");
 
 		btnSavePly = new JButton("Saved");
@@ -349,6 +352,8 @@ public class MainWindow extends JFrame {
 				} else if ((boolean) ((String) cbSegmentableChannel.getSelectedItem()).contains("Original file - C=")) {
 					cellOutlineChannel = extractChannelOfStack(cbSegmentableChannel.getSelectedIndex(), originalImp);
 					tpLimeSeg.setEnabled(true);
+					tf_zScale.setValue((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth/cellOutlineChannel.getOriginalFileInfo().pixelWidth);
+					
 				}
 			}
 		});
@@ -466,6 +471,22 @@ public class MainWindow extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				LimeSeg.stopOptimisation();
+			}
+		});
+		
+		btRoiManager.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				RoiManager roiManager = RoiManager.getRoiManager();
+			}
+		});
+		
+		btShowImg.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				cellOutlineChannel.show();
 			}
 		});
 
@@ -622,6 +643,6 @@ public class MainWindow extends JFrame {
 		univ.addContent(imp, ContentConstants.VOLUME);
 		univ.show();
 
-	}
+	}	
 
 }
