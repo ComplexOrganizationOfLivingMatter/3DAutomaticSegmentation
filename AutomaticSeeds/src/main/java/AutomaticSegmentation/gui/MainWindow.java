@@ -11,6 +11,8 @@ import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -76,15 +78,15 @@ public class MainWindow extends JFrame {
 	private JButton btLimeSeg;
 	private JButton btRoiManager;
 	private JButton btShowImg;
-	private JSpinner tf_D0;
-	private JSpinner tf_fPressure;
-	private JSpinner tf_zScale;
-	private JSpinner tf_rangeD0;
+	private JSpinner js_D0;
+	private JSpinner js_fPressure;
+	private JSpinner js_zScale;
+	private JSpinner js_rangeD0;
 	private JLabel label_D0;
 	private JLabel label_fPressure;
 	private JLabel label_zScale;
 	private JLabel label_rangeD0;
-
+	private SphereSegAdapted cf;
 	/**
 	 * PostLimeSeg attributes
 	 */
@@ -224,30 +226,31 @@ public class MainWindow extends JFrame {
 		
 		
 		// Init GUI
+		cf = new SphereSegAdapted();
 		label_D0 = new JLabel("D_0:");
-		tf_D0 = new JSpinner(new SpinnerNumberModel(5.5, null, null, 0.1));
+		js_D0 = new JSpinner(new SpinnerNumberModel(5.5, null, null, 0.1));
 
-		tf_D0.setMinimumSize(new Dimension(100, 10));
+		js_D0.setMinimumSize(new Dimension(100, 10));
 		tpLimeSeg.add(label_D0, "align center");
-		tpLimeSeg.add(tf_D0, "wrap, align center");
+		tpLimeSeg.add(js_D0, "wrap, align center");
 		
 		label_fPressure = new JLabel("F_Pressure:");
-		tf_fPressure = new JSpinner(new SpinnerNumberModel(0.015, -0.04, 0.04, 0.001));
-		tf_fPressure.setMinimumSize(new Dimension(100, 10));
+		js_fPressure = new JSpinner(new SpinnerNumberModel(0.015, -0.04, 0.04, 0.001));
+		js_fPressure.setMinimumSize(new Dimension(100, 10));
 		tpLimeSeg.add(label_fPressure, "align center");
-		tpLimeSeg.add(tf_fPressure, "wrap, align center");
+		tpLimeSeg.add(js_fPressure, "wrap, align center");
 
 		label_zScale = new JLabel("Z scale:");
-		tf_zScale = new JSpinner(new SpinnerNumberModel(1.0, null, null, 0.1));
-		tf_zScale.setMinimumSize(new Dimension(100, 10));
+		js_zScale = new JSpinner(new SpinnerNumberModel(1.0, null, null, 0.1));
+		js_zScale.setMinimumSize(new Dimension(100, 10));
 		tpLimeSeg.add(label_zScale, "align center");
-		tpLimeSeg.add(tf_zScale, "wrap, align center");
+		tpLimeSeg.add(js_zScale, "wrap, align center");
 
 		label_rangeD0 = new JLabel("Range in D0 units:");
-		tf_rangeD0 = new JSpinner(new SpinnerNumberModel(2, null, null, 1));
-		tf_rangeD0.setMinimumSize(new Dimension(100, 10));
+		js_rangeD0 = new JSpinner(new SpinnerNumberModel(2, null, null, 1));
+		js_rangeD0.setMinimumSize(new Dimension(100, 10));
 		tpLimeSeg.add(label_rangeD0, "align center");
-		tpLimeSeg.add(tf_rangeD0, "wrap, align center");
+		tpLimeSeg.add(js_rangeD0, "wrap, align center");
 
 		btRoiManager = new JButton("Open Roi Manager");
 		tpLimeSeg.add(btRoiManager, "align center");
@@ -352,7 +355,7 @@ public class MainWindow extends JFrame {
 				} else if ((boolean) ((String) cbSegmentableChannel.getSelectedItem()).contains("Original file - C=")) {
 					cellOutlineChannel = extractChannelOfStack(cbSegmentableChannel.getSelectedIndex(), originalImp);
 					tpLimeSeg.setEnabled(true);
-					tf_zScale.setValue((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth/cellOutlineChannel.getOriginalFileInfo().pixelWidth);
+					js_zScale.setValue((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth/cellOutlineChannel.getOriginalFileInfo().pixelWidth);
 					
 				}
 			}
@@ -423,34 +426,7 @@ public class MainWindow extends JFrame {
 		});
 
 		// LIMESEG FUNCTIONS
-		btLimeSeg.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				btLimeSeg.setEnabled(false);
-				ClearAll clear = new ClearAll();
-				SphereSegAdapted cf = new SphereSegAdapted();
-				cf.setImp(cellOutlineChannel);
-				cf.setZ_scale(cellOutlineChannel.getOriginalFileInfo().pixelDepth
-						/ cellOutlineChannel.getOriginalFileInfo().pixelWidth);
-				cf.setD_0((float) tf_D0.getValue());
-				cf.setF_pressure((float) tf_fPressure.getValue());
-				cf.setRange_in_d0_units((float) tf_rangeD0.getValue());
-
-				RoiManager roiManager = RoiManager.getRoiManager();
-				if (roiManager == null) {
-					System.err.println("No roi manager found - command aborted.");
-				}
-				if (roiManager.getRoisAsArray().length == 0) {
-					roiManager.runCommand("Open", new OpenDialog("Open Roi set").getPath());
-				}
-
-				clear.run();
-				cf.run();
-				btLimeSeg.setEnabled(true);
-			}
-		});
-
+		
 		btnSavePly.addActionListener(new ActionListener() {
 
 			@Override
@@ -471,6 +447,7 @@ public class MainWindow extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				LimeSeg.stopOptimisation();
+				cf.setClearOptimizer(true);
 			}
 		});
 		
@@ -489,6 +466,34 @@ public class MainWindow extends JFrame {
 				cellOutlineChannel.show();
 			}
 		});
+	
+		btLimeSeg.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				ExecutorService executor1 = Executors.newSingleThreadExecutor();
+				executor1.submit(() -> {
+				btLimeSeg.setEnabled(false);
+				ClearAll clear = new ClearAll();
+				cf.setImp(cellOutlineChannel);
+				cf.setZ_scale(Double.valueOf(js_zScale.getValue().toString()).floatValue());
+				cf.setD_0(Double.valueOf(js_D0.getValue().toString()).floatValue());
+				cf.setF_pressure(Double.valueOf(js_fPressure.getValue().toString()).floatValue());
+				cf.setRange_in_d0_units(Double.valueOf(js_rangeD0.getValue().toString()).floatValue());
+
+				RoiManager roiManager = RoiManager.getRoiManager();
+				if (roiManager.getRoisAsArray().length == 0) {
+					roiManager.runCommand("Open", new OpenDialog("Open Roi set").getPath());
+				}
+
+				clear.run();
+				cf.run();
+				btLimeSeg.setEnabled(true);
+				executor1.shutdown();
+				});
+			}
+		});
+
 
 		// POSTLIMESEG FUNCTIONS
 
