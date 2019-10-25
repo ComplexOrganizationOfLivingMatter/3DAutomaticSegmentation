@@ -68,7 +68,7 @@ public class MainWindow extends JFrame {
 	private JCheckBox jcbGPUEnable;
 	private ProgressBar progressBar;
 	private JComboBox<ThresholdMethod> cbThresholdMethod;
-	private JButton btCreateROIs;
+	private JButton btShowNuclei;
 	private ImagePlus imp_segmented;
 	/**
 	 * LimeSeg attributes
@@ -77,7 +77,7 @@ public class MainWindow extends JFrame {
 	private JButton btnSavePly;
 	private JButton btLimeSeg;
 	private JButton btRoiManager;
-	private JButton btShowImg;
+	private JButton btShowOutlines;
 	private JSpinner js_D0;
 	private JSpinner js_fPressure;
 	private JSpinner js_zScale;
@@ -118,6 +118,7 @@ public class MainWindow extends JFrame {
 	private JLabel lbOriginalFileName;
 	private JButton btOpenOriginalImage;
 	private JLabel lbEmptyLabel;
+	private JButton btRemoveItems; 
 
 	/**
 	 * @throws HeadlessException
@@ -132,63 +133,53 @@ public class MainWindow extends JFrame {
 		 */
 
 		// Init GUI elements
-		getContentPane().setLayout(new GridLayout(2, 0, 0, 0));
-
-		imageChannelsPanel = new JPanel(new GridLayout(3, 4));
+		getContentPane().setLayout(new MigLayout());
+		
+		imageChannelsPanel = new JPanel(new MigLayout());
 		tabbedPane = new JTabbedPane();
-		getContentPane().add(imageChannelsPanel);
+		tabbedPane.setMinimumSize((new Dimension(500,250)));
+		getContentPane().add(imageChannelsPanel, "wrap");
 		getContentPane().add(tabbedPane);
-		tabbedPane.setEnabled(false);
+		//tabbedPane.setEnabled(false);
 
 		// Row 1: Original image
-		lbOriginalImage = new JLabel("Original image");
-		lbOriginalFileName = new JLabel("");
-		btOpenOriginalImage = new JButton("Open");
-		lbEmptyLabel = new JLabel("");
+		btRemoveItems = new JButton("Clear All");
+		btOpenOriginalImage = new JButton("Open Stack");
 
-		imageChannelsPanel.add(lbOriginalImage);
-		imageChannelsPanel.add(lbOriginalFileName);
-		imageChannelsPanel.add(lbEmptyLabel);
-		imageChannelsPanel.add(btOpenOriginalImage);
+		imageChannelsPanel.add(btRemoveItems);
+		imageChannelsPanel.add(btOpenOriginalImage, "wrap");
 
 		// Row 2: Nuclei channel
 		cbNucleiChannel = new JComboBox<String>();
-
+		cbNucleiChannel.setMinimumSize(new Dimension(100, 10));
+		cbNucleiChannel.addItem("");
 		lbNucleiChannel = new JLabel("Nuclei channel");
 		lbNucleiChannel.setLabelFor(cbNucleiChannel);
 
-		lbNucleiFileName = new JLabel("");
-		btNucleiOpenFile = new JButton("Open");
-
 		imageChannelsPanel.add(lbNucleiChannel);
-		imageChannelsPanel.add(cbNucleiChannel);
-		imageChannelsPanel.add(lbNucleiFileName);
-		imageChannelsPanel.add(btNucleiOpenFile);
-
+		imageChannelsPanel.add(cbNucleiChannel, "wrap");
+		
 		// Row 3: Cell outline channel
 		cbSegmentableChannel = new JComboBox<String>();
+		cbSegmentableChannel.setMinimumSize(new Dimension(100, 10));
+		cbSegmentableChannel.addItem("");
 		lbSegmentableChannel = new JLabel("Cell outline channel");
 		lbSegmentableChannel.setLabelFor(cbSegmentableChannel);
 
-		lbCellOutlinesFileName = new JLabel("");
-		btCellOutlinesOpenFile = new JButton("Open");
-
 		imageChannelsPanel.add(lbSegmentableChannel);
-		imageChannelsPanel.add(cbSegmentableChannel);
-		imageChannelsPanel.add(lbCellOutlinesFileName);
-		imageChannelsPanel.add(btCellOutlinesOpenFile);
+		imageChannelsPanel.add(cbSegmentableChannel, "wrap");
 
 		/*
 		 * PRELIMESEG PANEL DESCRIPTION
 		 */
 
 		tpPreLimeSeg = new JPanel();
-		tpPreLimeSeg.setLayout(new MigLayout());
+		tpPreLimeSeg.setLayout(new MigLayout("fill"));
 		imp_segmented = new ImagePlus();
 
 		// Init GUI elements
 		btPreLimeSeg = new JButton("Run!");
-		btCreateROIs = new JButton("Create ROIs");
+		btShowNuclei = new JButton("Show Nuclei");
 		jcbGPUEnable = new JCheckBox("Enable GPU operations");
 		jcbGPUEnable.setSelected(true);
 		progressBar = new ProgressBar(100, 25);
@@ -203,12 +194,12 @@ public class MainWindow extends JFrame {
 		cbThresholdMethod.setSelectedIndex(15);
 
 		// Add components
-		tpPreLimeSeg.add(btCreateROIs, "wrap");
+		tpPreLimeSeg.add(btShowNuclei, "wrap");
 		tpPreLimeSeg.add(cbThresholdMethod, "wrap");
 		tpPreLimeSeg.add(cbPredefinedTypeSegmentation, "wrap");
 		cbPredefinedTypeSegmentation.setSelectedIndex(0);
 		tpPreLimeSeg.add(btPreLimeSeg, "wrap");
-		tpPreLimeSeg.add(progressBar);
+		tpPreLimeSeg.add(progressBar, "align left");
 
 		// Associate this panel to the TabPanel
 		tabbedPane.addTab("PreLimeSeg", tpPreLimeSeg);
@@ -256,8 +247,8 @@ public class MainWindow extends JFrame {
 		btLimeSeg = new JButton("Start");
 		tpLimeSeg.add(btLimeSeg, "wrap, align center");
 
-		btShowImg = new JButton("Show Stack");
-		tpLimeSeg.add(btShowImg, "align center");
+		btShowOutlines = new JButton("Show Stack");
+		tpLimeSeg.add(btShowOutlines, "align center");
 
 		btStopOptimisation = new JButton("Stop");
 		tpLimeSeg.add(btStopOptimisation, "wrap, align center");
@@ -285,40 +276,6 @@ public class MainWindow extends JFrame {
 
 		// MAIN WINDOW FUNCTIONS
 
-		btNucleiOpenFile.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				try {
-					nucleiChannel = IJ.openImage();
-					if (lbNucleiFileName.getText().length() <= 2) {
-						lbNucleiFileName.setText(nucleiChannel.getOriginalFileInfo().fileName);
-						cbNucleiChannel.addItem(nucleiChannel.getTitle());
-						// cbNucleiChannel.setSelectedIndex(0);
-					}
-				} catch (Exception ex) {
-
-				}
-			}
-		});
-
-		btCellOutlinesOpenFile.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				try {
-					cellOutlineChannel = IJ.openImage();
-					if (lbCellOutlinesFileName.getText().length() <= 2) {
-						lbCellOutlinesFileName.setText(cellOutlineChannel.getOriginalFileInfo().fileName);
-						cbSegmentableChannel.addItem(cellOutlineChannel.getTitle());
-						// cbSegmentableChannel.setSelectedIndex(0);
-					}
-				} catch (Exception ex) {
-
-				}
-			}
-		});
-
 		btOpenOriginalImage.addActionListener(new ActionListener() {
 
 			@Override
@@ -331,22 +288,30 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
+		
+		btRemoveItems.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				cbNucleiChannel.removeAllItems();
+				cbNucleiChannel.addItem("");
+				cbSegmentableChannel.removeAllItems();
+				cbSegmentableChannel.addItem("");
+			}
+		});
 
 		cbNucleiChannel.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (((String) cbNucleiChannel.getSelectedItem()).equals("")) {
+				if (cbNucleiChannel.getItemCount() <= 1) {
 					nucleiChannel = null;
 
 				} else {
 					setEnablePanels(true, tpPreLimeSeg);
 					btPreLimeSeg.setEnabled(false);
-					if ((boolean) ((String) cbNucleiChannel.getSelectedItem()).contains("Original file - C=")) {
-						nucleiChannel = extractChannelOfStack(cbNucleiChannel.getSelectedIndex(), originalImp);
-						// lbNucleiFileName.setText("");
+					nucleiChannel = extractChannelOfStack(cbNucleiChannel.getSelectedIndex(), originalImp);
 					}
-				}
 
 			}
 		});
@@ -355,9 +320,9 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (((String) cbSegmentableChannel.getSelectedItem()).equals("")) {
+				if (cbSegmentableChannel.getItemCount() <= 1) {
 					cellOutlineChannel = null;
-				} else if ((boolean) ((String) cbSegmentableChannel.getSelectedItem()).contains("Original file - C=")) {
+				} else {
 					cellOutlineChannel = extractChannelOfStack(cbSegmentableChannel.getSelectedIndex(), originalImp);
 					setEnablePanels(true, tpPostLimeSeg);
 					setEnablePanels(true, tpLimeSeg);
@@ -422,17 +387,11 @@ public class MainWindow extends JFrame {
 
 		});
 
-		btCreateROIs.addActionListener(new ActionListener() {
+		btShowNuclei.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				if (imp_segmented == null) {
-					imp_segmented = IJ.openImage();
-					imp_segmented.show();
-				}
-
-				RoiManager rm = getNucleiROIs(imp_segmented);
+				nucleiChannel.duplicate().show();
 			}
 		});
 
@@ -470,7 +429,7 @@ public class MainWindow extends JFrame {
 			}
 		});
 
-		btShowImg.addActionListener(new ActionListener() {
+		btShowOutlines.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -540,16 +499,14 @@ public class MainWindow extends JFrame {
 	 * 
 	 */
 	private void newOriginalFileName() {
-		cbNucleiChannel.removeAllItems();
-		cbSegmentableChannel.removeAllItems();
-		lbOriginalFileName.setText(originalImp.getOriginalFileInfo().fileName);
-
-		cbNucleiChannel.addItem("");
-		cbSegmentableChannel.addItem("");
-
-		for (int numChannel = 0; numChannel < originalImp.getNChannels(); numChannel++) {
-			cbNucleiChannel.addItem("Original file - C=" + numChannel);
-			cbSegmentableChannel.addItem("Original file - C=" + numChannel);
+		if (originalImp.getNChannels() > 1) {
+			for (int numChannel = 0; numChannel < originalImp.getNChannels(); numChannel++) {
+				cbNucleiChannel.addItem("Original file - C=" + numChannel);
+				cbSegmentableChannel.addItem("Original file - C=" + numChannel);
+			}
+		} else {
+			cbNucleiChannel.addItem(originalImp.getTitle());
+			cbSegmentableChannel.addItem(originalImp.getTitle());
 		}
 	}
 
