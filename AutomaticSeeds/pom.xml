@@ -153,9 +153,7 @@
 		<dependency>
 			<groupId>eu.kiaru</groupId>
 			<artifactId>limeseg</artifactId>
-			<version>0.4.4-SNAPSHOT</version>
-			<scope>system</scope>
-      		<systemPath>D:\Github\LimeSeg\target\limeseg-0.4.4-SNAPSHOT.jar</systemPath>
+			<version>0.4.3-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.smurn</groupId>
@@ -334,6 +332,11 @@
 	</build>
 	<repositories>
 		<!-- NB: for project parent -->
+		<repository>
+			<id>Fiji-plugins</id>
+	        <url>https://raw.github.com/ComplexOrganizationOfLivingMatter/Fiji-plugins/master/</url>
+		</repository>
+		
 		<repository>
 			<id>imagej.public</id>
 			<url>http://maven.imagej.net/content/groups/public</url>
