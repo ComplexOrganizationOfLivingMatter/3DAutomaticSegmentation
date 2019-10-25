@@ -277,7 +277,7 @@ public class MainWindow extends JFrame {
 		tpPostLimeSeg = new JPanel(new MigLayout("fill"));
 		btPostLimeSeg = new JButton("Run PostProcessing");
 		tpPostLimeSeg.add(btPostLimeSeg, "align center");
-		
+
 		// Add to the tab
 		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
 		this.setEnablePanels(false, tpPostLimeSeg);
@@ -338,11 +338,14 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (((String) cbNucleiChannel.getSelectedItem()).equals("")) {
 					nucleiChannel = null;
-				} else if ((boolean) ((String) cbNucleiChannel.getSelectedItem()).contains("Original file - C=")) {
-					nucleiChannel = extractChannelOfStack(cbNucleiChannel.getSelectedIndex(), originalImp);
-					// lbNucleiFileName.setText("");
+
+				} else {
 					setEnablePanels(true, tpPreLimeSeg);
 					btPreLimeSeg.setEnabled(false);
+					if ((boolean) ((String) cbNucleiChannel.getSelectedItem()).contains("Original file - C=")) {
+						nucleiChannel = extractChannelOfStack(cbNucleiChannel.getSelectedIndex(), originalImp);
+						// lbNucleiFileName.setText("");
+					}
 				}
 
 			}
@@ -467,9 +470,6 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-//				ImagePlus imgDisplayed;
-//				imgDisplayed = cellOutlineChannel.duplicate();
-//				imgDisplayed.show();
 				cellOutlineChannel.duplicate().show();
 			}
 		});
@@ -496,12 +496,11 @@ public class MainWindow extends JFrame {
 						roiManager.getRoisAsArray();
 						clear.run();
 						cf.run();
+					} else {
+						IJ.log("Error. Any Roi set selected");
+
 					}
-						else{
-							IJ.log("Error. Any Roi set selected");
-						
-					}
-					
+
 					btLimeSeg.setEnabled(true);
 					executor1.shutdown();
 				});
@@ -555,14 +554,15 @@ public class MainWindow extends JFrame {
 	 */
 	public ImagePlus extractChannelOfStack(int numChannel, ImagePlus originalImage) {
 		ImageStack newChannelStack = new ImageStack(originalImage.getWidth(), originalImage.getHeight());
-
 		int indexToAdd = 0;
 		for (int numZ = 0; numZ < originalImage.getStackSize() / originalImage.getNChannels(); numZ++) {
 			indexToAdd = originalImage.getStackIndex(numChannel, numZ, originalImage.getFrame());
 			newChannelStack.addSlice(originalImage.getStack().getProcessor(indexToAdd));
+			//newChannelStack.addSlice(originalImage.getStack().getProcessor(numZ));
 		}
 		ImagePlus oneChannelStack = new ImagePlus("", newChannelStack);
 		oneChannelStack.setFileInfo(originalImage.getFileInfo());
+		//oneChannelStack.duplicate().show();
 		return oneChannelStack;
 	}
 
