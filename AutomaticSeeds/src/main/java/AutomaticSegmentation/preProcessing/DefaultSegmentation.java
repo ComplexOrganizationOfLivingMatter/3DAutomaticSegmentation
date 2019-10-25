@@ -64,7 +64,7 @@ public class DefaultSegmentation implements genericSegmentation {
 			ImageConverter converter = new ImageConverter(this.inputImp);
 			converter.convertToGray8();
 		}
-		this.inputImp.duplicate().show();
+		//this.inputImp.duplicate().show();
 		int BitD = this.inputImp.getBitDepth();
 		boolean dams = false;
 		// double resizeFactor = 1;

@@ -385,13 +385,14 @@ public class MainWindow extends JFrame {
 		btPreLimeSeg.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				setEnablePanels(false, tpPreLimeSeg);
+				ExecutorService executor1 = Executors.newSingleThreadExecutor();
+				executor1.submit(() -> {
 				imp_segmented = null;
-
 				CLIJ clij = null;
 				jcbGPUEnable.setSelected(false);
 				if (jcbGPUEnable.isSelected())
 					clij = CLIJ.getInstance();
-
+				
 				switch (cbPredefinedTypeSegmentation.getSelectedIndex()) {
 				case 1:
 					DefaultSegmentation defaultGland = new DefaultSegmentation(nucleiChannel);
@@ -412,6 +413,9 @@ public class MainWindow extends JFrame {
 				}
 				imp_segmented.show();
 				RoiManager rm = getNucleiROIs(imp_segmented);
+				executor1.shutdown();
+				});
+			
 				setEnablePanels(true, tpPreLimeSeg);
 				// visualization3D (imp_segmented);
 			}
