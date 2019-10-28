@@ -42,19 +42,26 @@ public interface genericSegmentation {
 	 * @param strelRadius3D
 	 * @return
 	 */
-	default ImagePlus filterPreprocessing(ImagePlus initImp, CLIJ clij, int strelRadius3D) {
+	default ImagePlus filterPreprocessing(ImagePlus nucleiImp,ImagePlus cellOutlineImp, CLIJ clij, int strelRadius3D) {
+		
+		correctBleach BCMH = null;
+		BCMH = new correctBleach(nucleiImp,cellOutlineImp);
+		BCMH.doCorrection();
+		
+		nucleiImp.show();
+		
 		if (clij != null) { // More info at https://clij.github.io/clij-docs/referenceJava
 			// Retrieve filtered stack
-			ClearCLBuffer inputClij = clij.push(initImp);
+			ClearCLBuffer inputClij = clij.push(nucleiImp);
 			ClearCLBuffer temp = clij.create(inputClij);
 			Kernels.meanBox(clij, inputClij, temp, strelRadius3D, strelRadius3D, strelRadius3D);
-			initImp = clij.pull(temp);
+			nucleiImp = clij.pull(temp);
 			inputClij.close();
 			temp.close();
 		} else {
-			Filters3D.filter(initImp.getStack(), Filters3D.MEAN, strelRadius3D, strelRadius3D, strelRadius3D);
+			Filters3D.filter(nucleiImp.getStack(), Filters3D.MEAN, strelRadius3D, strelRadius3D, strelRadius3D);
 		}
-		return initImp;
+		return nucleiImp;
 	}
 	
 

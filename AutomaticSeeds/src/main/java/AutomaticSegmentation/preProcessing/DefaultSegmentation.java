@@ -22,28 +22,31 @@ import net.haesleinhuepf.clij.CLIJ;
  */
 public class DefaultSegmentation implements genericSegmentation {
 	
-	private ImagePlus inputImp;
+	private ImagePlus inputNucleiImp;
+	private ImagePlus inputCellOutlineImp;
 	private ImagePlus outputImp;
 	private int strelRadius2D;
 	private int strelRadius3D;
 	private int toleranceWatershed;
 	private int pixelsToOpenVolume;
 
-	public DefaultSegmentation(ImagePlus imp) {
+	public DefaultSegmentation(ImagePlus impNuclei,ImagePlus impCellOutline) {
 		this.strelRadius2D = 4;
 		this.strelRadius3D = 3;
 		// 10 is a good start point for 8-bit images, 2000 for 16-bits. Minor
 		// tolerance more divided objects with watershed
 		this.toleranceWatershed = 0;
-		this.inputImp = imp;
+		this.inputNucleiImp = impNuclei;
+		this.inputCellOutlineImp = impCellOutline;
 		this.pixelsToOpenVolume = 50;
 	}
 
-	public DefaultSegmentation(ImagePlus imp, int radius2D, int radius3D, int tolerance, int pixelsToOpenVolume) {
+	public DefaultSegmentation(ImagePlus impNuclei,ImagePlus impCellOutline, int radius2D, int radius3D, int tolerance, int pixelsToOpenVolume) {
 		this.strelRadius2D = radius2D;
 		this.strelRadius3D = radius3D;
 		this.toleranceWatershed = tolerance;
-		this.inputImp = imp;
+		this.inputNucleiImp = impNuclei;
+		this.inputCellOutlineImp = impCellOutline;		
 		this.pixelsToOpenVolume = pixelsToOpenVolume;
 	}
 
@@ -60,24 +63,26 @@ public class DefaultSegmentation implements genericSegmentation {
 	public void segmentationProtocol(CLIJ clij, String thresholdMethod) {
 
 		// Convert the image to 8-Bit
-		if (this.inputImp.getBitDepth() != 8) {
-			ImageConverter converter = new ImageConverter(this.inputImp);
+		if (this.inputNucleiImp.getBitDepth() != 8) {
+			ImageConverter converter = new ImageConverter(this.inputNucleiImp);
 			converter.convertToGray8();
 		}
-		//this.inputImp.duplicate().show();
-		int BitD = this.inputImp.getBitDepth();
+		//this.inputNucleiImp.duplicate().show();
+		int BitD = this.inputNucleiImp.getBitDepth();
 		boolean dams = false;
 		// double resizeFactor = 1;
 
 		IJ.log(BitD + "-bits conversion");
 		System.out.println(BitD + "-bits conversion");
 
-		ImagePlus filteredImp = filterPreprocessing(this.inputImp, clij, strelRadius3D);
-
-//		filteredImp.show();
+		inputNucleiImp.duplicate().show();
+		
+		ImagePlus filteredImp = filterPreprocessing(this.inputNucleiImp,this.inputCellOutlineImp, clij, strelRadius3D);
+		
+		filteredImp.duplicate().show();
 
 		ImagePlus imp_segmented = automaticThreshold(filteredImp, thresholdMethod);
-
+		
 		/***** loop for closing, binarize and filling holes in 2D *****/
 		System.out.println("Closing, binarize and filling");
 		IJ.log("Closing, binarize and filling");
@@ -124,9 +129,10 @@ public class DefaultSegmentation implements genericSegmentation {
 		IJ.log("Opening using the median of volumes");
 		ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
 
-		ImagePlus imp_segmentedFinal = createColouredImageWithLabels(this.inputImp, imgFilterSize);
+		ImagePlus imp_segmentedFinal = createColouredImageWithLabels(this.inputNucleiImp, imgFilterSize);
 
 		// progressBar.show(1);
+		
 		this.outputImp = imp_segmentedFinal;
 	}
 }

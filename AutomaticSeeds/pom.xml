@@ -166,6 +166,12 @@
 			</exclusions>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/sc.fiji/CorrectBleach_ -->
+		<dependency>
+		    <groupId>sc.fiji</groupId>
+		    <artifactId>CorrectBleach_</artifactId>
+		    </dependency>
+
 		<!-- https://mvnrepository.com/artifact/com.vividsolutions/jts-core -->
 		<dependency>
 			<groupId>com.vividsolutions</groupId>
