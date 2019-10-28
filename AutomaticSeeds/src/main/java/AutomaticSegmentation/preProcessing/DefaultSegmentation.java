@@ -81,7 +81,7 @@ public class DefaultSegmentation implements genericSegmentation {
 		
 		filteredImp.duplicate().show();
 
-		ImagePlus imp_segmented = automaticThreshold(filteredImp, thresholdMethod);
+		//ImagePlus imp_segmented = automaticThreshold(filteredImp, thresholdMethod);
 		
 		/***** loop for closing, binarize and filling holes in 2D *****/
 		System.out.println("Closing, binarize and filling");

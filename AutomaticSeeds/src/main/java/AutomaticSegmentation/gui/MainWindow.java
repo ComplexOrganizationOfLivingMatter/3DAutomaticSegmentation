@@ -25,10 +25,13 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.SpinnerNumberModel;
+
+import org.jfree.util.Log;
 
 import AutomaticSegmentation.limeSeg.SphereSegAdapted;
 import AutomaticSegmentation.preProcessing.DefaultSegmentation;
@@ -387,7 +390,9 @@ public class MainWindow extends JFrame {
 				jcbGPUEnable.setSelected(false);
 				if (jcbGPUEnable.isSelected())
 					clij = CLIJ.getInstance();
-				
+		
+				nucleiChannel = RunThreshold();
+
 				switch (cbPredefinedTypeSegmentation.getSelectedIndex()) {
 				case 1:
 					DefaultSegmentation defaultGland = new DefaultSegmentation(nucleiChannel,cellOutlineChannel);
@@ -540,6 +545,22 @@ public class MainWindow extends JFrame {
 		});
 
 	}
+
+    public synchronized ImagePlus RunThreshold() {
+    	nucleiChannel.duplicate().show();
+		IJ.run("Threshold...");
+        while (IJ.getImage().getProcessor().isBinary() != true) {
+        	try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+
+        return IJ.getImage().duplicate();
+    }
+
 
 	// GENERIC METHODS
 
