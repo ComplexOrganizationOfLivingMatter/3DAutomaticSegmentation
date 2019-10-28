@@ -15,6 +15,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -116,6 +117,7 @@ public class MainWindow extends JFrame {
 	private JPanel tpLimeSeg;
 	private JPanel tpPostLimeSeg;
 
+	private ArrayList<ImagePlus> ImpArraylist; 
 	private ImagePlus originalImp;
 	private ImagePlus nucleiChannel;
 	private ImagePlus cellOutlineChannel;
@@ -136,7 +138,8 @@ public class MainWindow extends JFrame {
 
 		cellOutlineChannel = null;
 		nucleiChannel = null;
-
+		ImpArraylist = new ArrayList<ImagePlus>();
+		ImpArraylist.add(null);
 		/*
 		 * MAIN WINDOW DESCRIPTION
 		 */
@@ -302,6 +305,7 @@ public class MainWindow extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				try {
+					
 					originalImp = IJ.openImage();
 					newOriginalFileName();
 					tabbedPane.setEnabled(true);
@@ -318,6 +322,9 @@ public class MainWindow extends JFrame {
 				cbNucleiChannel.addItem("");
 				cbSegmentableChannel.removeAllItems();
 				cbSegmentableChannel.addItem("");
+				ImpArraylist.removeAll(ImpArraylist);
+				ImpArraylist.add(null);
+				tabbedPane.setEnabled(false);
 			}
 		});
 
@@ -325,16 +332,14 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (cbNucleiChannel.getItemCount() <= 1) {
+				if (cbNucleiChannel.getSelectedItem() == "") {
 					nucleiChannel = null;
-
 				} else {
+					nucleiChannel = extractChannelOfStack(1, ImpArraylist.get(cbNucleiChannel.getSelectedIndex()));
 					setEnablePanels(true, tpPreLimeSeg);
 					setEnablePanels(true, ThresholdMethodPanel);
 					btPreLimeSeg.setEnabled(false);
-					nucleiChannel = extractChannelOfStack(cbNucleiChannel.getSelectedIndex(), originalImp);
 					}
-
 			}
 		});
 
@@ -342,10 +347,12 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (cbSegmentableChannel.getItemCount() <= 1) {
+				if (cbSegmentableChannel.getSelectedItem() == "") {
 					cellOutlineChannel = null;
 				} else {
-					cellOutlineChannel = extractChannelOfStack(cbSegmentableChannel.getSelectedIndex(), originalImp);
+					int a = cbSegmentableChannel.getSelectedIndex();
+					
+					cellOutlineChannel = extractChannelOfStack(1, ImpArraylist.get(cbSegmentableChannel.getSelectedIndex()));
 					setEnablePanels(true, tpPostLimeSeg);
 					setEnablePanels(true, tpLimeSeg);
 					js_zScale.setValue((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
@@ -371,9 +378,10 @@ public class MainWindow extends JFrame {
 
 		btPreLimeSeg.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				setEnablePanels(false, tpPreLimeSeg);
+				
 				ExecutorService executor1 = Executors.newSingleThreadExecutor();
 				executor1.submit(() -> {
+				btPreLimeSeg.setEnabled(false);
 				imp_segmented = null;
 				CLIJ clij = null;
 				jcbGPUEnable.setSelected(false);
@@ -400,10 +408,11 @@ public class MainWindow extends JFrame {
 				}
 				imp_segmented.show();
 				RoiManager rm = getNucleiROIs(imp_segmented);
+				btPreLimeSeg.setEnabled(true);
 				executor1.shutdown();
 				});
 			
-				setEnablePanels(true, tpPreLimeSeg);
+				
 				// visualization3D (imp_segmented);
 			}
 
@@ -413,7 +422,9 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				nucleiChannel.duplicate().show();
+				if (nucleiChannel != null) {
+					nucleiChannel.duplicate().show();
+				}
 			}
 		});
 		
@@ -474,7 +485,9 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				cellOutlineChannel.duplicate().show();
+				if (cellOutlineChannel != null) {
+					cellOutlineChannel.duplicate().show();
+				}
 			}
 		});
 
@@ -544,10 +557,12 @@ public class MainWindow extends JFrame {
 			for (int numChannel = 0; numChannel < originalImp.getNChannels(); numChannel++) {
 				cbNucleiChannel.addItem("Original file - C=" + numChannel);
 				cbSegmentableChannel.addItem("Original file - C=" + numChannel);
+				ImpArraylist.add(extractChannelOfStack(numChannel+1, originalImp));
 			}
 		} else {
 			cbNucleiChannel.addItem(originalImp.getTitle());
 			cbSegmentableChannel.addItem(originalImp.getTitle());
+			ImpArraylist.add(extractChannelOfStack(1, originalImp));
 		}
 	}
 
