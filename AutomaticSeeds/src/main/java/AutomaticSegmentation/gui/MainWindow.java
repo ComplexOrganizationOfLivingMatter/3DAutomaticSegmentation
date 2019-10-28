@@ -360,7 +360,7 @@ public class MainWindow extends JFrame {
 				
 				switch (cbPredefinedTypeSegmentation.getSelectedIndex()) {
 				case 1:
-					DefaultSegmentation defaultGland = new DefaultSegmentation(nucleiChannel);
+					DefaultSegmentation defaultGland = new DefaultSegmentation(nucleiChannel,cellOutlineChannel);
 					defaultGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
 					imp_segmented = defaultGland.getOuputImp().duplicate();
 					break;
