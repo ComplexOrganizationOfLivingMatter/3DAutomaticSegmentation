@@ -23,30 +23,27 @@ import net.haesleinhuepf.clij.CLIJ;
 public class DefaultSegmentation implements genericSegmentation {
 	
 	private ImagePlus inputNucleiImp;
-	private ImagePlus inputCellOutlineImp;
 	private ImagePlus outputImp;
 	private int strelRadius2D;
 	private int strelRadius3D;
 	private int toleranceWatershed;
 	private int pixelsToOpenVolume;
 
-	public DefaultSegmentation(ImagePlus impNuclei,ImagePlus impCellOutline) {
+	public DefaultSegmentation(ImagePlus impNuclei) {
 		this.strelRadius2D = 4;
 		this.strelRadius3D = 3;
 		// 10 is a good start point for 8-bit images, 2000 for 16-bits. Minor
 		// tolerance more divided objects with watershed
 		this.toleranceWatershed = 0;
 		this.inputNucleiImp = impNuclei;
-		this.inputCellOutlineImp = impCellOutline;
 		this.pixelsToOpenVolume = 50;
 	}
 
-	public DefaultSegmentation(ImagePlus impNuclei,ImagePlus impCellOutline, int radius2D, int radius3D, int tolerance, int pixelsToOpenVolume) {
+	public DefaultSegmentation(ImagePlus impNuclei,int radius2D, int radius3D, int tolerance, int pixelsToOpenVolume) {
 		this.strelRadius2D = radius2D;
 		this.strelRadius3D = radius3D;
 		this.toleranceWatershed = tolerance;
 		this.inputNucleiImp = impNuclei;
-		this.inputCellOutlineImp = impCellOutline;		
 		this.pixelsToOpenVolume = pixelsToOpenVolume;
 	}
 
@@ -77,7 +74,7 @@ public class DefaultSegmentation implements genericSegmentation {
 
 		inputNucleiImp.duplicate().show();
 		
-		ImagePlus filteredImp = filterPreprocessing(this.inputNucleiImp,this.inputCellOutlineImp, clij, strelRadius3D);
+		ImagePlus filteredImp = filterPreprocessing(this.inputNucleiImp, clij, strelRadius3D);
 		
 		filteredImp.duplicate().show();
 

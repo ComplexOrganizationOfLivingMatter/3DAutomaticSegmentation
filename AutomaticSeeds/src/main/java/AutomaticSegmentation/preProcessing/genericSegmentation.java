@@ -42,14 +42,8 @@ public interface genericSegmentation {
 	 * @param strelRadius3D
 	 * @return
 	 */
-	default ImagePlus filterPreprocessing(ImagePlus nucleiImp,ImagePlus cellOutlineImp, CLIJ clij, int strelRadius3D) {
-		
-		correctBleach BCMH = null;
-		BCMH = new correctBleach(nucleiImp,cellOutlineImp);
-		BCMH.doCorrection();
-		
-		nucleiImp.show();
-		
+	default ImagePlus filterPreprocessing(ImagePlus nucleiImp, CLIJ clij, int strelRadius3D) {
+				
 		if (clij != null) { // More info at https://clij.github.io/clij-docs/referenceJava
 			// Retrieve filtered stack
 			ClearCLBuffer inputClij = clij.push(nucleiImp);
@@ -74,22 +68,6 @@ public interface genericSegmentation {
 	 * @return
 	 */
 	public default ImagePlus automaticThreshold(ImagePlus initImp, String autoThresholdMethod) {
-
-		// Thresholder p = new Thresholder();
-		// ImagePlus imp_segmented = new ImagePlus("",
-		// initImp.getStack().duplicate());
-		// imp_segmented.setSlice(Math.round(initImp.getStackSize()/2));
-		// imp_segmented.show();
-		// p.run("");
-		//
-		// try {
-		// this.wait();
-		// } catch (InterruptedException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-
-		// initImp.show();
 
 		IJ.log("Applying " + autoThresholdMethod + " and automatic threshold");
 		System.out.println("Applying " + autoThresholdMethod + " and automatic threshold");
