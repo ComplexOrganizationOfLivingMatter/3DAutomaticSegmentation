@@ -3,6 +3,7 @@
  */
 package AutomaticSegmentation.gui;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
@@ -10,7 +11,11 @@ import java.awt.GridLayout;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.font.TextAttribute;
 import java.io.File;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -68,8 +73,12 @@ public class MainWindow extends JFrame {
 	private JCheckBox jcbGPUEnable;
 	private ProgressBar progressBar;
 	private JComboBox<ThresholdMethod> cbThresholdMethod;
+	private JLabel lbThresholdMethod;
+	private JPanel ThresholdMethodPanel;
 	private JButton btShowNuclei;
+	private JButton btThresholdMethod; 
 	private ImagePlus imp_segmented;
+	
 	/**
 	 * LimeSeg attributes
 	 */
@@ -140,7 +149,7 @@ public class MainWindow extends JFrame {
 		tabbedPane.setMinimumSize((new Dimension(500,250)));
 		getContentPane().add(imageChannelsPanel, "wrap");
 		getContentPane().add(tabbedPane);
-		//tabbedPane.setEnabled(false);
+		tabbedPane.setEnabled(false);
 
 		// Row 1: Original image
 		btRemoveItems = new JButton("Clear All");
@@ -192,18 +201,30 @@ public class MainWindow extends JFrame {
 
 		cbThresholdMethod = new JComboBox<ThresholdMethod>(ThresholdMethod.values());
 		cbThresholdMethod.setSelectedIndex(15);
-
+		lbThresholdMethod = new JLabel("Threshold method:");
+		ThresholdMethodPanel = new JPanel();
+		btThresholdMethod = new JButton("Info about Threshold methods");
+		btThresholdMethod.setBorderPainted(false);
+		Map attributes = btThresholdMethod.getFont().getAttributes();
+		attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+		btThresholdMethod.setFont(btThresholdMethod.getFont().deriveFont(attributes));
+		
 		// Add components
+		 ThresholdMethodPanel.add(lbThresholdMethod);
+		 ThresholdMethodPanel.add(cbThresholdMethod);
+		
 		tpPreLimeSeg.add(btShowNuclei, "wrap");
-		tpPreLimeSeg.add(cbThresholdMethod, "wrap");
+		tpPreLimeSeg.add(ThresholdMethodPanel);
+		tpPreLimeSeg.add(btThresholdMethod, "wrap, align left");
 		tpPreLimeSeg.add(cbPredefinedTypeSegmentation, "wrap");
 		cbPredefinedTypeSegmentation.setSelectedIndex(0);
 		tpPreLimeSeg.add(btPreLimeSeg, "wrap");
-		tpPreLimeSeg.add(progressBar, "align left");
+		tpPreLimeSeg.add(progressBar, "align center");
 
 		// Associate this panel to the TabPanel
 		tabbedPane.addTab("PreLimeSeg", tpPreLimeSeg);
 		this.setEnablePanels(false, tpPreLimeSeg);
+		this.setEnablePanels(false, ThresholdMethodPanel);
 		// tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 
 		/*
@@ -309,6 +330,7 @@ public class MainWindow extends JFrame {
 
 				} else {
 					setEnablePanels(true, tpPreLimeSeg);
+					setEnablePanels(true, ThresholdMethodPanel);
 					btPreLimeSeg.setEnabled(false);
 					nucleiChannel = extractChannelOfStack(cbNucleiChannel.getSelectedIndex(), originalImp);
 					}
@@ -394,6 +416,25 @@ public class MainWindow extends JFrame {
 				nucleiChannel.duplicate().show();
 			}
 		});
+		
+		btThresholdMethod.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				nucleiChannel.duplicate().show();
+				IJ.run("Threshold...");
+
+			}
+		});
+		
+		btThresholdMethod.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent arg0) {
+            	btThresholdMethod.setForeground((Color.BLUE));
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+            	btThresholdMethod.setForeground((Color.BLACK));
+            }
+        });
 
 		// LIMESEG FUNCTIONS
 
