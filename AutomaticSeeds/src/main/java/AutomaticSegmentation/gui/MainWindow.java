@@ -324,7 +324,9 @@ public class MainWindow extends JFrame {
 				cbSegmentableChannel.addItem("");
 				ImpArraylist.removeAll(ImpArraylist);
 				ImpArraylist.add(null);
-				tabbedPane.setEnabled(false);
+				setEnablePanels(false, tpPreLimeSeg);
+				setEnablePanels(false, tpLimeSeg);
+				setEnablePanels(false, tpPostLimeSeg);
 			}
 		});
 
@@ -332,7 +334,7 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (cbNucleiChannel.getSelectedItem() == "") {
+				if (cbNucleiChannel.getSelectedItem() == "" | cbNucleiChannel.getSelectedIndex() == -1) {
 					nucleiChannel = null;
 				} else {
 					nucleiChannel = extractChannelOfStack(1, ImpArraylist.get(cbNucleiChannel.getSelectedIndex()));
@@ -347,11 +349,9 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (cbSegmentableChannel.getSelectedItem() == "") {
+				if (cbSegmentableChannel.getSelectedItem() == "" | cbSegmentableChannel.getSelectedIndex() == -1) {
 					cellOutlineChannel = null;
 				} else {
-					int a = cbSegmentableChannel.getSelectedIndex();
-					
 					cellOutlineChannel = extractChannelOfStack(1, ImpArraylist.get(cbSegmentableChannel.getSelectedIndex()));
 					setEnablePanels(true, tpPostLimeSeg);
 					setEnablePanels(true, tpLimeSeg);
