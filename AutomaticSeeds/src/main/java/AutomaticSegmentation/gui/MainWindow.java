@@ -31,6 +31,7 @@ import javax.swing.SpinnerNumberModel;
 
 import AutomaticSegmentation.limeSeg.SphereSegAdapted;
 import AutomaticSegmentation.preProcessing.DefaultSegmentation;
+import AutomaticSegmentation.preProcessing.SegmBigAndOverlappedNuclei;
 import AutomaticSegmentation.preProcessing.SegmZebrafish;
 import AutomaticSegmentation.preProcessing.SegmentingNucleiGlands;
 import AutomaticSegmentation.preProcessing.ThresholdMethod;
@@ -193,6 +194,7 @@ public class MainWindow extends JFrame {
 		cbPredefinedTypeSegmentation.addItem("Default");
 		cbPredefinedTypeSegmentation.addItem("Salivary glands (cylinder monolayer)");
 		cbPredefinedTypeSegmentation.addItem("Zebrafish multilayer");
+		cbPredefinedTypeSegmentation.addItem("Big and overlapped nuclei");
 
 		cbThresholdMethod = new JComboBox<ThresholdMethod>(ThresholdMethod.values());
 		cbThresholdMethod.setSelectedIndex(15);
@@ -384,7 +386,7 @@ public class MainWindow extends JFrame {
 
 				switch (cbPredefinedTypeSegmentation.getSelectedIndex()) {
 				case 1:
-					DefaultSegmentation defaultGland = new DefaultSegmentation(nucleiChannel,cellOutlineChannel);
+					DefaultSegmentation defaultGland = new DefaultSegmentation(nucleiChannel);
 					defaultGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
 					imp_segmented = defaultGland.getOuputImp().duplicate();
 					break;
@@ -398,6 +400,11 @@ public class MainWindow extends JFrame {
 					SegmZebrafish segZeb = new SegmZebrafish(nucleiChannel);
 					segZeb.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
 					imp_segmented = segZeb.getOuputImp().duplicate();
+					break;
+				case 4:
+					SegmBigAndOverlappedNuclei segBigOverNuc = new SegmBigAndOverlappedNuclei(nucleiChannel);
+					segBigOverNuc.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
+					imp_segmented = segBigOverNuc.getOuputImp().duplicate();
 					break;
 				}
 				imp_segmented.show();
