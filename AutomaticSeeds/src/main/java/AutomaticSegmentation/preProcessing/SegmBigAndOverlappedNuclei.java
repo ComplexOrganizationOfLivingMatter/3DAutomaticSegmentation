@@ -88,6 +88,7 @@ public class SegmBigAndOverlappedNuclei implements genericSegmentation {
 		// loop for to close hole in 2D. Dilatation + erosion + fill holes
 		Strel shape2D = Strel.Shape.DISK.fromRadius(strelRadius2D);
 
+		ImagePlus imp_segmented = inputImp.duplicate();
 		/***** loop for closing, binarize and filling holes in 2D *****/
 		System.out.println("Closing, binarize and filling");
 		IJ.log("Closing, binarize and filling");
