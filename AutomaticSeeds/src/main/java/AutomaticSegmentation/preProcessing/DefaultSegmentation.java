@@ -84,11 +84,11 @@ public class DefaultSegmentation implements genericSegmentation {
 		System.out.println("Closing, binarize and filling");
 		IJ.log("Closing, binarize and filling");
 		Strel shape2D = Strel.Shape.DISK.fromRadius(this.strelRadius2D);
-		ImageStack imgFilled = imp_segmented.getStack().duplicate();
-		for (int i = 1; i <= imp_segmented.getStackSize(); i++) {
+		ImageStack imgFilled = filteredImp.getStack().duplicate();
+		for (int i = 1; i <= filteredImp.getStackSize(); i++) {
 			
 			System.out.println(i);
-			ImageProcessor processor = imp_segmented.getStack().getProcessor(i);
+			ImageProcessor processor = filteredImp.getStack().getProcessor(i);
 			processor = Morphology.closing(processor, shape2D);
 			processor = BinaryImages.binarize(processor);
 			processor = Reconstruction.fillHoles(processor);
