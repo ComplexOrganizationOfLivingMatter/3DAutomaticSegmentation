@@ -7,7 +7,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
-import java.awt.GridLayout;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -25,13 +24,10 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.SpinnerNumberModel;
-
-import org.jfree.util.Log;
 
 import AutomaticSegmentation.limeSeg.SphereSegAdapted;
 import AutomaticSegmentation.preProcessing.DefaultSegmentation;
@@ -41,6 +37,7 @@ import AutomaticSegmentation.preProcessing.ThresholdMethod;
 import AutomaticSegmentation.utils.Utils;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.commands.ClearAll;
+import eu.kiaru.limeseg.struct.Cell;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -48,7 +45,6 @@ import ij.Prefs;
 import ij.gui.OvalRoi;
 import ij.gui.ProgressBar;
 import ij.gui.Roi;
-import ij.io.OpenDialog;
 import ij.plugin.frame.RoiManager;
 import ij3d.ContentConstants;
 import ij3d.Image3DUniverse;
@@ -124,14 +120,7 @@ public class MainWindow extends JFrame {
 	private ImagePlus originalImp;
 	private ImagePlus nucleiChannel;
 	private ImagePlus cellOutlineChannel;
-	private JLabel lbNucleiFileName;
-	private JButton btNucleiOpenFile;
-	private JLabel lbCellOutlinesFileName;
-	private JButton btCellOutlinesOpenFile;
-	private JLabel lbOriginalImage;
-	private JLabel lbOriginalFileName;
 	private JButton btOpenOriginalImage;
-	private JLabel lbEmptyLabel;
 	private JButton btRemoveItems; 
 
 	/**
