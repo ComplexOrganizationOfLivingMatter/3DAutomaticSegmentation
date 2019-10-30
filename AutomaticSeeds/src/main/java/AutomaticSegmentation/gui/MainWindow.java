@@ -28,6 +28,7 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.WindowConstants;
 
 import AutomaticSegmentation.limeSeg.SphereSegAdapted;
 import AutomaticSegmentation.preProcessing.DefaultSegmentation;
@@ -38,7 +39,6 @@ import AutomaticSegmentation.preProcessing.ThresholdMethod;
 import AutomaticSegmentation.utils.Utils;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.commands.ClearAll;
-import eu.kiaru.limeseg.struct.Cell;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -77,9 +77,9 @@ public class MainWindow extends JFrame {
 	private JLabel lbThresholdMethod;
 	private JPanel ThresholdMethodPanel;
 	private JButton btShowNuclei;
-	private JButton btThresholdMethod; 
+	private JButton btThresholdMethod;
 	private ImagePlus imp_segmented;
-	
+
 	/**
 	 * LimeSeg attributes
 	 */
@@ -117,12 +117,12 @@ public class MainWindow extends JFrame {
 	private JPanel tpLimeSeg;
 	private JPanel tpPostLimeSeg;
 
-	private ArrayList<ImagePlus> ImpArraylist; 
+	private ArrayList<ImagePlus> ImpArraylist;
 	private ImagePlus originalImp;
 	private ImagePlus nucleiChannel;
 	private ImagePlus cellOutlineChannel;
 	private JButton btOpenOriginalImage;
-	private JButton btRemoveItems; 
+	private JButton btRemoveItems;
 
 	/**
 	 * @throws HeadlessException
@@ -136,10 +136,10 @@ public class MainWindow extends JFrame {
 
 		// Init GUI elements
 		getContentPane().setLayout(new MigLayout());
-		
+
 		mainPanel = new JPanel(new MigLayout());
 		tabbedPane = new JTabbedPane();
-		tabbedPane.setMinimumSize((new Dimension(500,250)));
+		tabbedPane.setMinimumSize((new Dimension(500, 250)));
 		getContentPane().add(mainPanel, "wrap");
 		getContentPane().add(tabbedPane);
 		tabbedPane.setEnabled(false);
@@ -159,7 +159,7 @@ public class MainWindow extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				try {
-					
+
 					originalImp = IJ.openImage();
 					newOriginalFileName();
 					tabbedPane.setEnabled(true);
@@ -167,7 +167,7 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
-		
+
 		btRemoveItems.addActionListener(new ActionListener() {
 
 			@Override
@@ -195,7 +195,7 @@ public class MainWindow extends JFrame {
 					setEnablePanels(true, tpPreLimeSeg);
 					setEnablePanels(true, ThresholdMethodPanel);
 					btPreLimeSeg.setEnabled(false);
-					}
+				}
 			}
 		});
 
@@ -206,7 +206,8 @@ public class MainWindow extends JFrame {
 				if (cbSegmentableChannel.getSelectedItem() == "" | cbSegmentableChannel.getSelectedIndex() == -1) {
 					cellOutlineChannel = null;
 				} else {
-					cellOutlineChannel = extractChannelOfStack(1, ImpArraylist.get(cbSegmentableChannel.getSelectedIndex()));
+					cellOutlineChannel = extractChannelOfStack(1,
+							ImpArraylist.get(cbSegmentableChannel.getSelectedIndex()));
 					setEnablePanels(true, tpPostLimeSeg);
 					setEnablePanels(true, tpLimeSeg);
 					js_zScale.setValue((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
@@ -216,9 +217,12 @@ public class MainWindow extends JFrame {
 			}
 		});
 
-		/* -------------------------  PRELIMESEG -------------------------------- */
+		/*
+		 * ------------------------- PRELIMESEG --------------------------------
+		 */
 
 		cbPredefinedTypeSegmentation.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 
 				if (cbPredefinedTypeSegmentation.getSelectedIndex() == 0) {
@@ -231,49 +235,49 @@ public class MainWindow extends JFrame {
 		});
 
 		btPreLimeSeg.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
-				
+
 				ExecutorService executor1 = Executors.newSingleThreadExecutor();
 				executor1.submit(() -> {
-				btPreLimeSeg.setEnabled(false);
-				imp_segmented = null;
-				CLIJ clij = null;
-				jcbGPUEnable.setSelected(false);
-				if (jcbGPUEnable.isSelected())
-					clij = CLIJ.getInstance();
-		
-				nucleiChannel = RunThreshold();
+					btPreLimeSeg.setEnabled(false);
+					imp_segmented = null;
+					CLIJ clij = null;
+					jcbGPUEnable.setSelected(false);
+					if (jcbGPUEnable.isSelected())
+						clij = CLIJ.getInstance();
 
-				switch (cbPredefinedTypeSegmentation.getSelectedIndex()) {
-				case 1:
-					DefaultSegmentation defaultGland = new DefaultSegmentation(nucleiChannel);
-					defaultGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-					imp_segmented = defaultGland.getOuputImp().duplicate();
-					break;
-				case 2:
-					SegmentingNucleiGlands segGland = new SegmentingNucleiGlands(nucleiChannel);
-					segGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-					imp_segmented = segGland.getOuputImp().duplicate();
-					break;
+					nucleiChannel = RunThreshold();
 
-				case 3:
-					SegmZebrafish segZeb = new SegmZebrafish(nucleiChannel);
-					segZeb.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-					imp_segmented = segZeb.getOuputImp().duplicate();
-					break;
-				case 4:
-					SegmBigAndOverlappedNuclei segBigOverNuc = new SegmBigAndOverlappedNuclei(nucleiChannel);
-					segBigOverNuc.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-					imp_segmented = segBigOverNuc.getOuputImp().duplicate();
-					break;
-				}
-				imp_segmented.show();
-				RoiManager rm = getNucleiROIs(imp_segmented);
-				btPreLimeSeg.setEnabled(true);
-				executor1.shutdown();
+					switch (cbPredefinedTypeSegmentation.getSelectedIndex()) {
+					case 1:
+						DefaultSegmentation defaultGland = new DefaultSegmentation(nucleiChannel);
+						defaultGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
+						imp_segmented = defaultGland.getOuputImp().duplicate();
+						break;
+					case 2:
+						SegmentingNucleiGlands segGland = new SegmentingNucleiGlands(nucleiChannel);
+						segGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
+						imp_segmented = segGland.getOuputImp().duplicate();
+						break;
+
+					case 3:
+						SegmZebrafish segZeb = new SegmZebrafish(nucleiChannel);
+						segZeb.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
+						imp_segmented = segZeb.getOuputImp().duplicate();
+						break;
+					case 4:
+						SegmBigAndOverlappedNuclei segBigOverNuc = new SegmBigAndOverlappedNuclei(nucleiChannel);
+						segBigOverNuc.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
+						imp_segmented = segBigOverNuc.getOuputImp().duplicate();
+						break;
+					}
+					imp_segmented.show();
+					RoiManager rm = getNucleiROIs(imp_segmented);
+					btPreLimeSeg.setEnabled(true);
+					executor1.shutdown();
 				});
-			
-				
+
 				// visualization3D (imp_segmented);
 			}
 
@@ -288,27 +292,29 @@ public class MainWindow extends JFrame {
 				}
 			}
 		});
-		
+
 		btThresholdMethod.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed(ActionEvent e) {
 				nucleiChannel.duplicate().show();
 				IJ.run("Threshold...");
 
 			}
 		});
-		
-		btThresholdMethod.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent arg0) {
-            	btThresholdMethod.setForeground((Color.BLUE));
-            }
-            @Override
-            public void mouseExited(MouseEvent e) {
-            	btThresholdMethod.setForeground((Color.BLACK));
-            }
-        });
 
-		// LIMESEG FUNCTIONS
+		btThresholdMethod.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				btThresholdMethod.setForeground((Color.BLUE));
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				btThresholdMethod.setForeground((Color.BLACK));
+			}
+		});
+
+		/* --------------------- LIMESEG FUNCTIONS ------------------------- */
 
 		btnSavePly.addActionListener(new ActionListener() {
 
@@ -338,7 +344,7 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				RoiManager roiManager = RoiManager.getRoiManager();
+				RoiManager.getRoiManager();
 			}
 		});
 
@@ -413,8 +419,8 @@ public class MainWindow extends JFrame {
 		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
 		this.setEnablePanels(false, tpPostLimeSeg);
 	}
-	
-	/** -------------------------- INIT GUI ELEMENTS ----------------------**/
+
+	/** -------------------------- INIT GUI ELEMENTS ---------------------- **/
 
 	/**
 	 * 
@@ -447,11 +453,11 @@ public class MainWindow extends JFrame {
 		Map attributes = btThresholdMethod.getFont().getAttributes();
 		attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
 		btThresholdMethod.setFont(btThresholdMethod.getFont().deriveFont(attributes));
-		
+
 		// Add components
-		 ThresholdMethodPanel.add(lbThresholdMethod);
-		 ThresholdMethodPanel.add(cbThresholdMethod);
-		
+		ThresholdMethodPanel.add(lbThresholdMethod);
+		ThresholdMethodPanel.add(cbThresholdMethod);
+
 		tpPreLimeSeg.add(btShowNuclei, "wrap");
 		tpPreLimeSeg.add(ThresholdMethodPanel);
 		tpPreLimeSeg.add(btThresholdMethod, "wrap, align left");
@@ -487,7 +493,7 @@ public class MainWindow extends JFrame {
 
 		mainPanel.add(lbNucleiChannel);
 		mainPanel.add(cbNucleiChannel, "wrap");
-		
+
 		// Row 3: Cell outline channel
 		cbSegmentableChannel = new JComboBox<String>();
 		cbSegmentableChannel.setMinimumSize(new Dimension(100, 10));
@@ -505,7 +511,7 @@ public class MainWindow extends JFrame {
 	private void initLimeSegPanel() {
 		tpLimeSeg = new JPanel();
 		tpLimeSeg.setLayout(new MigLayout("fill"));
-		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
 		// Init GUI
 		cf = new SphereSegAdapted();
@@ -553,24 +559,23 @@ public class MainWindow extends JFrame {
 		tabbedPane.addTab("LimeSeg", tpLimeSeg);
 		this.setEnablePanels(false, tpLimeSeg);
 	}
-	
+
 	/** ------------ END INIT GUI ELEMENTS ------------------------ **/
 
-    public synchronized ImagePlus RunThreshold() {
-    	nucleiChannel.duplicate().show();
+	public synchronized ImagePlus RunThreshold() {
+		nucleiChannel.duplicate().show();
 		IJ.run("Threshold...");
-        while (IJ.getImage().getProcessor().isBinary() != true) {
-        	try {
+		while (IJ.getImage().getProcessor().isBinary() != true) {
+			try {
 				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-        }
+		}
 
-        return IJ.getImage().duplicate();
-    }
-
+		return IJ.getImage().duplicate();
+	}
 
 	// GENERIC METHODS
 
@@ -588,7 +593,7 @@ public class MainWindow extends JFrame {
 			for (int numChannel = 0; numChannel < originalImp.getNChannels(); numChannel++) {
 				cbNucleiChannel.addItem("Original file - C=" + numChannel);
 				cbSegmentableChannel.addItem("Original file - C=" + numChannel);
-				ImpArraylist.add(extractChannelOfStack(numChannel+1, originalImp));
+				ImpArraylist.add(extractChannelOfStack(numChannel + 1, originalImp));
 			}
 		} else {
 			cbNucleiChannel.addItem(originalImp.getTitle());
@@ -606,11 +611,11 @@ public class MainWindow extends JFrame {
 		for (int numZ = 0; numZ < originalImage.getStackSize() / originalImage.getNChannels(); numZ++) {
 			indexToAdd = originalImage.getStackIndex(numChannel, numZ, originalImage.getFrame());
 			newChannelStack.addSlice(originalImage.getStack().getProcessor(indexToAdd));
-			//newChannelStack.addSlice(originalImage.getStack().getProcessor(numZ));
+			// newChannelStack.addSlice(originalImage.getStack().getProcessor(numZ));
 		}
 		ImagePlus oneChannelStack = new ImagePlus("", newChannelStack);
 		oneChannelStack.setFileInfo(originalImage.getFileInfo());
-		//oneChannelStack.duplicate().show();
+		// oneChannelStack.duplicate().show();
 		return oneChannelStack;
 	}
 
