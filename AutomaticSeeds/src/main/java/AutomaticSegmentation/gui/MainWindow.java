@@ -190,11 +190,12 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (cbNucleiChannel.getSelectedItem() == "" | cbNucleiChannel.getSelectedIndex() == -1) {
 					nucleiChannel = null;
+					setEnablePanels(false, tpPreLimeSeg);
+					setEnablePanels(false, ThresholdMethodPanel);
 				} else {
-					nucleiChannel = extractChannelOfStack(1, ImpArraylist.get(cbNucleiChannel.getSelectedIndex()));
+					nucleiChannel = ImpArraylist.get(cbNucleiChannel.getSelectedIndex());
 					setEnablePanels(true, tpPreLimeSeg);
 					setEnablePanels(true, ThresholdMethodPanel);
-					btPreLimeSeg.setEnabled(false);
 				}
 			}
 		});
@@ -205,9 +206,10 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (cbSegmentableChannel.getSelectedItem() == "" | cbSegmentableChannel.getSelectedIndex() == -1) {
 					cellOutlineChannel = null;
+					setEnablePanels(false, tpPostLimeSeg);
+					setEnablePanels(false, tpLimeSeg);
 				} else {
-					cellOutlineChannel = extractChannelOfStack(1,
-							ImpArraylist.get(cbSegmentableChannel.getSelectedIndex()));
+					cellOutlineChannel = ImpArraylist.get(cbSegmentableChannel.getSelectedIndex());
 					setEnablePanels(true, tpPostLimeSeg);
 					setEnablePanels(true, tpLimeSeg);
 					js_zScale.setValue((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
