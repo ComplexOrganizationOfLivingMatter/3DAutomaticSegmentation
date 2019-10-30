@@ -376,7 +376,7 @@ public class MainWindow extends JFrame {
 
 					RoiManager roiManager = RoiManager.getRoiManager();
 					if (roiManager.getRoisAsArray().length == 0) {
-						roiManager.runCommand("Open", cellOutlineChannel.getOriginalFileInfo().directory);
+						roiManager.runCommand("Open", "");
 					}
 					if (roiManager.getRoisAsArray().length != 0) {
 						clear.run();
