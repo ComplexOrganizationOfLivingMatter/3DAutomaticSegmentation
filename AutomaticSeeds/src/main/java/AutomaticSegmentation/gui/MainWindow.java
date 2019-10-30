@@ -40,6 +40,7 @@ import AutomaticSegmentation.preProcessing.ThresholdMethod;
 import AutomaticSegmentation.utils.Utils;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.commands.ClearAll;
+import eu.kiaru.limeseg.struct.Cell;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -323,22 +324,30 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String path = cellOutlineChannel.getOriginalFileInfo().directory + "OutputLimeSeg";
-				File dir = new File(path);
-				if (!dir.isDirectory()) {
-					System.out.println("New folder created");
-					dir.mkdir();
-				}
-				
-				if (dir.listFiles().length!=0) {
-					//Show dialog to confirm 
-					int dialogResult = JOptionPane.showConfirmDialog (null, "Saving will remove the content of the select folder, confirm?","Warning",JOptionPane.YES_NO_OPTION);
-					if (dialogResult == JOptionPane.YES_OPTION) {
-						purgeDirectory(dir,1);
+				ArrayList<Cell> cell = LimeSeg.allCells;
+				if (cell != null) {
+					String path = cellOutlineChannel.getOriginalFileInfo().directory + "OutputLimeSeg";
+					File dir = new File(path);
+					if (!dir.isDirectory()) {
+						System.out.println("New folder created");
+						dir.mkdir();
+					}
+
+					if (dir.listFiles().length != 0) {
+						// Show dialog to confirm
+						int dialogResult = JOptionPane.showConfirmDialog(null,
+								"Saving will remove the content of the select folder, confirm?", "Warning",
+								JOptionPane.YES_NO_OPTION);
+						if (dialogResult == JOptionPane.YES_OPTION) {
+							purgeDirectory(dir, 1);
+							LimeSeg.saveStateToXmlPly(path);
+						}
+					} else {
 						LimeSeg.saveStateToXmlPly(path);
 					}
+
 				} else {
-					LimeSeg.saveStateToXmlPly(path);	
+					IJ.log("Any cell segmented");
 				}
 			}
 		});
@@ -564,7 +573,7 @@ public class MainWindow extends JFrame {
 		btStopOptimisation = new JButton("Stop");
 		tpLimeSeg.add(btStopOptimisation, "wrap, align center");
 
-		btnSavePly = new JButton("Saved");
+		btnSavePly = new JButton("Save");
 		tpLimeSeg.add(new JLabel(""));
 		tpLimeSeg.add(btnSavePly, "align center");
 
@@ -727,7 +736,7 @@ public class MainWindow extends JFrame {
 		univ.show();
 
 	}
-	
+
 	public void purgeDirectory(File dir, int height) {
 		// no need to clean below level
 		if (height >= 0) {
