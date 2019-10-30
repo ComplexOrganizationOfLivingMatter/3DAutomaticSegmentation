@@ -80,7 +80,7 @@ import net.miginfocom.swing.MigLayout;
  * @author Victor Hugo Arriaga, Antonio Tagua, Pablo Vicente-Munuera
  *
  */
-public class PostProcessingWindow extends ImageWindow implements ActionListener {
+public class PostProcessingWindow {
 
 	/**
 	 * 
@@ -89,7 +89,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 	public static double THRESHOLD = 5;
 
-	private CustomCanvas canvas;
+	public ImagePlus workingImp;
 	private Cell LimeSegCell;
 	public ArrayList<Cell> allCells;
 	public RoiAdjustment newCell;
@@ -112,9 +112,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	private Scrollbar zoom;
 	private JLabel slicePanel;
 
-	private PolygonRoi polyRoi;
-
-	private String initialDirectory;
+	public PolygonRoi polyRoi;
+	public String initialDirectory;
 	public Cell3D PostProcessCell;
 	public ArrayList<Cell3D> all3dCells;
 	public PolygonRoi[][] lumenDots;
@@ -125,9 +124,9 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	 * @param raw_img
 	 */
 	public PostProcessingWindow(ImagePlus raw_img) {
-		super(raw_img, new CustomCanvas(raw_img));
+		this.workingImp = raw_img;
 		// time 6 seconds
-		this.initialDirectory = raw_img.getOriginalFileInfo().directory;
+		this.initialDirectory = workingImp.getOriginalFileInfo().directory;
 		newCell = new RoiAdjustment();
 		LimeSeg.allCells = new ArrayList<Cell>();
 		LimeSegCell = new Cell();
@@ -145,7 +144,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			Cell3D PostProcessCellCopy = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
 			PostProcessCell = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
 			PostProcessCell.clearCell();
-			for (int i = 0; i < imp.getStackSize(); i++) {
+			for (int i = 0; i < workingImp.getStackSize(); i++) {
 				if (PostProcessCellCopy.getCell3DAt(i).size() != 0) {
 					PostProcessCell.addDotsList(processLimeSegOutput(PostProcessCellCopy.getCell3DAt(i), i));
 				}
@@ -164,193 +163,18 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 			}
 		});
 
-		canvas = (CustomCanvas) super.getCanvas();
 		MainAutomatic3DSegmentation.callToolbarPolygon();
-
-		sliceSelector = new Scrollbar(Scrollbar.HORIZONTAL, 1, 1, 1, (imp.getStackSize()));
-		sliceSelector.setVisible(true);
-
-		// Zoom, create an invisible scrollbar to limit the canvas zone (I don't
-		// understand why)
-		zoom = new Scrollbar(Scrollbar.VERTICAL, 1, 1, 1, 1024);
-		zoom.setVisible(false);
-
+		
 		// Initialize lumenDots as matrix [x][2] to split the lumen in 2
 		// polygons
-		lumenDots = new PolygonRoi[imp.getStackSize() + 1][2];
+		lumenDots = new PolygonRoi[workingImp.getStackSize() + 1][2];
 		//loadLumen();
 		removeCellOverlap();
 		removeCellLumenOverlap();
-		initializeGUIItems();
-		raw_img.setOverlay(addOverlay(0, canvas.getImage().getCurrentSlice(), all3dCells, raw_img, false, lumenDots));
-		initGUI();
+
+		workingImp.setOverlay(addOverlay(0, workingImp.getCurrentSlice(), all3dCells, raw_img, false, lumenDots));
 
 		// Image3DUniverse C3D = new Image3DUniverse (1024,1024);
-
-	}
-
-	/**
-	 * 
-	 */
-	private void initGUI() {
-
-		upRightPanel.setLayout(new MigLayout());
-		upRightPanel.setBorder(BorderFactory.createTitledBorder("ID Cell"));
-		upRightPanel.add(cellSpinner, "wrap");
-		upRightPanel.add(checkOverlay);
-
-		middlePanel.setLayout(new MigLayout());
-		middlePanel.setBorder(BorderFactory.createTitledBorder("Cell Correction"));
-		middlePanel.add(btnInsert, "wrap");
-		middlePanel.add(btnSave, "wrap");
-
-		bottomRightPanel.setLayout(new MigLayout());
-		bottomRightPanel.setBorder(BorderFactory.createTitledBorder("Lumen Processing"));
-		bottomRightPanel.add(btnLumen, "wrap");
-		bottomRightPanel.add(checkLumen);
-
-		rightPanel.setLayout(new MigLayout());
-		rightPanel.add(upRightPanel, "wrap, gapy 10::50, aligny top");
-		rightPanel.add(middlePanel, "aligny center, wrap, gapy 10::50");
-		rightPanel.add(bottomRightPanel);
-		rightPanel.add(slicePanel, "aligny center, wrap, south");
-		rightPanel.add(btn3DDisplay, "aligny center, south");
-
-		leftPanel.setLayout(new MigLayout());
-
-		canvas.setMaximumSize(new Dimension(1024, 1024));
-		canvas.setMinimumSize(new Dimension(500, 500));
-		Color newColor = new Color(200, 200, 255);
-		sliceSelector.setBackground(newColor);
-		leftPanel.add(canvas, "wrap");
-		leftPanel.add(sliceSelector, "growx");
-		leftPanel.add(zoom, "west,growy");
-
-		processingFrame.setLayout(new MigLayout());
-		processingFrame.add(leftPanel);
-		processingFrame.add(rightPanel, "east");
-		processingFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		processingFrame.pack();
-		processingFrame.setVisible(true);
-
-	}
-
-	/**
-	 * 
-	 */
-	private void initializeGUIItems() {
-
-		// Init attributes.
-		newCell = new RoiAdjustment();
-
-		processingFrame = new JFrame();
-		upRightPanel = new JPanel();
-		middlePanel = new JPanel();
-		bottomRightPanel = new JPanel();
-		rightPanel = new JPanel();
-		leftPanel = new JPanel();
-		slicePanel = new JLabel();
-
-		cellSpinner = new JSpinner();
-		cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
-		cellSpinner.addChangeListener(listener);
-
-		checkOverlay = new JComboBox<String>();
-		checkOverlay.addItem("None overlay");
-		checkOverlay.addItem("Cell overlay");
-		checkOverlay.addItem("All overlays");
-		checkOverlay.setSelectedIndex(2);
-		checkOverlay.addActionListener(this);
-
-		checkLumen = new JComboBox<String>();
-		checkLumen.addItem("Without lumen");
-		checkLumen.addItem("Show lumen");
-		checkLumen.setSelectedIndex(0);
-		checkLumen.addActionListener(this);
-
-		btnInsert = new JButton("Modify Cell");
-		btnInsert.addActionListener(this);
-
-		btnSave = new JButton("Save Results");
-		btnSave.addActionListener(this);
-
-		btnLumen = new JButton("Update Lumen");
-		btnLumen.addActionListener(this);
-
-		btn3DDisplay = new JButton("Show 3D Cell");
-		btn3DDisplay.addActionListener(this);
-
-		canvas.addComponentListener(new ComponentAdapter() {
-
-			public void componentResized(ComponentEvent ce) {
-				Rectangle r = canvas.getBounds();
-				canvas.setDstDimensions(r.width, r.height);
-			}
-
-		});
-
-		sliceSelector.addAdjustmentListener(new AdjustmentListener() {
-			public void adjustmentValueChanged(AdjustmentEvent e) {
-				int z = sliceSelector.getValue();
-				imp.setSlice(z);
-				int p = imp.getStackSize();
-				int s = sliceSelector.getValue();
-				String slice = "Current slice:" + Integer.toString(s) + "/" + Integer.toString(p);
-				slicePanel.setText(slice);
-				updateOverlay();
-
-			}
-		});
-		// Zoom
-		processingFrame.addMouseWheelListener(new MouseWheelListener() {
-			public void mouseWheelMoved(MouseWheelEvent e) {
-				// TODO Auto-generated method stub
-				int rotation = e.getWheelRotation();
-				int amount = e.getScrollAmount();
-				@SuppressWarnings("deprecation")
-				boolean ctrl = (e.getModifiers() & Event.CTRL_MASK) != 0;
-				if (IJ.debugMode) {
-					IJ.log("mouseWheelMoved: " + e);
-					IJ.log("  type: " + e.getScrollType());
-					IJ.log("  ctrl: " + ctrl);
-					IJ.log("  rotation: " + rotation);
-					IJ.log("  amount: " + amount);
-				}
-				if (amount < 1)
-					amount = 1;
-				if (rotation == 0)
-					return;
-				int width = canvas.getWidth();
-				int height = canvas.getHeight();
-				Rectangle srcRect = canvas.getSrcRect();
-				int xstart = srcRect.x;
-				int ystart = srcRect.y;
-				if ((ctrl || IJ.shiftKeyDown()) && canvas != null) {
-					Point loc = canvas.getCursorLoc();
-					int x = canvas.screenX(loc.x);
-					int y = canvas.screenY(loc.y);
-					if (rotation < 0)
-						canvas.zoomIn(x, y);
-					else
-						canvas.zoomOut(x, y);
-					return;
-				} else if (IJ.spaceBarDown() || srcRect.height == height) {
-					srcRect.x += rotation * amount * Math.max(width / 200, 1);
-					if (srcRect.x < 0)
-						srcRect.x = 0;
-					if (srcRect.x + srcRect.width > width)
-						srcRect.x = width - srcRect.width;
-				} else {
-					srcRect.y += rotation * amount * Math.max(height / 200, 1);
-					if (srcRect.y < 0)
-						srcRect.y = 0;
-					if (srcRect.y + srcRect.height > height)
-						srcRect.y = height - srcRect.height;
-				}
-				if (srcRect.x != xstart || srcRect.y != ystart)
-					canvas.repaint();
-			}
-		});
 	}
 
 	/*
@@ -359,93 +183,12 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	 * @see
 	 * java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == checkOverlay) {
-			updateOverlay();
-		}
-
-		if (e.getSource() == checkLumen) {
-			updateOverlay();
-		}
-
-		if (e.getSource() == btnInsert) {
-			this.addROI();
-			// Check if polyRoi is different to null, if is do the modify cell
-			if (polyRoi != null) {
-				all3dCells = newCell.removeOverlappingRegions(all3dCells, polyRoi, canvas.getImage().getCurrentSlice(),
-						all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, lumenDots);
-				checkOverlay.setSelectedIndex(1);
-				updateOverlay();
-				// After modify cell return poly to null, clean the roi
-				polyRoi = null;
-			}
-			// If polyRoi is null show a message to prevent errors
-			else {
-				JOptionPane.showMessageDialog(middlePanel.getParent(), "You must select a new Region.");
-			}
-
-		}
-
-		if (e.getSource() == btnSave) {
-			this.savePlyFiles(all3dCells, initialDirectory);
-			// After saved the plyFiles show a message to inform the user
-			JOptionPane.showMessageDialog(middlePanel.getParent(), "Saved results.");
-		}
-
-		if (e.getSource() == btnLumen) {
-			// read the lumen
-			loadLumen();
-			// remove the overlaps cells
-			removeCellLumenOverlap();
-			updateOverlay();
-		}
-
-		if (e.getSource() == btn3DDisplay) {
-			String path_in = initialDirectory + "OutputLimeSeg";
-			LimeSeg.loadStateFromXmlPly(path_in);
-			LimeSeg.make3DViewVisible();
-			LimeSeg.putAllCellsTo3DDisplay();
-			System.out.println("READY");
-		}
-
-	}
-
-	/**
-	 * 
-	 */
-	private void updateOverlay() {
-
-		canvas.clearOverlay();
-		canvas.getImage().getOverlay().clear();
-
-		if (checkOverlay.getSelectedItem() == "All overlays") {
-			Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1), canvas.getImage().getCurrentSlice(),
-					all3dCells, canvas.getImage(), true, lumenDots);
-			canvas.getImage().setOverlay(newOverlay);
-		} else if (checkOverlay.getSelectedItem() == "Cell overlay") {
-			Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1), canvas.getImage().getCurrentSlice(),
-					all3dCells, canvas.getImage(), false, lumenDots);
-			canvas.getImage().setOverlay(newOverlay);
-		}
-
-		canvas.setImageUpdated();
-		canvas.repaint();
-	}
-
-	ChangeListener listener = new ChangeListener() {
-
-		@Override
-		public void stateChanged(ChangeEvent e) {
-			updateOverlay();
-		}
-	};
 
 	/**
 	 * Add the painted Roi to the roiManager
 	 */
 	public void addROI() {
-		Roi r = this.getImagePlus().getRoi();
+		Roi r = workingImp.getRoi();
 		if (r != null) {
 			int[] xPoly = ((PolygonRoi) r).getXCoordinates();
 			int[] yPoly = ((PolygonRoi) r).getYCoordinates();
@@ -457,7 +200,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 					2);
 			polyRoi.setLocation(r.getXBase(), r.getYBase());
 		}
-		this.getImagePlus().deleteRoi();
+		workingImp.deleteRoi();
 
 	}
 
@@ -505,11 +248,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 				}
 			}
 
-			if (lumen[lumen.length / 2] != null & checkLumen.getSelectedItem() == "Show lumen") {
-				ov.addElement(lumen[frame - 1][0]);
-				if (lumen[frame - 1][1] != null)
-					ov.addElement(lumen[frame - 1][1]);
-			}
+//			if (lumen[lumen.length / 2] != null & checkLumen.getSelectedItem() == "Show lumen") {
+//				ov.addElement(lumen[frame - 1][0]);
+//				if (lumen[frame - 1][1] != null)
+//					ov.addElement(lumen[frame - 1][1]);
+//			}
 			// TODO: change this part of the code
 
 		}
@@ -545,7 +288,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	 * 
 	 */
 	public void removeCellLumenOverlap() {
-		for (int nFrame = 1; nFrame < imp.getStackSize() + 1; nFrame++) {
+		for (int nFrame = 1; nFrame < workingImp.getStackSize() + 1; nFrame++) {
 			for (int nCell = 0; nCell < all3dCells.size(); nCell++) {
 				// Check if the frame have lumen and the cell is not empty
 				if (lumenDots[nFrame - 1] != null & all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) {
@@ -647,7 +390,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 	 * 
 	 */
 	public void removeCellOverlap() {
-		for (int nFrame = 1; nFrame < imp.getStackSize() + 1; nFrame++) {
+		for (int nFrame = 1; nFrame < workingImp.getStackSize() + 1; nFrame++) {
 			for (int nCell = 0; nCell < all3dCells.size(); nCell++) {
 				// Check if the cell is not empty
 				if (all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) {
