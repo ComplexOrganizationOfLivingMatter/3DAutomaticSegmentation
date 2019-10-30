@@ -64,19 +64,11 @@ public class MainAutomatic3DSegmentation implements PlugIn {
 	}
 
 	/**
-	 * Static method to enable multipoint selection It is mainly used to create
+	 * Static method to enable oval selection It is mainly used to create
 	 * ROIs
 	 */
-	public static void callToolbarMultiPoint() {
-		ij.gui.Toolbar.getInstance().setTool("multi");
-	}
-
-	/**
-	 * Static method to enable rectangle selection It is mainly used to create
-	 * ROIs
-	 */
-	public static void callToolbarRectangle() {
-		ij.gui.Toolbar.getInstance().setTool(ij.gui.Toolbar.RECTANGLE);
+	public static void callToolbarOval() {
+		ij.gui.Toolbar.getInstance().setTool(ij.gui.Toolbar.OVAL);
 	}
 	/**
 	 * Static method to enable polygon selection It is mainly used to create ROIs
