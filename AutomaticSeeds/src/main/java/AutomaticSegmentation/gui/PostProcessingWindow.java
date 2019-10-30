@@ -89,10 +89,8 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 
 	public static double THRESHOLD = 5;
 
-	private IOXmlPlyLimeSeg OutputLimeSeg;
 	private CustomCanvas canvas;
 	private Cell LimeSegCell;
-	private LimeSeg limeSeg;
 	public ArrayList<Cell> allCells;
 	public RoiAdjustment newCell;
 	public PolygonRoi polyRoi2;
@@ -130,7 +128,6 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		super(raw_img, new CustomCanvas(raw_img));
 		// time 6 seconds
 		this.initialDirectory = raw_img.getOriginalFileInfo().directory;
-		limeSeg = new LimeSeg();
 		newCell = new RoiAdjustment();
 		LimeSeg.allCells = new ArrayList<Cell>();
 		LimeSegCell = new Cell();
@@ -262,13 +259,13 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		checkOverlay.addItem("None overlay");
 		checkOverlay.addItem("Cell overlay");
 		checkOverlay.addItem("All overlays");
-		checkOverlay.setSelectedIndex(1);
+		checkOverlay.setSelectedIndex(2);
 		checkOverlay.addActionListener(this);
 
 		checkLumen = new JComboBox<String>();
 		checkLumen.addItem("Without lumen");
 		checkLumen.addItem("Show lumen");
-		checkLumen.setSelectedIndex(1);
+		checkLumen.setSelectedIndex(0);
 		checkLumen.addActionListener(this);
 
 		btnInsert = new JButton("Modify Cell");

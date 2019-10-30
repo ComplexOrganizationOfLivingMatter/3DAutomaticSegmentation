@@ -24,6 +24,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
@@ -328,8 +329,17 @@ public class MainWindow extends JFrame {
 					System.out.println("New folder created");
 					dir.mkdir();
 				}
-				LimeSeg.saveStateToXmlPly(path);
-				System.out.println("Saved");
+				
+				if (dir.listFiles().length!=0) {
+					//Show dialog to confirm 
+					int dialogResult = JOptionPane.showConfirmDialog (null, "Saving will remove the content of the select folder, confirm?","Warning",JOptionPane.YES_NO_OPTION);
+					if (dialogResult == JOptionPane.YES_OPTION) {
+						purgeDirectory(dir,1);
+						LimeSeg.saveStateToXmlPly(path);
+					}
+				} else {
+					LimeSeg.saveStateToXmlPly(path);	
+				}
 			}
 		});
 
@@ -717,5 +727,15 @@ public class MainWindow extends JFrame {
 		univ.show();
 
 	}
-
+	
+	public void purgeDirectory(File dir, int height) {
+		// no need to clean below level
+		if (height >= 0) {
+			for (File file : dir.listFiles()) {
+				if (file.isDirectory())
+					purgeDirectory(file, height - 1);
+				file.delete();
+			}
+		}
+	}
 }
