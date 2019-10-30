@@ -322,7 +322,7 @@ public class MainWindow extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String path = cellOutlineChannel.getOriginalFileInfo().directory + "/OutputLimeSeg";
+				String path = cellOutlineChannel.getOriginalFileInfo().directory + "OutputLimeSeg";
 				File dir = new File(path);
 				if (!dir.isDirectory()) {
 					System.out.println("New folder created");
@@ -616,7 +616,7 @@ public class MainWindow extends JFrame {
 			// newChannelStack.addSlice(originalImage.getStack().getProcessor(numZ));
 		}
 		ImagePlus oneChannelStack = new ImagePlus("", newChannelStack);
-		oneChannelStack.setFileInfo(originalImage.getFileInfo());
+		oneChannelStack.setFileInfo(originalImage.getOriginalFileInfo());
 		// oneChannelStack.duplicate().show();
 		return oneChannelStack;
 	}
