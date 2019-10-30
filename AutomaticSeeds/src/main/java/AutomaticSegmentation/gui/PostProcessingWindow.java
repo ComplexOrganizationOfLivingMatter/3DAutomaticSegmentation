@@ -181,7 +181,7 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		// Initialize lumenDots as matrix [x][2] to split the lumen in 2
 		// polygons
 		lumenDots = new PolygonRoi[imp.getStackSize() + 1][2];
-		loadLumen();
+		//loadLumen();
 		removeCellOverlap();
 		removeCellLumenOverlap();
 		initializeGUIItems();
@@ -823,7 +823,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		}
 	}
 
-	// Save ply files, xml and copy limeSegParams from original LimeSeg Output
+	/**
+	 * Save ply files, xml and copy limeSegParams from original LimeSeg Output
+	 * @param allCells
+	 * @param path_in
+	 */
 	public void savePlyFiles(ArrayList<Cell3D> allCells, String path_in) {
 		if (!path_in.endsWith(File.separator)) {
 			path_in = path_in + File.separator;
@@ -902,7 +906,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		}
 	}
 
-	// functions from LimeSeg to clean the files and save XML
+	/**
+	 * Functions from LimeSeg to clean the files
+	 * @param dir
+	 * @param height
+	 */
 	static void purgeDirectory(File dir, int height) {
 		// no need to clean below level
 		if (height >= 0) {
@@ -914,6 +922,11 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		}
 	}
 
+	/**
+	 * Save XML
+	 * @param path
+	 * @param dom
+	 */
 	static void saveXmlFile(String path, Document dom) {
 		try {
 			Transformer tr = TransformerFactory.newInstance().newTransformer();
@@ -933,7 +946,12 @@ public class PostProcessingWindow extends ImageWindow implements ActionListener 
 		}
 	}
 
-	// function to copyFiles
+	/**
+	 * function to copyFiles
+	 * @param fromFile
+	 * @param toFile
+	 * @return
+	 */
 	public boolean copyFile(String fromFile, String toFile) {
 		File origin = new File(fromFile);
 		File destination = new File(toFile);
