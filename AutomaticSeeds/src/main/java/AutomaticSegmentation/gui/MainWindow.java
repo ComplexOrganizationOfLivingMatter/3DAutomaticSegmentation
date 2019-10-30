@@ -106,7 +106,7 @@ public class MainWindow extends JFrame {
 	/**
 	 * MainWindow attributes
 	 */
-	private JPanel imageChannelsPanel;
+	private JPanel mainPanel;
 	private JComboBox<String> cbNucleiChannel;
 	private JComboBox<String> cbSegmentableChannel;
 	private JLabel lbNucleiChannel;
@@ -133,166 +133,26 @@ public class MainWindow extends JFrame {
 		nucleiChannel = null;
 		ImpArraylist = new ArrayList<ImagePlus>();
 		ImpArraylist.add(null);
-		/*
-		 * MAIN WINDOW DESCRIPTION
-		 */
 
 		// Init GUI elements
 		getContentPane().setLayout(new MigLayout());
 		
-		imageChannelsPanel = new JPanel(new MigLayout());
+		mainPanel = new JPanel(new MigLayout());
 		tabbedPane = new JTabbedPane();
 		tabbedPane.setMinimumSize((new Dimension(500,250)));
-		getContentPane().add(imageChannelsPanel, "wrap");
+		getContentPane().add(mainPanel, "wrap");
 		getContentPane().add(tabbedPane);
 		tabbedPane.setEnabled(false);
 
-		// Row 1: Original image
-		btRemoveItems = new JButton("Clear All");
-		btOpenOriginalImage = new JButton("Open Stack");
+		initMainPanel();
 
-		imageChannelsPanel.add(btRemoveItems);
-		imageChannelsPanel.add(btOpenOriginalImage, "wrap");
+		initPreLimeSegPanel();
 
-		// Row 2: Nuclei channel
-		cbNucleiChannel = new JComboBox<String>();
-		cbNucleiChannel.setMinimumSize(new Dimension(100, 10));
-		cbNucleiChannel.addItem("");
-		lbNucleiChannel = new JLabel("Nuclei channel");
-		lbNucleiChannel.setLabelFor(cbNucleiChannel);
+		initLimeSegPanel();
 
-		imageChannelsPanel.add(lbNucleiChannel);
-		imageChannelsPanel.add(cbNucleiChannel, "wrap");
-		
-		// Row 3: Cell outline channel
-		cbSegmentableChannel = new JComboBox<String>();
-		cbSegmentableChannel.setMinimumSize(new Dimension(100, 10));
-		cbSegmentableChannel.addItem("");
-		lbSegmentableChannel = new JLabel("Cell outline channel");
-		lbSegmentableChannel.setLabelFor(cbSegmentableChannel);
+		initPostLimeSegPanel();
 
-		imageChannelsPanel.add(lbSegmentableChannel);
-		imageChannelsPanel.add(cbSegmentableChannel, "wrap");
-
-		/*
-		 * PRELIMESEG PANEL DESCRIPTION
-		 */
-
-		tpPreLimeSeg = new JPanel();
-		tpPreLimeSeg.setLayout(new MigLayout("fill"));
-		imp_segmented = new ImagePlus();
-
-		// Init GUI elements
-		btPreLimeSeg = new JButton("Run!");
-		btShowNuclei = new JButton("Show Nuclei");
-		jcbGPUEnable = new JCheckBox("Enable GPU operations");
-		jcbGPUEnable.setSelected(true);
-		progressBar = new ProgressBar(100, 25);
-
-		cbPredefinedTypeSegmentation = new JComboBox<String>();
-		cbPredefinedTypeSegmentation.addItem("Select a type of DAPI segmentation");
-		cbPredefinedTypeSegmentation.addItem("Default");
-		cbPredefinedTypeSegmentation.addItem("Salivary glands (cylinder monolayer)");
-		cbPredefinedTypeSegmentation.addItem("Zebrafish multilayer");
-		cbPredefinedTypeSegmentation.addItem("Big and overlapped nuclei");
-
-		cbThresholdMethod = new JComboBox<ThresholdMethod>(ThresholdMethod.values());
-		cbThresholdMethod.setSelectedIndex(15);
-		lbThresholdMethod = new JLabel("Threshold method:");
-		ThresholdMethodPanel = new JPanel();
-		btThresholdMethod = new JButton("Info about Threshold methods");
-		btThresholdMethod.setBorderPainted(false);
-		Map attributes = btThresholdMethod.getFont().getAttributes();
-		attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-		btThresholdMethod.setFont(btThresholdMethod.getFont().deriveFont(attributes));
-		
-		// Add components
-		 ThresholdMethodPanel.add(lbThresholdMethod);
-		 ThresholdMethodPanel.add(cbThresholdMethod);
-		
-		tpPreLimeSeg.add(btShowNuclei, "wrap");
-		tpPreLimeSeg.add(ThresholdMethodPanel);
-		tpPreLimeSeg.add(btThresholdMethod, "wrap, align left");
-		tpPreLimeSeg.add(cbPredefinedTypeSegmentation, "wrap");
-		cbPredefinedTypeSegmentation.setSelectedIndex(0);
-		tpPreLimeSeg.add(btPreLimeSeg, "wrap");
-		tpPreLimeSeg.add(progressBar, "align center");
-
-		// Associate this panel to the TabPanel
-		tabbedPane.addTab("PreLimeSeg", tpPreLimeSeg);
-		this.setEnablePanels(false, tpPreLimeSeg);
-		this.setEnablePanels(false, ThresholdMethodPanel);
-		// tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
-
-		/*
-		 * LIMESEG PANEL DESCRIPTION
-		 */
-
-		tpLimeSeg = new JPanel();
-		tpLimeSeg.setLayout(new MigLayout("fill"));
-		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
-		// Init GUI
-		cf = new SphereSegAdapted();
-		label_D0 = new JLabel("D_0:");
-		js_D0 = new JSpinner(new SpinnerNumberModel(5.5, null, null, 0.1));
-
-		js_D0.setMinimumSize(new Dimension(100, 10));
-		tpLimeSeg.add(label_D0, "align center");
-		tpLimeSeg.add(js_D0, "wrap, align center");
-
-		label_fPressure = new JLabel("F_Pressure:");
-		js_fPressure = new JSpinner(new SpinnerNumberModel(0.015, -0.04, 0.04, 0.001));
-		js_fPressure.setMinimumSize(new Dimension(100, 10));
-		tpLimeSeg.add(label_fPressure, "align center");
-		tpLimeSeg.add(js_fPressure, "wrap, align center");
-
-		label_zScale = new JLabel("Z scale:");
-		js_zScale = new JSpinner(new SpinnerNumberModel(1.0, null, null, 0.1));
-		js_zScale.setMinimumSize(new Dimension(100, 10));
-		tpLimeSeg.add(label_zScale, "align center");
-		tpLimeSeg.add(js_zScale, "wrap, align center");
-
-		label_rangeD0 = new JLabel("Range in D0 units:");
-		js_rangeD0 = new JSpinner(new SpinnerNumberModel(2, null, null, 1));
-		js_rangeD0.setMinimumSize(new Dimension(100, 10));
-		tpLimeSeg.add(label_rangeD0, "align center");
-		tpLimeSeg.add(js_rangeD0, "wrap, align center");
-
-		btRoiManager = new JButton("Open Roi Manager");
-		tpLimeSeg.add(btRoiManager, "align center");
-
-		btLimeSeg = new JButton("Start");
-		tpLimeSeg.add(btLimeSeg, "wrap, align center");
-
-		btShowOutlines = new JButton("Show Stack");
-		tpLimeSeg.add(btShowOutlines, "align center");
-
-		btStopOptimisation = new JButton("Stop");
-		tpLimeSeg.add(btStopOptimisation, "wrap, align center");
-
-		btnSavePly = new JButton("Saved");
-		tpLimeSeg.add(new JLabel(""));
-		tpLimeSeg.add(btnSavePly, "align center");
-
-		tabbedPane.addTab("LimeSeg", tpLimeSeg);
-		this.setEnablePanels(false, tpLimeSeg);
-		// tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
-
-		/*
-		 * POSTLIMESEG PANEL DESCRIPTION
-		 */
-		// Init GUI items
-		tpPostLimeSeg = new JPanel(new MigLayout("fill"));
-		btPostLimeSeg = new JButton("Run PostProcessing");
-		tpPostLimeSeg.add(btPostLimeSeg, "align center");
-
-		// Add to the tab
-		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
-		this.setEnablePanels(false, tpPostLimeSeg);
-		// tabbedPane.setMnemonicAt(2, KeyEvent.VK_3);
-
-		// MAIN WINDOW FUNCTIONS
+		/*-------------------- MAIN WINDOW FUNCTIONS ----------------------*/
 
 		btOpenOriginalImage.addActionListener(new ActionListener() {
 
@@ -356,7 +216,7 @@ public class MainWindow extends JFrame {
 			}
 		});
 
-		// FUNCTIONS PRELIMESEG
+		/* -------------------------  PRELIMESEG -------------------------------- */
 
 		cbPredefinedTypeSegmentation.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -540,6 +400,161 @@ public class MainWindow extends JFrame {
 		});
 
 	}
+
+	/**
+	 * 
+	 */
+	private void initPostLimeSegPanel() {
+		tpPostLimeSeg = new JPanel(new MigLayout("fill"));
+		btPostLimeSeg = new JButton("Run PostProcessing");
+		tpPostLimeSeg.add(btPostLimeSeg, "align center");
+
+		// Add to the tab
+		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
+		this.setEnablePanels(false, tpPostLimeSeg);
+	}
+	
+	/** -------------------------- INIT GUI ELEMENTS ----------------------**/
+
+	/**
+	 * 
+	 */
+	private void initPreLimeSegPanel() {
+		tpPreLimeSeg = new JPanel();
+		tpPreLimeSeg.setLayout(new MigLayout("fill"));
+		imp_segmented = new ImagePlus();
+
+		// Init GUI elements
+		btPreLimeSeg = new JButton("Run!");
+		btShowNuclei = new JButton("Show Nuclei");
+		jcbGPUEnable = new JCheckBox("Enable GPU operations");
+		jcbGPUEnable.setSelected(true);
+		progressBar = new ProgressBar(100, 25);
+
+		cbPredefinedTypeSegmentation = new JComboBox<String>();
+		cbPredefinedTypeSegmentation.addItem("Select a type of DAPI segmentation");
+		cbPredefinedTypeSegmentation.addItem("Default");
+		cbPredefinedTypeSegmentation.addItem("Salivary glands (cylinder monolayer)");
+		cbPredefinedTypeSegmentation.addItem("Zebrafish multilayer");
+		cbPredefinedTypeSegmentation.addItem("Big and overlapped nuclei");
+
+		cbThresholdMethod = new JComboBox<ThresholdMethod>(ThresholdMethod.values());
+		cbThresholdMethod.setSelectedIndex(15);
+		lbThresholdMethod = new JLabel("Threshold method:");
+		ThresholdMethodPanel = new JPanel();
+		btThresholdMethod = new JButton("Info about Threshold methods");
+		btThresholdMethod.setBorderPainted(false);
+		Map attributes = btThresholdMethod.getFont().getAttributes();
+		attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+		btThresholdMethod.setFont(btThresholdMethod.getFont().deriveFont(attributes));
+		
+		// Add components
+		 ThresholdMethodPanel.add(lbThresholdMethod);
+		 ThresholdMethodPanel.add(cbThresholdMethod);
+		
+		tpPreLimeSeg.add(btShowNuclei, "wrap");
+		tpPreLimeSeg.add(ThresholdMethodPanel);
+		tpPreLimeSeg.add(btThresholdMethod, "wrap, align left");
+		tpPreLimeSeg.add(cbPredefinedTypeSegmentation, "wrap");
+		cbPredefinedTypeSegmentation.setSelectedIndex(0);
+		tpPreLimeSeg.add(btPreLimeSeg, "wrap");
+		tpPreLimeSeg.add(progressBar, "align center");
+
+		// Associate this panel to the TabPanel
+		tabbedPane.addTab("PreLimeSeg", tpPreLimeSeg);
+		this.setEnablePanels(false, tpPreLimeSeg);
+		this.setEnablePanels(false, ThresholdMethodPanel);
+		// tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
+	}
+
+	/**
+	 * 
+	 */
+	private void initMainPanel() {
+		// Row 1: Original image
+		btRemoveItems = new JButton("Clear All");
+		btOpenOriginalImage = new JButton("Open Stack");
+
+		mainPanel.add(btRemoveItems);
+		mainPanel.add(btOpenOriginalImage, "wrap");
+
+		// Row 2: Nuclei channel
+		cbNucleiChannel = new JComboBox<String>();
+		cbNucleiChannel.setMinimumSize(new Dimension(100, 10));
+		cbNucleiChannel.addItem("");
+		lbNucleiChannel = new JLabel("Nuclei channel");
+		lbNucleiChannel.setLabelFor(cbNucleiChannel);
+
+		mainPanel.add(lbNucleiChannel);
+		mainPanel.add(cbNucleiChannel, "wrap");
+		
+		// Row 3: Cell outline channel
+		cbSegmentableChannel = new JComboBox<String>();
+		cbSegmentableChannel.setMinimumSize(new Dimension(100, 10));
+		cbSegmentableChannel.addItem("");
+		lbSegmentableChannel = new JLabel("Cell outline channel");
+		lbSegmentableChannel.setLabelFor(cbSegmentableChannel);
+
+		mainPanel.add(lbSegmentableChannel);
+		mainPanel.add(cbSegmentableChannel, "wrap");
+	}
+
+	/**
+	 * 
+	 */
+	private void initLimeSegPanel() {
+		tpLimeSeg = new JPanel();
+		tpLimeSeg.setLayout(new MigLayout("fill"));
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+		// Init GUI
+		cf = new SphereSegAdapted();
+		label_D0 = new JLabel("D_0:");
+		js_D0 = new JSpinner(new SpinnerNumberModel(5.5, null, null, 0.1));
+
+		js_D0.setMinimumSize(new Dimension(100, 10));
+		tpLimeSeg.add(label_D0, "align center");
+		tpLimeSeg.add(js_D0, "wrap, align center");
+
+		label_fPressure = new JLabel("F_Pressure:");
+		js_fPressure = new JSpinner(new SpinnerNumberModel(0.015, -0.04, 0.04, 0.001));
+		js_fPressure.setMinimumSize(new Dimension(100, 10));
+		tpLimeSeg.add(label_fPressure, "align center");
+		tpLimeSeg.add(js_fPressure, "wrap, align center");
+
+		label_zScale = new JLabel("Z scale:");
+		js_zScale = new JSpinner(new SpinnerNumberModel(1.0, null, null, 0.1));
+		js_zScale.setMinimumSize(new Dimension(100, 10));
+		tpLimeSeg.add(label_zScale, "align center");
+		tpLimeSeg.add(js_zScale, "wrap, align center");
+
+		label_rangeD0 = new JLabel("Range in D0 units:");
+		js_rangeD0 = new JSpinner(new SpinnerNumberModel(2, null, null, 1));
+		js_rangeD0.setMinimumSize(new Dimension(100, 10));
+		tpLimeSeg.add(label_rangeD0, "align center");
+		tpLimeSeg.add(js_rangeD0, "wrap, align center");
+
+		btRoiManager = new JButton("Open Roi Manager");
+		tpLimeSeg.add(btRoiManager, "align center");
+
+		btLimeSeg = new JButton("Start");
+		tpLimeSeg.add(btLimeSeg, "wrap, align center");
+
+		btShowOutlines = new JButton("Show Stack");
+		tpLimeSeg.add(btShowOutlines, "align center");
+
+		btStopOptimisation = new JButton("Stop");
+		tpLimeSeg.add(btStopOptimisation, "wrap, align center");
+
+		btnSavePly = new JButton("Saved");
+		tpLimeSeg.add(new JLabel(""));
+		tpLimeSeg.add(btnSavePly, "align center");
+
+		tabbedPane.addTab("LimeSeg", tpLimeSeg);
+		this.setEnablePanels(false, tpLimeSeg);
+	}
+	
+	/** ------------ END INIT GUI ELEMENTS ------------------------ **/
 
     public synchronized ImagePlus RunThreshold() {
     	nucleiChannel.duplicate().show();
