@@ -129,6 +129,9 @@ public class SphereSegAdapted implements Command {
 				LimeSeg.currentFrame = circle.getTPosition();
 				if (LimeSeg.currentFrame==0) {LimeSeg.currentFrame=1;}
 				float z0 = circle.getZPosition();
+				if (z0 == 0){
+					z0 = circle.getPosition();
+				}
 				float x0 = (float)(circle.getXBase()+circle.getFloatWidth()/2);
 				float y0 = (float)(circle.getYBase()+circle.getFloatHeight()/2);
 				
