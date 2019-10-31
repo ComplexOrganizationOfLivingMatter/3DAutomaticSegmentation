@@ -55,6 +55,7 @@ import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
+import ij.ImageListener;
 import ij.ImagePlus;
 import ij.gui.Overlay;
 import ij.gui.PointRoi;
@@ -219,6 +220,26 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 */
 	public void setCellOutlineChannel(ImagePlus cellOutlineChannel) {
 		this.cellOutlineChannel = cellOutlineChannel;
+		cellOutlineChannel.addImageListener(new ImageListener() {
+			
+			@Override
+			public void imageUpdated(ImagePlus imp) {
+				// TODO Auto-generated method stub
+				updateOverlay();
+			}
+			
+			@Override
+			public void imageOpened(ImagePlus imp) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void imageClosed(ImagePlus imp) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
 	}
 
 	/*-------------------- METHODS ----------------------*/
