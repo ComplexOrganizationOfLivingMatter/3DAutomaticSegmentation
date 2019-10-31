@@ -4,6 +4,7 @@
 package AutomaticSegmentation.gui;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,7 +20,9 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
 
 import AutomaticSegmentation.preProcessing.NucleiSegmentation3D;
 import AutomaticSegmentation.utils.Utils;
@@ -51,13 +54,12 @@ public class PanelPreProcessing extends JPanel {
     int max_nuc_radius = 28,min_nuc_radius = 18, seed_threshold = 29000;
     private JCheckBox prefilteringCheckB;
 	private JLabel maxNucleusSizeLb,minNucleusSizeLb,seedThresholdLb;
-	private JTextField maxNucleusSizeTextF,minNucleusSizeTextF,seedThresholdTextF;
+	private JSpinner maxNucleusSizeSpin,minNucleusSizeSpin,seedThresholdSpin;
 	private JButton btRun, btCancel,btLoad,btShowNuclei;
 	private static final long serialVersionUID = 1L;
 	private ImagePlus imp_segmented,nucleiChannel;
 	private ProgressBar progressBar;
-	private JPanel panelPreproc;
-	
+
 	/**
 	 * @param layout
 	 */
@@ -75,9 +77,10 @@ public class PanelPreProcessing extends JPanel {
 				ExecutorService executor1 = Executors.newSingleThreadExecutor();
 				executor1.submit(() -> {
 					btRun.setEnabled(false);
-					int maxN = Integer.parseInt(maxNucleusSizeTextF.getText());
-					int minN = Integer.parseInt(minNucleusSizeTextF.getText());
-					int nSeed = Integer.parseInt(seedThresholdTextF.getText());
+									
+					int maxN = Integer.valueOf(maxNucleusSizeSpin.getValue().toString()).intValue();
+					int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
+					int nSeed = Integer.valueOf(seedThresholdSpin.getValue().toString()).intValue();
 					String pathImg = nucleiChannel.getOriginalFileInfo().directory;
 					NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,pathImg,maxN,minN,nSeed,prefilteringCheckB.isSelected());
 					imp_segmented = nucSeg3D.segment();
@@ -150,9 +153,15 @@ public class PanelPreProcessing extends JPanel {
 		maxNucleusSizeLb = new JLabel("Maximal nucleus size");
 		minNucleusSizeLb = new JLabel("Minimal nucleus size");
 		seedThresholdLb = new JLabel("Seed threshold");
-		maxNucleusSizeTextF = new JTextField(String.valueOf(max_nuc_radius),10);
-		minNucleusSizeTextF = new JTextField(String.valueOf(min_nuc_radius),10);
-		seedThresholdTextF = new JTextField(String.valueOf(seed_threshold),10);
+		
+		/*MODIFY the limits of JSPinners*/
+		maxNucleusSizeSpin = new JSpinner(new SpinnerNumberModel(max_nuc_radius, null, null, 1));
+		maxNucleusSizeSpin.setMinimumSize(new Dimension(100, 10));
+		minNucleusSizeSpin = new JSpinner(new SpinnerNumberModel(min_nuc_radius, null, null, 1));
+		minNucleusSizeSpin.setMinimumSize(new Dimension(100, 10));
+		seedThresholdSpin = new JSpinner(new SpinnerNumberModel(seed_threshold, null, null, 1));
+		seedThresholdSpin.setMinimumSize(new Dimension(100, 10));
+		
 		progressBar = new ProgressBar(100, 25);		
 		
 		//panelPreproc = new JPanel();
@@ -161,11 +170,11 @@ public class PanelPreProcessing extends JPanel {
 		this.add(btShowNuclei, "align center,wrap");
 		this.add(prefilteringCheckB,"align left,wrap");
 		this.add(maxNucleusSizeLb,"align left");
-		this.add(maxNucleusSizeTextF, "wrap,align left");
+		this.add(maxNucleusSizeSpin, "wrap,align left");
 		this.add(minNucleusSizeLb,"align left");
-		this.add(minNucleusSizeTextF, "wrap,align left");
+		this.add(minNucleusSizeSpin, "wrap,align left");
 		this.add(seedThresholdLb,"align left");
-		this.add(seedThresholdTextF, "wrap,align left");
+		this.add(seedThresholdSpin, "wrap,align left");
 		this.add(btRun,"align left,wrap");
 		this.add(btCancel,"align left");
 		this.add(progressBar,"wrap, align left");	
