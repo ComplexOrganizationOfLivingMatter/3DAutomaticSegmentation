@@ -560,51 +560,6 @@ public class MainWindow extends JFrame {
 		tabbedPane.addTab("LimeSeg", tpLimeSeg);
 		this.setEnablePanels(false, tpLimeSeg);
 	}
-	
-	/**
-	 * 
-	 */
-	private void initPostLimeSegPanel() {
-		tpPostLimeSeg = new JPanel(new MigLayout("fill"));
-		//Init GUI elements
-		cellSpinner = new JSpinner();
-		//idPanel = new JPanel();
-		//cellLabel = new JLabel("ID Cells:");
-		cellSpinner.setMinimumSize(new Dimension(125, 10));
-		
-		btPostLimeSeg = new JButton("Run PostProcessing");
-		checkOverlay = new JComboBox<String>();
-		checkOverlay.addItem("None overlay");
-		checkOverlay.addItem("Cell overlay");
-		checkOverlay.addItem("All overlays");
-		checkOverlay.setSelectedIndex(2);
-		checkOverlay.setMinimumSize(new Dimension(125, 20));
-		
-		checkLumen = new JComboBox<String>();
-		checkLumen.addItem("Without lumen");
-		checkLumen.addItem("Show lumen");
-		checkLumen.setSelectedIndex(0);
-		checkLumen.setMinimumSize(new Dimension(125, 20));
-		
-		btnInsert = new JButton("Modify Cell");
-		btnPostSave = new JButton("Save Results");
-		btnLumen = new JButton("Update Lumen");
-		btn3DDisplay = new JButton("Show 3D Cell");
- 		
- 		//Add components
-		
-		tpPostLimeSeg.add(btPostLimeSeg);
-		tpPostLimeSeg.add(new JPanel());
- 		tpPostLimeSeg.add(cellSpinner, "wrap, align center");
- 		tpPostLimeSeg.add(new JPanel());
- 		tpPostLimeSeg.add(btnInsert);
- 		tpPostLimeSeg.add(checkOverlay, "wrap, align center");
- 		tpPostLimeSeg.add(btnPostSave);
- 		tpPostLimeSeg.add(btnLumen);
- 		tpPostLimeSeg.add(checkLumen, "align center");
-		
-		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
-	}
 
 	/** ------------ END INIT GUI ELEMENTS ------------------------ **/
 	
