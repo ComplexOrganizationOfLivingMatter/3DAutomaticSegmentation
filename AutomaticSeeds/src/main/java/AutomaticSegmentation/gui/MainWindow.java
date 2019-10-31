@@ -9,30 +9,19 @@ import java.awt.GraphicsConfiguration;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
-import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
 
-import AutomaticSegmentation.limeSeg.SphereSegAdapted;
-import eu.kiaru.limeseg.LimeSeg;
-import eu.kiaru.limeseg.commands.ClearAll;
-import eu.kiaru.limeseg.struct.Cell;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
-import ij.plugin.frame.RoiManager;
 import ij3d.ContentConstants;
 import ij3d.Image3DUniverse;
 import net.miginfocom.swing.MigLayout;
@@ -48,8 +37,6 @@ public class MainWindow extends JFrame {
 	 */
 	private static final long serialVersionUID = 1L;
 	public static double THRESHOLD = 5;
-	
-
 
 	private ArrayList<ImagePlus> ImpArraylist;
 	private ImagePlus originalImp;
@@ -162,7 +149,6 @@ public class MainWindow extends JFrame {
 					setEnablePanels(true, tpLimeSeg);
 					tpLimeSeg.setZScale((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
 							/ cellOutlineChannel.getOriginalFileInfo().pixelWidth);
-					
 
 				}
 			}
@@ -174,7 +160,7 @@ public class MainWindow extends JFrame {
 	 */
 	private void initMainPanel() {
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-		
+
 		// Row 1: Original image
 		btRemoveItems = new JButton("Clear All");
 		btOpenOriginalImage = new JButton("Open Stack");
@@ -201,7 +187,7 @@ public class MainWindow extends JFrame {
 
 		mainPanel.add(lbSegmentableChannel);
 		mainPanel.add(cbSegmentableChannel, "wrap");
-		
+
 		tpPreLimeSeg = new PanelPreProcessing(new MigLayout("fill"));
 		tabbedPane.addTab("PreLimeSeg", tpPreLimeSeg);
 		this.setEnablePanels(false, tpPreLimeSeg);
@@ -210,8 +196,7 @@ public class MainWindow extends JFrame {
 		tpLimeSeg = new PanelLimeSeg(new MigLayout("fill"));
 		tabbedPane.addTab("LimeSeg", tpLimeSeg);
 		this.setEnablePanels(false, tpLimeSeg);
-		
-		
+
 		tpPostLimeSeg = new PanelPostProcessing(new MigLayout("fill"));
 		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
 		this.setEnablePanels(false, tpPostLimeSeg);
