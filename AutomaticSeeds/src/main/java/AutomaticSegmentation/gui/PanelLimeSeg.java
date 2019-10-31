@@ -28,7 +28,7 @@ import ij.ImagePlus;
 import ij.plugin.frame.RoiManager;
 
 /**
- * @author PhD-Student
+ * @author 
  *
  */
 public class PanelLimeSeg extends JPanel {
@@ -60,8 +60,6 @@ public class PanelLimeSeg extends JPanel {
 		super(layout);
 
 		initLimeSegPanel();
-
-		/* --------------------- LIMESEG FUNCTIONS ------------------------- */
 
 		btnSavePly.addActionListener(new ActionListener() {
 

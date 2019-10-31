@@ -101,7 +101,7 @@ public class PanelPreProcessing extends JPanel {
 				}
 			}
 		});
-
+		*/
 
 	}
 	

@@ -81,8 +81,6 @@ public class MainWindow extends JFrame {
 
 		initMainPanel();
 
-		/*-------------------- MAIN WINDOW FUNCTIONS ----------------------*/
-
 		btOpenOriginalImage.addActionListener(new ActionListener() {
 
 			@Override
