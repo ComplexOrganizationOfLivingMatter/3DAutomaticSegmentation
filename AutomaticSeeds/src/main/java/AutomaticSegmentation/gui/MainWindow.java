@@ -143,7 +143,7 @@ public class MainWindow extends JFrame {
 					cellOutlineChannel = ImpArraylist.get(cbSegmentableChannel.getSelectedIndex());
 					tpPostLimeSeg.setCellOutlineChannel(cellOutlineChannel);
 					tpLimeSeg.setCellOutlineChannel(cellOutlineChannel);
-					setEnablePanels(true, tpPostLimeSeg);
+					tpPostLimeSeg.btPostLimeSeg.setEnabled(true);
 					setEnablePanels(true, tpLimeSeg);
 					tpLimeSeg.setZScale((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
 							/ cellOutlineChannel.getOriginalFileInfo().pixelWidth);
@@ -199,7 +199,12 @@ public class MainWindow extends JFrame {
 		this.setEnablePanels(false, tpPostLimeSeg);
 	}
 
-	protected void setEnablePanels(boolean enabled, JPanel panel) {
+	/**
+	 * 
+	 * @param enabled
+	 * @param panel
+	 */
+	private void setEnablePanels(boolean enabled, JPanel panel) {
 		for (Component c : panel.getComponents()) {
 			c.setEnabled(enabled);
 		}
@@ -208,7 +213,7 @@ public class MainWindow extends JFrame {
 	/**
 	 * 
 	 */
-	private void newOriginalFileName() {
+	public void newOriginalFileName() {
 		if (originalImp.getNChannels() > 1) {
 			for (int numChannel = 0; numChannel < originalImp.getNChannels(); numChannel++) {
 				cbNucleiChannel.addItem("Original file - C=" + numChannel);
