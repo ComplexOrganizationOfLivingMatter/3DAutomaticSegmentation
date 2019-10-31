@@ -121,12 +121,10 @@ public class MainWindow extends JFrame {
 					nucleiChannel = null;
 					tpPreLimeSeg.setNucleiChannel(null);
 					setEnablePanels(false, tpPreLimeSeg);
-					setEnablePanels(false, tpPreLimeSeg.getThresholdMethodPanel());
 				} else {
 					nucleiChannel = ImpArraylist.get(cbNucleiChannel.getSelectedIndex());
 					tpPreLimeSeg.setNucleiChannel(nucleiChannel);
 					setEnablePanels(true, tpPreLimeSeg);
-					setEnablePanels(true, tpPreLimeSeg.getThresholdMethodPanel());
 				}
 			}
 		});
@@ -191,7 +189,6 @@ public class MainWindow extends JFrame {
 		tpPreLimeSeg = new PanelPreProcessing(new MigLayout("fill"));
 		tabbedPane.addTab("PreLimeSeg", tpPreLimeSeg);
 		this.setEnablePanels(false, tpPreLimeSeg);
-		this.setEnablePanels(false, tpPreLimeSeg.getThresholdMethodPanel());
 
 		tpLimeSeg = new PanelLimeSeg(new MigLayout("fill"));
 		tabbedPane.addTab("LimeSeg", tpLimeSeg);
