@@ -106,24 +106,6 @@ public class MainWindow extends JFrame {
 	private JLabel label_zScale;
 	private JLabel label_rangeD0;
 	private SphereSegAdapted cf;
-	/**
-	 * PostLimeSeg attributes
-	 */
-	private PostProcessingWindow postprocessingWindow;
-	private JButton btPostLimeSeg;
-	public RoiAdjustment newCell;
-	public PolygonRoi polyRoi2;
-
-	private JButton btnPostSave;
-	private JButton btnInsert;
-	private JButton btnLumen;
-	private JButton btn3DDisplay;
-	private JComboBox<String> checkOverlay;
-	private JComboBox<String> checkLumen;
-	private JSpinner cellSpinner;
-	private PolygonRoi polyRoi;
-	public Cell3D PostProcessCell;
-	public PolygonRoi[][] lumenDots;
 
 	/**
 	 * MainWindow attributes
@@ -137,7 +119,7 @@ public class MainWindow extends JFrame {
 	private JTabbedPane tabbedPane;
 	private JPanel tpPreLimeSeg;
 	private JPanel tpLimeSeg;
-	private JPanel tpPostLimeSeg;
+	private PanelPostProcessing tpPostLimeSeg;
 
 	private ArrayList<ImagePlus> ImpArraylist;
 	private ImagePlus originalImp;
@@ -171,8 +153,10 @@ public class MainWindow extends JFrame {
 		initPreLimeSegPanel();
 
 		initLimeSegPanel();
-		initPostLimeSegPanel();
-	
+		
+		tpPostLimeSeg = new PanelPostProcessing(new MigLayout("fill"));
+		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
+		
 		this.setEnablePanels(false, tpPostLimeSeg);
 
 
@@ -230,10 +214,12 @@ public class MainWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (cbSegmentableChannel.getSelectedItem() == "" | cbSegmentableChannel.getSelectedIndex() == -1) {
 					cellOutlineChannel = null;
+					tpPostLimeSeg.setCellOutlineChannel(null);
 					setEnablePanels(false, tpPostLimeSeg);
 					setEnablePanels(false, tpLimeSeg);
 				} else {
 					cellOutlineChannel = ImpArraylist.get(cbSegmentableChannel.getSelectedIndex());
+					tpPostLimeSeg.setCellOutlineChannel(cellOutlineChannel);
 					setEnablePanels(true, tpPostLimeSeg);
 					setEnablePanels(true, tpLimeSeg);
 					js_zScale.setValue((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
@@ -433,89 +419,7 @@ public class MainWindow extends JFrame {
 				});
 			}
 		});
-
-		// POSTLIMESEG FUNCTIONS
-		//
-
-		btPostLimeSeg.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// btPostLimeSeg.setEnabled(false);
-				// cellOutline will show in the postProcessingWindow
-				
-				//btPostLimeSeg.setEnabled(false);
-				postprocessingWindow = new PostProcessingWindow(cellOutlineChannel);
-				cellOutlineChannel = postprocessingWindow.workingImp;
-				checkOverlay.addActionListener(this);
-				checkLumen.addActionListener(this);
-				btnInsert.addActionListener(this);
-				btnPostSave.addActionListener(this);
-				btnLumen.addActionListener(this);
-				btn3DDisplay.addActionListener(this);
-				
-				cellSpinner.setModel(new SpinnerNumberModel(1, 1, postprocessingWindow.all3dCells.size(), 1));
-				cellSpinner.addChangeListener(new ChangeListener() {
-					public void stateChanged(ChangeEvent e) {
-						updateOverlay();
-					}
-				});
-			
-				
-				if (e.getSource() == checkOverlay) {
-					updateOverlay();
-				}
-
-				if (e.getSource() == checkLumen) {
-					updateOverlay();
-				}
-
-				if (e.getSource() == btnInsert) {
-					postprocessingWindow.addROI();
-					// Check if polyRoi is different to null, if is do the modify cell
-					if (postprocessingWindow.polyRoi != null) {
-						postprocessingWindow.all3dCells = newCell.removeOverlappingRegions(postprocessingWindow.all3dCells, polyRoi, cellOutlineChannel.getCurrentSlice(),
-								postprocessingWindow.all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, postprocessingWindow.lumenDots);
-						checkOverlay.setSelectedIndex(1);
-						updateOverlay();
-						// After modify cell return poly to null, clean the roi
-						polyRoi = null;
-					}
-					// If polyRoi is null show a message to prevent errors
-					else {
-						JOptionPane.showMessageDialog(tpPostLimeSeg.getParent(), "You must select a new Region.");
-					}
-
-				}
-
-				if (e.getSource() == btnPostSave) {
-					postprocessingWindow.savePlyFiles(postprocessingWindow.all3dCells, postprocessingWindow.initialDirectory);
-					// After saved the plyFiles show a message to inform the user
-					JOptionPane.showMessageDialog(tpPostLimeSeg.getParent(), "Saved results.");
-				}
-
-				if (e.getSource() == btnLumen) {
-					// read the lumen
-					postprocessingWindow.loadLumen();
-					// remove the overlaps cells
-					postprocessingWindow.removeCellLumenOverlap();
-					updateOverlay();
-				}
-
-				if (e.getSource() == btn3DDisplay) {
-					String path_in = postprocessingWindow.initialDirectory;
-					LimeSeg.loadStateFromXmlPly(path_in);
-					LimeSeg.make3DViewVisible();
-					LimeSeg.putAllCellsTo3DDisplay();
-					System.out.println("READY");
-				}
-
-				// btPostLimeSeg.setEnabled(true);
-			}
-		});
-
 	}
-
 
 	/** -------------------------- INIT GUI ELEMENTS ---------------------- **/
 
@@ -719,27 +623,7 @@ public class MainWindow extends JFrame {
 		}
 
 		return IJ.getImage().duplicate();
-	}
-	
-	//PostLimeSeg Methods
-	public void updateOverlay() {
-
-		cellOutlineChannel.getOverlay().clear();
-
-		if (checkOverlay.getSelectedItem() == "All overlays") {
-			Overlay newOverlay = postprocessingWindow.addOverlay(((Integer) cellSpinner.getValue() - 1), cellOutlineChannel.getCurrentSlice(),
-					postprocessingWindow.all3dCells, cellOutlineChannel, true, lumenDots);
-			cellOutlineChannel.setOverlay(newOverlay);
-		} else if (checkOverlay.getSelectedItem() == "Cell overlay") {
-			Overlay newOverlay = postprocessingWindow.addOverlay(((Integer) cellSpinner.getValue() - 1), cellOutlineChannel.getCurrentSlice(),
-					postprocessingWindow.all3dCells, cellOutlineChannel, false, lumenDots);
-			cellOutlineChannel.setOverlay(newOverlay);
-		}
-
-		cellOutlineChannel.updateAndRepaintWindow();
-	}
-
-	
+	}	
 
 	// GENERIC METHODS
 
