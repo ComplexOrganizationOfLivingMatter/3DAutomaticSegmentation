@@ -867,20 +867,20 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	}
 
 	public void updateOverlay() {
-
-		cellOutlineChannel.getOverlay().clear();
-
-		if (checkOverlay.getSelectedItem() == "All overlays") {
-			Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1),
-					cellOutlineChannel.getCurrentSlice(), all3dCells, cellOutlineChannel, true, lumenDots);
-			cellOutlineChannel.setOverlay(newOverlay);
-		} else if (checkOverlay.getSelectedItem() == "Cell overlay") {
-			Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1),
-					cellOutlineChannel.getCurrentSlice(), all3dCells, cellOutlineChannel, false, lumenDots);
-			cellOutlineChannel.setOverlay(newOverlay);
-		}
 		
-		this.cellOutlineChannel.updateAndRepaintWindow();
+		if (cellOutlineChannel.getOverlay() != null) {
+			cellOutlineChannel.getOverlay().clear();
+			if (checkOverlay.getSelectedItem() == "All overlays") {
+				Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1),
+						cellOutlineChannel.getCurrentSlice(), all3dCells, cellOutlineChannel, true, lumenDots);
+				cellOutlineChannel.setOverlay(newOverlay);
+			} else if (checkOverlay.getSelectedItem() == "Cell overlay") {
+				Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1),
+						cellOutlineChannel.getCurrentSlice(), all3dCells, cellOutlineChannel, false, lumenDots);
+				cellOutlineChannel.setOverlay(newOverlay);
+			}
+			//this.cellOutlineChannel.updateAndRepaintWindow();
+		}
 	}
 
 	/**
