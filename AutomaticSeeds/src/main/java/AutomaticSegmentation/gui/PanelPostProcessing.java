@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
@@ -143,6 +145,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				btPostLimeSeg.setEnabled(false);
 				this.cellOutlineChannel.show();
 				initialDirectory = cellOutlineChannel.getOriginalFileInfo().directory;
+				ExecutorService executor1 = Executors.newSingleThreadExecutor();
+				executor1.submit(() -> {
 				openPlyFiles();
 				MainAutomatic3DSegmentation.callToolbarPolygon();
 				lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
@@ -160,6 +164,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				cellSpinner.addChangeListener(this);
 				this.setEnablePanel(true);
 				checkLumen.setEnabled(false);
+				executor1.shutdown();
+				});
 			}
 
 		}
@@ -197,11 +203,15 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == btnLumen) {
+			ExecutorService executor1 = Executors.newSingleThreadExecutor();
+			executor1.submit(() -> {
 			// read the lumen
 			loadLumen();
 			// remove the overlaps cells
 			removeCellLumenOverlap();
 			updateOverlay();
+			executor1.shutdown();
+			});
 		}
 
 		if (e.getSource() == btn3DDisplay) {
