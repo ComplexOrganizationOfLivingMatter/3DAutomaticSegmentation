@@ -86,11 +86,12 @@ public class MainWindow extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				try {
-
+					// We just can't open multiple images
 					originalImp = IJ.openImage();
 					newOriginalFileName();
 					tabbedPane.setEnabled(true);
 				} catch (Exception ex) {
+					
 				}
 			}
 		});
@@ -226,7 +227,10 @@ public class MainWindow extends JFrame {
 	}
 
 	/**
+	 * 
 	 * @param numChannel
+	 * @param originalImage
+	 * @return
 	 */
 	public ImagePlus extractChannelOfStack(int numChannel, ImagePlus originalImage) {
 		ImageStack newChannelStack = new ImageStack(originalImage.getWidth(), originalImage.getHeight());
