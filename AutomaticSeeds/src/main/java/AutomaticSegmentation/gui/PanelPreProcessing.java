@@ -21,11 +21,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import AutomaticSegmentation.preProcessing.DefaultSegmentation;
-import AutomaticSegmentation.preProcessing.SegmBigAndOverlappedNuclei;
-import AutomaticSegmentation.preProcessing.SegmZebrafish;
-import AutomaticSegmentation.preProcessing.SegmentingNucleiGlands;
-import AutomaticSegmentation.preProcessing.ThresholdMethod;
+import AutomaticSegmentation.preProcessing.NucleiSegmentation3D;
 import AutomaticSegmentation.utils.Utils;
 import ij.IJ;
 import ij.ImagePlus;
@@ -38,6 +34,7 @@ import inra.ijpb.geometry.Box3D;
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.region3d.BoundingBox3D;
 import inra.ijpb.measure.region3d.Centroid3D;
+import mcib_testing.Segmentation.NucleiSegmentation_;
 import net.haesleinhuepf.clij.CLIJ;
 
 /**
@@ -70,48 +67,23 @@ public class PanelPreProcessing extends JPanel {
 		initPreLimeSegPanel();
 
 		
-		/*btPreLimeSeg.addActionListener(new ActionListener() {
+		btRun.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 
 				ExecutorService executor1 = Executors.newSingleThreadExecutor();
 				executor1.submit(() -> {
-					btPreLimeSeg.setEnabled(false);
-					imp_segmented = null;
-					CLIJ clij = null;
-					jcbGPUEnable.setSelected(false);
-					if (jcbGPUEnable.isSelected())
-						clij = CLIJ.getInstance();
-
-					nucleiChannel = RunThreshold();
-
-					switch (cbPredefinedTypeSegmentation.getSelectedIndex()) {
-					case 1:
-						DefaultSegmentation defaultGland = new DefaultSegmentation(nucleiChannel);
-						defaultGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-						imp_segmented = defaultGland.getOuputImp().duplicate();
-						break;
-					case 2:
-						SegmentingNucleiGlands segGland = new SegmentingNucleiGlands(nucleiChannel);
-						segGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-						imp_segmented = segGland.getOuputImp().duplicate();
-						break;
-
-					case 3:
-						SegmZebrafish segZeb = new SegmZebrafish(nucleiChannel);
-						segZeb.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-						imp_segmented = segZeb.getOuputImp().duplicate();
-						break;
-					case 4:
-						SegmBigAndOverlappedNuclei segBigOverNuc = new SegmBigAndOverlappedNuclei(nucleiChannel);
-						segBigOverNuc.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-						imp_segmented = segBigOverNuc.getOuputImp().duplicate();
-						break;
-					}
+					btRun.setEnabled(false);
+					int maxN = Integer.parseInt(maxNucleusSizeTextF.getText());
+					int minN = Integer.parseInt(minNucleusSizeTextF.getText());
+					int nSeed = Integer.parseInt(seedThresholdTextF.getText());
+					String pathImg = nucleiChannel.getOriginalFileInfo().directory;
+					NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,pathImg,maxN,minN,nSeed,prefilteringCheckB.isSelected());
+					imp_segmented = nucSeg3D.segment();
+					btRun.setEnabled(true);
 					imp_segmented.show();
 					RoiManager rm = getNucleiROIs(imp_segmented);
-					btPreLimeSeg.setEnabled(true);
 					executor1.shutdown();
 				});
 
