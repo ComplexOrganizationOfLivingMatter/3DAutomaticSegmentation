@@ -76,18 +76,18 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	private static final long serialVersionUID = 1L;
 	public static double THRESHOLD = 5;
 
-	public RoiAdjustment newCell;
+	private RoiAdjustment newCell;
 	private Cell LimeSegCell;
 	private ArrayList<Cell> allCells;
 	public String initialDirectory;
-	public Cell3D PostProcessCell;
-	public ArrayList<Cell3D> all3dCells;
+	private Cell3D PostProcessCell;
+	private ArrayList<Cell3D> all3dCells;
 	private PolygonRoi polyRoi;
 	private PolygonRoi polyRoi2;
-	public PolygonRoi[][] lumenDots;
+	private PolygonRoi[][] lumenDots;
 	private ImagePlus cellOutlineChannel;
 
-	private JButton btPostLimeSeg;
+	public JButton btPostLimeSeg;
 	private JButton btnPostSave;
 	private JButton btnInsert;
 	private JButton btnLumen;
@@ -153,7 +153,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			btnLumen.addActionListener(this);
 			btn3DDisplay.addActionListener(this);
 			cellSpinner.addChangeListener(this);
-			btPostLimeSeg.setEnabled(true);
+			this.setEnablePanel(true);
+			
 		}
 		
 		if (e.getSource() == checkOverlay) {
@@ -898,6 +899,17 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	public PanelPostProcessing(LayoutManager layout, boolean isDoubleBuffered) {
 		super(layout, isDoubleBuffered);
 		// TODO Auto-generated constructor stub
+	}
+	
+	/**
+	 * 
+	 * @param enabled
+	 * @param panel
+	 */
+	private void setEnablePanel(boolean enabled) {
+		for (Component c : this.getComponents()) {
+			c.setEnabled(enabled);
+		}
 	}
 
 }

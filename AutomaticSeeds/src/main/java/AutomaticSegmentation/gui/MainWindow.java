@@ -145,7 +145,7 @@ public class MainWindow extends JFrame {
 					cellOutlineChannel = ImpArraylist.get(cbSegmentableChannel.getSelectedIndex());
 					tpPostLimeSeg.setCellOutlineChannel(cellOutlineChannel);
 					tpLimeSeg.setCellOutlineChannel(cellOutlineChannel);
-					setEnablePanels(true, tpPostLimeSeg);
+					tpPostLimeSeg.btPostLimeSeg.setEnabled(true);
 					setEnablePanels(true, tpLimeSeg);
 					tpLimeSeg.setZScale((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
 							/ cellOutlineChannel.getOriginalFileInfo().pixelWidth);
