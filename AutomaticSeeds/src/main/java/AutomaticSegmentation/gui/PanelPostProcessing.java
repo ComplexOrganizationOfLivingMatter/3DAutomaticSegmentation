@@ -55,6 +55,7 @@ import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
+import ij.IJ;
 import ij.ImageListener;
 import ij.ImagePlus;
 import ij.gui.Overlay;
@@ -62,6 +63,8 @@ import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
+import ij.io.OpenDialog;
+import ij.plugin.FolderOpener;
 import ij.process.ImageProcessor;
 
 /**
@@ -154,9 +157,9 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			btn3DDisplay.addActionListener(this);
 			cellSpinner.addChangeListener(this);
 			this.setEnablePanel(true);
-			
+
 		}
-		
+
 		if (e.getSource() == checkOverlay) {
 			updateOverlay();
 		}
@@ -222,23 +225,23 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	public void setCellOutlineChannel(ImagePlus cellOutlineChannel) {
 		this.cellOutlineChannel = cellOutlineChannel;
 		cellOutlineChannel.addImageListener(new ImageListener() {
-			
+
 			@Override
 			public void imageUpdated(ImagePlus imp) {
 				// TODO Auto-generated method stub
 				updateOverlay();
 			}
-			
+
 			@Override
 			public void imageOpened(ImagePlus imp) {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 			@Override
 			public void imageClosed(ImagePlus imp) {
 				// TODO Auto-generated method stub
-				
+
 			}
 		});
 	}
@@ -272,7 +275,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		btnInsert.setMinimumSize(new Dimension(150, 20));
 		btnPostSave = new JButton("Save Results");
 		btnPostSave.setMinimumSize(new Dimension(150, 20));
-		btnLumen = new JButton("Update Lumen");
+		btnLumen = new JButton("Load Lumen");
 		btnLumen.setMinimumSize(new Dimension(150, 20));
 		btn3DDisplay = new JButton("Show 3D Cell");
 		btn3DDisplay.setMinimumSize(new Dimension(150, 20));
@@ -586,125 +589,132 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 * 
 	 */
 	public void loadLumen() {
-		File dirLumen = new File(this.initialDirectory.toString() + "/SegmentedLumen");
-		File[] filesLumen = dirLumen.listFiles(new FilenameFilter() {
-			public boolean accept(File dir, String name) {
-				return name.startsWith("");
-			}
-		});
-		int zIndex = 0;
-
 		try {
-			// read the Lumen Directory
-			for (File f : filesLumen) {
-				FileInputStream lumen = new FileInputStream(f);
-				BufferedImage lumen_img = ImageIO.read(lumen);
-				ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
-				// Get the image and find the Edge of the lumen
-				ImageProcessor lumImg = lumenImg.getProcessor();
-				lumImg.findEdges();
-				// Create a new image with lumen edges (edges are white)
-				ImagePlus lumEd = new ImagePlus("LumenEdge", lumImg);
+			String lumenDirectory = new OpenDialog("").getDirectory();
+			if (lumenDirectory != null) {
+				File dirLumen = new File(lumenDirectory);
+				File[] filesLumen = dirLumen.listFiles(new FilenameFilter() {
+					public boolean accept(File dir, String name) {
+						return name.startsWith("");
+					}
+				});
+				int zIndex = 0;
+				// read the Lumen Directory
+				for (File f : filesLumen) {
+					FileInputStream lumen = new FileInputStream(f);
+					BufferedImage lumen_img = ImageIO.read(lumen);
+					ImagePlus lumenImg = new ImagePlus("Lumen", lumen_img);
+					// Get the image and find the Edge of the lumen
+					ImageProcessor lumImg = lumenImg.getProcessor();
+					lumImg.findEdges();
+					// Create a new image with lumen edges (edges are white)
+					ImagePlus lumEd = new ImagePlus("LumenEdge", lumImg);
 
-				ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
-				// Read all the pixel and save the white (65535) pixels
-				for (int y = 0; y < lumEd.getProcessor().getWidth(); y++) {
-					for (int x = 0; x < lumEd.getProcessor().getHeight(); x++) {
-						if (lumEd.getProcessor().getPixel(x, y) == 65535) {
-							PointRoi dot = new PointRoi(x, y);
-							fileLumenDots.add(dot);
+					ArrayList<Roi> fileLumenDots = new ArrayList<Roi>();
+					// Read all the pixel and save the white (65535) pixels
+					for (int y = 0; y < lumEd.getProcessor().getWidth(); y++) {
+						for (int x = 0; x < lumEd.getProcessor().getHeight(); x++) {
+							if (lumEd.getProcessor().getPixel(x, y) == 65535) {
+								PointRoi dot = new PointRoi(x, y);
+								fileLumenDots.add(dot);
+							}
 						}
 					}
-				}
 
-				if (fileLumenDots.size() != 0) {
-					Roi[] sliceDots = new Roi[fileLumenDots.size()];
-					sliceDots = fileLumenDots.toArray(sliceDots);
-					// get the x, y points from the array
-					float[] xPoints = new float[sliceDots.length];
-					float[] yPoints = new float[sliceDots.length];
-					int dis = sliceDots.length;
-					float disEu[] = new float[dis];
+					if (fileLumenDots.size() != 0) {
+						Roi[] sliceDots = new Roi[fileLumenDots.size()];
+						sliceDots = fileLumenDots.toArray(sliceDots);
+						// get the x, y points from the array
+						float[] xPoints = new float[sliceDots.length];
+						float[] yPoints = new float[sliceDots.length];
+						int dis = sliceDots.length;
+						float disEu[] = new float[dis];
 
-					for (int i = 0; i < sliceDots.length; i++) {
-						xPoints[i] = (float) sliceDots[i].getXBase();
-						yPoints[i] = (float) sliceDots[i].getYBase();
-					}
-					// calculate the distance between each point
-					for (int i = 0; i < dis; i++) {
-						if (i == dis - 1) {
-							disEu[i] = newCell.distEu(xPoints[i], xPoints[i], yPoints[i], yPoints[i]);
+						for (int i = 0; i < sliceDots.length; i++) {
+							xPoints[i] = (float) sliceDots[i].getXBase();
+							yPoints[i] = (float) sliceDots[i].getYBase();
+						}
+						// calculate the distance between each point
+						for (int i = 0; i < dis; i++) {
+							if (i == dis - 1) {
+								disEu[i] = newCell.distEu(xPoints[i], xPoints[i], yPoints[i], yPoints[i]);
+							} else {
+								disEu[i] = newCell.distEu(xPoints[i + 1], xPoints[i], yPoints[i + 1], yPoints[i]);
+							}
+						}
+
+						int pos = dis;
+						int rest = 0;
+						// check if the distance between is less than 100 to split
+						// in two polygons
+						for (int i = 0; i < dis; i++) {
+							if (disEu[i] > 100) {
+								// if distance more than 100 save the position and
+								// the qty of points after the position
+								pos = i;
+								rest = dis - i;
+							}
+						}
+						// if the qty is different to 0 split the roi in two
+						// polygons
+						if (rest != 0) {
+							// save the points after position, this points are the
+							// 2nd polygon
+							float x[] = new float[rest - 1];
+							float y[] = new float[rest - 1];
+							int j = 0;
+							for (int i = pos + 1; i < dis; i++) {
+								x[j] = xPoints[i];
+								y[j] = yPoints[i];
+								j++;
+							}
+							// create polygon one with the point until pos
+							PolygonRoi poly = new PolygonRoi(xPoints, yPoints, pos, 6);
+							// create polygon two with the rest of the points
+							PolygonRoi poly2 = new PolygonRoi(x, y, 6);
+							// fill the second polygon with points to get the
+							// correct border
+							PolygonRoi postpol = new PolygonRoi(poly2.getInterpolatedPolygon(2, false), 6);
+
+							Roi[] roiDots = newCell.getRois(poly.getXCoordinates(), poly.getYCoordinates(), poly);
+							Roi[] roiDots2 = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(),
+									postpol);
+							// find the border with ConcavHull
+							PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
+							PolygonRoi lum2 = newCell.getConcaveHull(roiDots2, THRESHOLD);
+							lumenDots[zIndex][0] = lum; // save the border in matrix
+														// position 0
+							lumenDots[zIndex][1] = lum2; // save the border in
+															// position 1
 						} else {
-							disEu[i] = newCell.distEu(xPoints[i + 1], xPoints[i], yPoints[i + 1], yPoints[i]);
+							// if is only one polygon, get the polygon, border and
+							// save
+							PolygonRoi poly = new PolygonRoi(xPoints, yPoints, 6);
+							PolygonRoi postpol = new PolygonRoi(poly.getInterpolatedPolygon(2, false), 6);
+							Roi[] roiDots = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(),
+									postpol);
+							PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
+							lumenDots[zIndex][0] = lum;
 						}
+						// set the color of lumen in this case white
+						Color colorCurrentCell = new Color(255, 255, 255);
+						lumenDots[zIndex][0].setStrokeColor(colorCurrentCell);
+						// if the 1 position is not empty set the color
+						if (lumenDots[zIndex][1] != null)
+							lumenDots[zIndex][1].setStrokeColor(colorCurrentCell);
+
 					}
 
-					int pos = dis;
-					int rest = 0;
-					// check if the distance between is less than 100 to split
-					// in two polygons
-					for (int i = 0; i < dis; i++) {
-						if (disEu[i] > 100) {
-							// if distance more than 100 save the position and
-							// the qty of points after the position
-							pos = i;
-							rest = dis - i;
-						}
-					}
-					// if the qty is different to 0 split the roi in two
-					// polygons
-					if (rest != 0) {
-						// save the points after position, this points are the
-						// 2nd polygon
-						float x[] = new float[rest - 1];
-						float y[] = new float[rest - 1];
-						int j = 0;
-						for (int i = pos + 1; i < dis; i++) {
-							x[j] = xPoints[i];
-							y[j] = yPoints[i];
-							j++;
-						}
-						// create polygon one with the point until pos
-						PolygonRoi poly = new PolygonRoi(xPoints, yPoints, pos, 6);
-						// create polygon two with the rest of the points
-						PolygonRoi poly2 = new PolygonRoi(x, y, 6);
-						// fill the second polygon with points to get the
-						// correct border
-						PolygonRoi postpol = new PolygonRoi(poly2.getInterpolatedPolygon(2, false), 6);
-
-						Roi[] roiDots = newCell.getRois(poly.getXCoordinates(), poly.getYCoordinates(), poly);
-						Roi[] roiDots2 = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(), postpol);
-						// find the border with ConcavHull
-						PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
-						PolygonRoi lum2 = newCell.getConcaveHull(roiDots2, THRESHOLD);
-						lumenDots[zIndex][0] = lum; // save the border in matrix
-													// position 0
-						lumenDots[zIndex][1] = lum2; // save the border in
-														// position 1
-					} else {
-						// if is only one polygon, get the polygon, border and
-						// save
-						PolygonRoi poly = new PolygonRoi(xPoints, yPoints, 6);
-						PolygonRoi postpol = new PolygonRoi(poly.getInterpolatedPolygon(2, false), 6);
-						Roi[] roiDots = newCell.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(), postpol);
-						PolygonRoi lum = newCell.getConcaveHull(roiDots, THRESHOLD);
-						lumenDots[zIndex][0] = lum;
-					}
-					// set the color of lumen in this case white
-					Color colorCurrentCell = new Color(255, 255, 255);
-					lumenDots[zIndex][0].setStrokeColor(colorCurrentCell);
-					// if the 1 position is not empty set the color
-					if (lumenDots[zIndex][1] != null)
-						lumenDots[zIndex][1].setStrokeColor(colorCurrentCell);
-
-				}
-
-				zIndex++;
+					zIndex++;
+				} 
+			} else {
+				IJ.log("Any file readed");
 			}
 
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
+			IJ.log("Not valid lumen");
 		}
 	}
 
@@ -868,7 +878,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	}
 
 	public void updateOverlay() {
-		
+
 		if (cellOutlineChannel.getOverlay() != null) {
 			cellOutlineChannel.getOverlay().clear();
 			if (checkOverlay.getSelectedItem() == "All overlays") {
@@ -880,7 +890,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						cellOutlineChannel.getCurrentSlice(), all3dCells, cellOutlineChannel, false, lumenDots);
 				cellOutlineChannel.setOverlay(newOverlay);
 			}
-			//this.cellOutlineChannel.updateAndRepaintWindow();
+			// this.cellOutlineChannel.updateAndRepaintWindow();
 		}
 	}
 
@@ -900,7 +910,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		super(layout, isDoubleBuffered);
 		// TODO Auto-generated constructor stub
 	}
-	
+
 	/**
 	 * 
 	 * @param enabled
