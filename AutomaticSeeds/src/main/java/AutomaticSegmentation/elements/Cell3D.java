@@ -6,6 +6,12 @@ import java.util.ArrayList;
 
 import eu.kiaru.limeseg.struct.DotN;
 
+/**
+ * Class adding some behaviour to LimeSeg's cell.
+ * It is used as basic element for the postprocessing protocol.
+ * @author Antonio Tagua
+ *
+ */
 public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 
 	/**
@@ -16,6 +22,8 @@ public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 
 	/**
 	 * Constructor
+	 * @param id of the cell
+	 * @param dots points of the cell
 	 */
 	public Cell3D(String id, ArrayList<DotN> dots) {
 		dotsList = new ArrayList<DotN>();
@@ -50,6 +58,12 @@ public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 		return this.labelCell;
 	}
 
+	/**
+	 * 
+	 * @param axis
+	 * @param dots
+	 * @return
+	 */
 	public float[] getCoordinate(String axis, ArrayList<DotN> dots) {
 		float[] coordinates = new float[dots.size()];
 		for (int i = 0; i < dots.size(); i++) {
@@ -69,6 +83,11 @@ public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 		return coordinates;
 	}
 
+	/**
+	 * 
+	 * @param frame
+	 * @return
+	 */
 	public Point[] getPoints(int frame) {
 		ArrayList<DotN> cellZDots = this.getCell3DAt(frame);
 		Point[] cellPoints = new Point[cellZDots.size()];
@@ -79,22 +98,30 @@ public class Cell3D extends eu.kiaru.limeseg.struct.Cell {
 		return cellPoints;
 	}
 	
-	// Setter
-	
+	/**
+	 * 
+	 * @param dots
+	 */
 	public void setCell3D(ArrayList<DotN> dots) {
 		this.dotsList = dots;
 		}
 
+	/**
+	 * 
+	 */
 	public void clearCell() {
 		if (this.dotsList != null) {
 			this.dotsList.clear();
 		}
 	}
 	
+	/**
+	 * 
+	 * @param dots
+	 */
 	public void addDotsList(ArrayList<DotN> dots) {
 		for (int nDot = 0; nDot < dots.size(); nDot++) {
 			this.dotsList.add(dots.get(nDot));
 		}
 	}
-
 }
