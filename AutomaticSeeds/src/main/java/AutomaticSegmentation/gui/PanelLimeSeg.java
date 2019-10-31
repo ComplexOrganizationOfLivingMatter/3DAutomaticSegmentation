@@ -66,7 +66,7 @@ public class PanelLimeSeg extends JPanel {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				ArrayList<Cell> cell = LimeSeg.allCells;
-				if (cell != null) {
+				if (cell.size() > 0) {
 					String path = cellOutlineChannel.getOriginalFileInfo().directory + "OutputLimeSeg";
 					File dir = new File(path);
 					if (!dir.isDirectory()) {
@@ -76,15 +76,17 @@ public class PanelLimeSeg extends JPanel {
 
 					if (dir.listFiles().length != 0) {
 						// Show dialog to confirm
-						int dialogResult = JOptionPane.showConfirmDialog(null,
+						int dialogResult = JOptionPane.showConfirmDialog(btnSavePly.getParent(),
 								"Saving will remove the content of the select folder, confirm?", "Warning",
 								JOptionPane.YES_NO_OPTION);
 						if (dialogResult == JOptionPane.YES_OPTION) {
 							purgeDirectory(dir, 1);
 							LimeSeg.saveStateToXmlPly(path);
+							JOptionPane.showMessageDialog(btnSavePly.getParent(), "Saved!");
 						}
 					} else {
 						LimeSeg.saveStateToXmlPly(path);
+						JOptionPane.showMessageDialog(btnSavePly.getParent(), "Saved!");
 					}
 
 				} else {
@@ -171,8 +173,8 @@ public class PanelLimeSeg extends JPanel {
 	 * @param js_zScale
 	 *            the js_zScale to set
 	 */
-	public void setZScale(double d) {
-		this.js_zScale.setValue(d);
+	public void setZScale(double js_zScale) {
+		this.js_zScale.setValue(js_zScale);
 	}
 
 	/**

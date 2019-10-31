@@ -11,6 +11,7 @@ import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 import java.io.File;
+import filters.Bandpass3D;
 
 /**
  *
@@ -67,6 +68,21 @@ public class NucleiSegmentation3D{
         //band pass filtering
         IJ.run(imp2, "32-bit", "");
         IJ.log("Computing Band Pass...");
+//        // This is probabliy a shit
+//        DF_Bandpass df = new DF_Bandpass();
+//        // This is better
+//		// filter image with 3D-bandpass
+//		Bandpass3D bp3d = new Bandpass3D();
+//		bp3d.in_hprad = hprad;
+//		bp3d.in_lprad = lprad;
+//		bp3d.in_xz_ratio = zdx;
+//		bp3d.in_image = stack.getStack();
+//		if (!bp3d.checkInputParams().equals("")) {
+//			IJ.showMessage(bp3d.checkInputParams());
+//			return;
+//		}
+//		bp3d.filterit();
+//		ImagePlus impOut = new ImagePlus("BP_" + stack.getTitle(), bp3d.out_result);
         IJ.run(imp2, "DF_Bandpass", "maximal_feature_size="+max_nuc_radius+" minimal_feature_size="+min_nuc_radius+" z/x_aspect_ratio=3.000");
         IJ.selectWindow("BP_C4-dapi");
         if(dir!=null)
