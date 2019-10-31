@@ -57,24 +57,6 @@ public class MainWindow extends JFrame {
 	private ImagePlus cellOutlineChannel;
 
 	/**
-	 * LimeSeg attributes
-	 */
-	private JButton btStopOptimisation;
-	private JButton btnSavePly;
-	private JButton btLimeSeg;
-	private JButton btRoiManager;
-	private JButton btShowOutlines;
-	private JSpinner js_D0;
-	private JSpinner js_fPressure;
-	private JSpinner js_zScale;
-	private JSpinner js_rangeD0;
-	private JLabel label_D0;
-	private JLabel label_fPressure;
-	private JLabel label_zScale;
-	private JLabel label_rangeD0;
-	private SphereSegAdapted cf;
-
-	/**
 	 * MainWindow attributes
 	 */
 	private JPanel mainPanel;
@@ -85,7 +67,7 @@ public class MainWindow extends JFrame {
 
 	private JTabbedPane tabbedPane;
 	private PanelPreProcessing tpPreLimeSeg;
-	private JPanel tpLimeSeg;
+	private PanelLimeSeg tpLimeSeg;
 	private PanelPostProcessing tpPostLimeSeg;
 	private JButton btOpenOriginalImage;
 	private JButton btRemoveItems;
@@ -111,20 +93,6 @@ public class MainWindow extends JFrame {
 		tabbedPane.setEnabled(false);
 
 		initMainPanel();
-		
-
-		tpPreLimeSeg = new PanelPreProcessing(new MigLayout("fill"));
-		tabbedPane.addTab("PreLimeSeg", tpPreLimeSeg);
-		this.setEnablePanels(false, tpPreLimeSeg);
-		this.setEnablePanels(false, tpPreLimeSeg.getThresholdMethodPanel());
-
-		initLimeSegPanel();
-		
-		tpPostLimeSeg = new PanelPostProcessing(new MigLayout("fill"));
-		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
-		
-		this.setEnablePanels(false, tpPostLimeSeg);
-
 
 		/*-------------------- MAIN WINDOW FUNCTIONS ----------------------*/
 
@@ -183,123 +151,30 @@ public class MainWindow extends JFrame {
 				if (cbSegmentableChannel.getSelectedItem() == "" | cbSegmentableChannel.getSelectedIndex() == -1) {
 					cellOutlineChannel = null;
 					tpPostLimeSeg.setCellOutlineChannel(null);
+					tpLimeSeg.setCellOutlineChannel(null);
 					setEnablePanels(false, tpPostLimeSeg);
 					setEnablePanels(false, tpLimeSeg);
 				} else {
 					cellOutlineChannel = ImpArraylist.get(cbSegmentableChannel.getSelectedIndex());
 					tpPostLimeSeg.setCellOutlineChannel(cellOutlineChannel);
+					tpLimeSeg.setCellOutlineChannel(cellOutlineChannel);
 					setEnablePanels(true, tpPostLimeSeg);
 					setEnablePanels(true, tpLimeSeg);
-					js_zScale.setValue((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
+					tpLimeSeg.setZScale((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
 							/ cellOutlineChannel.getOriginalFileInfo().pixelWidth);
 					
 
 				}
 			}
 		});
-
-		
-
-		/* --------------------- LIMESEG FUNCTIONS ------------------------- */
-
-		btnSavePly.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				ArrayList<Cell> cell = LimeSeg.allCells;
-				if (cell != null) {
-					String path = cellOutlineChannel.getOriginalFileInfo().directory + "OutputLimeSeg";
-					File dir = new File(path);
-					if (!dir.isDirectory()) {
-						System.out.println("New folder created");
-						dir.mkdir();
-					}
-
-					if (dir.listFiles().length != 0) {
-						// Show dialog to confirm
-						int dialogResult = JOptionPane.showConfirmDialog(null,
-								"Saving will remove the content of the select folder, confirm?", "Warning",
-								JOptionPane.YES_NO_OPTION);
-						if (dialogResult == JOptionPane.YES_OPTION) {
-							purgeDirectory(dir, 1);
-							LimeSeg.saveStateToXmlPly(path);
-						}
-					} else {
-						LimeSeg.saveStateToXmlPly(path);
-					}
-
-				} else {
-					IJ.log("Any cell segmented");
-				}
-			}
-		});
-
-		btStopOptimisation.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				LimeSeg.stopOptimisation();
-				cf.setClearOptimizer(true);
-			}
-		});
-
-		btRoiManager.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				RoiManager.getRoiManager();
-			}
-		});
-
-		btShowOutlines.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (cellOutlineChannel != null) {
-					cellOutlineChannel.duplicate().show();
-				}
-			}
-		});
-
-		btLimeSeg.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				ExecutorService executor1 = Executors.newSingleThreadExecutor();
-				executor1.submit(() -> {
-					btLimeSeg.setEnabled(false);
-					ClearAll clear = new ClearAll();
-					cf.setImp(cellOutlineChannel);
-					cf.setZ_scale(Double.valueOf(js_zScale.getValue().toString()).floatValue());
-					cf.setD_0(Double.valueOf(js_D0.getValue().toString()).floatValue());
-					cf.setF_pressure(Double.valueOf(js_fPressure.getValue().toString()).floatValue());
-					cf.setRange_in_d0_units(Double.valueOf(js_rangeD0.getValue().toString()).floatValue());
-
-					RoiManager roiManager = RoiManager.getRoiManager();
-					if (roiManager.getRoisAsArray().length == 0) {
-						roiManager.runCommand("Open", "");
-					}
-					if (roiManager.getRoisAsArray().length != 0) {
-						clear.run();
-						cf.run();
-					} else {
-						IJ.log("Error. Any Roi set selected");
-
-					}
-
-					btLimeSeg.setEnabled(true);
-					executor1.shutdown();
-				});
-			}
-		});
 	}
-
-	/** -------------------------- INIT GUI ELEMENTS ---------------------- **/
 
 	/**
 	 * 
 	 */
 	private void initMainPanel() {
+		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		
 		// Row 1: Original image
 		btRemoveItems = new JButton("Clear All");
 		btOpenOriginalImage = new JButton("Open Stack");
@@ -326,66 +201,21 @@ public class MainWindow extends JFrame {
 
 		mainPanel.add(lbSegmentableChannel);
 		mainPanel.add(cbSegmentableChannel, "wrap");
-	}
+		
+		tpPreLimeSeg = new PanelPreProcessing(new MigLayout("fill"));
+		tabbedPane.addTab("PreLimeSeg", tpPreLimeSeg);
+		this.setEnablePanels(false, tpPreLimeSeg);
+		this.setEnablePanels(false, tpPreLimeSeg.getThresholdMethodPanel());
 
-	/**
-	 * 
-	 */
-	private void initLimeSegPanel() {
-		tpLimeSeg = new JPanel();
-		tpLimeSeg.setLayout(new MigLayout("fill"));
-		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-
-		// Init GUI
-		cf = new SphereSegAdapted();
-		label_D0 = new JLabel("D_0:");
-		js_D0 = new JSpinner(new SpinnerNumberModel(5.5, null, null, 0.1));
-
-		js_D0.setMinimumSize(new Dimension(100, 10));
-		tpLimeSeg.add(label_D0, "align center");
-		tpLimeSeg.add(js_D0, "wrap, align center");
-
-		label_fPressure = new JLabel("F_Pressure:");
-		js_fPressure = new JSpinner(new SpinnerNumberModel(0.015, -0.04, 0.04, 0.001));
-		js_fPressure.setMinimumSize(new Dimension(100, 10));
-		tpLimeSeg.add(label_fPressure, "align center");
-		tpLimeSeg.add(js_fPressure, "wrap, align center");
-
-		label_zScale = new JLabel("Z scale:");
-		js_zScale = new JSpinner(new SpinnerNumberModel(1.0, null, null, 0.1));
-		js_zScale.setMinimumSize(new Dimension(100, 10));
-		tpLimeSeg.add(label_zScale, "align center");
-		tpLimeSeg.add(js_zScale, "wrap, align center");
-
-		label_rangeD0 = new JLabel("Range in D0 units:");
-		js_rangeD0 = new JSpinner(new SpinnerNumberModel(2, null, null, 1));
-		js_rangeD0.setMinimumSize(new Dimension(100, 10));
-		tpLimeSeg.add(label_rangeD0, "align center");
-		tpLimeSeg.add(js_rangeD0, "wrap, align center");
-
-		btRoiManager = new JButton("Open Roi Manager");
-		tpLimeSeg.add(btRoiManager, "align center");
-
-		btLimeSeg = new JButton("Start");
-		tpLimeSeg.add(btLimeSeg, "wrap, align center");
-
-		btShowOutlines = new JButton("Show Stack");
-		tpLimeSeg.add(btShowOutlines, "align center");
-
-		btStopOptimisation = new JButton("Stop");
-		tpLimeSeg.add(btStopOptimisation, "wrap, align center");
-
-		btnSavePly = new JButton("Save");
-		tpLimeSeg.add(new JLabel(""));
-		tpLimeSeg.add(btnSavePly, "align center");
-
+		tpLimeSeg = new PanelLimeSeg(new MigLayout("fill"));
 		tabbedPane.addTab("LimeSeg", tpLimeSeg);
 		this.setEnablePanels(false, tpLimeSeg);
+		
+		
+		tpPostLimeSeg = new PanelPostProcessing(new MigLayout("fill"));
+		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
+		this.setEnablePanels(false, tpPostLimeSeg);
 	}
-
-	/** ------------ END INIT GUI ELEMENTS ------------------------ **/
-
-	// GENERIC METHODS
 
 	protected void setEnablePanels(boolean enabled, JPanel panel) {
 		for (Component c : panel.getComponents()) {
@@ -478,17 +308,5 @@ public class MainWindow extends JFrame {
 		Image3DUniverse univ = new Image3DUniverse();
 		univ.addContent(imp, ContentConstants.VOLUME);
 		univ.show();
-
-	}
-
-	public void purgeDirectory(File dir, int height) {
-		// no need to clean below level
-		if (height >= 0) {
-			for (File file : dir.listFiles()) {
-				if (file.isDirectory())
-					purgeDirectory(file, height - 1);
-				file.delete();
-			}
-		}
 	}
 }
