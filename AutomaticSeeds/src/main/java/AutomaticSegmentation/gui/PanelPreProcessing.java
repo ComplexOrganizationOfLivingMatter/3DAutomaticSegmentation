@@ -34,7 +34,6 @@ import inra.ijpb.geometry.Box3D;
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.region3d.BoundingBox3D;
 import inra.ijpb.measure.region3d.Centroid3D;
-import mcib_testing.Segmentation.NucleiSegmentation_;
 import net.haesleinhuepf.clij.CLIJ;
 
 /**
