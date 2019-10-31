@@ -138,25 +138,29 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	public void actionPerformed(ActionEvent e) {
 
 		if (e.getSource() == btPostLimeSeg) {
-			btPostLimeSeg.setEnabled(false);
-			this.cellOutlineChannel.show();
-			initialDirectory = cellOutlineChannel.getOriginalFileInfo().directory;
-			openPlyFiles();
-			MainAutomatic3DSegmentation.callToolbarPolygon();
-			lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
-			removeCellOverlap();
-			removeCellLumenOverlap();
-			cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(), all3dCells,
-					cellOutlineChannel, false, lumenDots));
-			cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
-			checkOverlay.addActionListener(this);
-			checkLumen.addActionListener(this);
-			btnInsert.addActionListener(this);
-			btnPostSave.addActionListener(this);
-			btnLumen.addActionListener(this);
-			btn3DDisplay.addActionListener(this);
-			cellSpinner.addChangeListener(this);
-			this.setEnablePanel(true);
+			
+			if (all3dCells.isEmpty()) {
+				btPostLimeSeg.setEnabled(false);
+				this.cellOutlineChannel.show();
+				initialDirectory = cellOutlineChannel.getOriginalFileInfo().directory;
+				openPlyFiles();
+				MainAutomatic3DSegmentation.callToolbarPolygon();
+				lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
+				removeCellOverlap();
+				removeCellLumenOverlap();
+				cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(), all3dCells,
+						cellOutlineChannel, false, lumenDots));
+				cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
+				checkOverlay.addActionListener(this);
+				checkLumen.addActionListener(this);
+				btnInsert.addActionListener(this);
+				btnPostSave.addActionListener(this);
+				btnLumen.addActionListener(this);
+				btn3DDisplay.addActionListener(this);
+				cellSpinner.addChangeListener(this);
+				this.setEnablePanel(true);
+				checkLumen.setEnabled(false);
+			}
 
 		}
 
@@ -707,6 +711,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 					zIndex++;
 				} 
+				checkLumen.setEnabled(true);
 			} else {
 				IJ.log("Any file readed");
 			}
