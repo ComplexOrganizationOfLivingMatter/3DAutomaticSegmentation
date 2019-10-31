@@ -168,9 +168,9 @@
 
 		<!-- https://mvnrepository.com/artifact/sc.fiji/CorrectBleach_ -->
 		<dependency>
-		    <groupId>sc.fiji</groupId>
-		    <artifactId>CorrectBleach_</artifactId>
-		    </dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>CorrectBleach_</artifactId>
+		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/com.vividsolutions/jts-core -->
 		<dependency>
@@ -237,6 +237,21 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<dependency>
+			<groupId>filter.Bandpass3D</groupId>
+			<artifactId>filter.Bandpass3D</artifactId>
+			<version>0</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/externalJARs/droplet_finder.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>mcib_testing</groupId>
+			<artifactId>mcib_testing</artifactId>
+			<version>0</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/externalJARs/tissueanalysis_.jar</systemPath>
+		</dependency>
+		
 	</dependencies>
 	<build>
 		<plugins>
@@ -347,9 +362,9 @@
 		<!-- NB: for project parent -->
 		<repository>
 			<id>Fiji-plugins</id>
-	        <url>https://raw.github.com/ComplexOrganizationOfLivingMatter/Fiji-plugins/master/</url>
+			<url>https://raw.github.com/ComplexOrganizationOfLivingMatter/Fiji-plugins/master/</url>
 		</repository>
-		
+
 		<repository>
 			<id>imagej.public</id>
 			<url>http://maven.imagej.net/content/groups/public</url>

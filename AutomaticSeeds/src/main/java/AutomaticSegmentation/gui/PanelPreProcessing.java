@@ -19,12 +19,9 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
-import AutomaticSegmentation.preProcessing.DefaultSegmentation;
-import AutomaticSegmentation.preProcessing.SegmBigAndOverlappedNuclei;
-import AutomaticSegmentation.preProcessing.SegmZebrafish;
-import AutomaticSegmentation.preProcessing.SegmentingNucleiGlands;
-import AutomaticSegmentation.preProcessing.ThresholdMethod;
+import AutomaticSegmentation.preProcessing.NucleiSegmentation3D;
 import AutomaticSegmentation.utils.Utils;
 import ij.IJ;
 import ij.ImagePlus;
@@ -37,6 +34,7 @@ import inra.ijpb.geometry.Box3D;
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.region3d.BoundingBox3D;
 import inra.ijpb.measure.region3d.Centroid3D;
+import mcib_testing.Segmentation.NucleiSegmentation_;
 import net.haesleinhuepf.clij.CLIJ;
 
 /**
@@ -48,19 +46,18 @@ public class PanelPreProcessing extends JPanel {
 	/**
 	 * 
 	 */
+	
+	String dir = null;
+    int max_nuc_radius = 28,min_nuc_radius = 18, seed_threshold = 29000;
+    private JCheckBox prefilteringCheckB;
+	private JLabel maxNucleusSizeLb,minNucleusSizeLb,seedThresholdLb;
+	private JTextField maxNucleusSizeTextF,minNucleusSizeTextF,seedThresholdTextF;
+	private JButton btRun, btCancel,btLoad,btShowNuclei;
 	private static final long serialVersionUID = 1L;
-	private JComboBox<String> cbPredefinedTypeSegmentation;
-	private JButton btPreLimeSeg;
-	private JCheckBox jcbGPUEnable;
+	private ImagePlus imp_segmented,nucleiChannel;
 	private ProgressBar progressBar;
-	private JComboBox<ThresholdMethod> cbThresholdMethod;
-	private JLabel lbThresholdMethod;
-	private JPanel ThresholdMethodPanel;
-	private JButton btShowNuclei;
-	private JButton btThresholdMethod;
-	private ImagePlus imp_segmented;
-	private ImagePlus nucleiChannel;
-
+	private JPanel panelPreproc;
+	
 	/**
 	 * @param layout
 	 */
@@ -69,61 +66,24 @@ public class PanelPreProcessing extends JPanel {
 		
 		initPreLimeSegPanel();
 
-		cbPredefinedTypeSegmentation.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-
-				if (cbPredefinedTypeSegmentation.getSelectedIndex() == 0) {
-					btPreLimeSeg.setEnabled(false);
-				} else {
-					btPreLimeSeg.setEnabled(true);
-				}
-
-			}
-		});
-
-		btPreLimeSeg.addActionListener(new ActionListener() {
+		
+		btRun.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 
 				ExecutorService executor1 = Executors.newSingleThreadExecutor();
 				executor1.submit(() -> {
-					btPreLimeSeg.setEnabled(false);
-					imp_segmented = null;
-					CLIJ clij = null;
-					jcbGPUEnable.setSelected(false);
-					if (jcbGPUEnable.isSelected())
-						clij = CLIJ.getInstance();
-
-					nucleiChannel = RunThreshold();
-
-					switch (cbPredefinedTypeSegmentation.getSelectedIndex()) {
-					case 1:
-						DefaultSegmentation defaultGland = new DefaultSegmentation(nucleiChannel);
-						defaultGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-						imp_segmented = defaultGland.getOuputImp().duplicate();
-						break;
-					case 2:
-						SegmentingNucleiGlands segGland = new SegmentingNucleiGlands(nucleiChannel);
-						segGland.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-						imp_segmented = segGland.getOuputImp().duplicate();
-						break;
-
-					case 3:
-						SegmZebrafish segZeb = new SegmZebrafish(nucleiChannel);
-						segZeb.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-						imp_segmented = segZeb.getOuputImp().duplicate();
-						break;
-					case 4:
-						SegmBigAndOverlappedNuclei segBigOverNuc = new SegmBigAndOverlappedNuclei(nucleiChannel);
-						segBigOverNuc.segmentationProtocol(clij, cbThresholdMethod.getSelectedItem().toString());
-						imp_segmented = segBigOverNuc.getOuputImp().duplicate();
-						break;
-					}
+					btRun.setEnabled(false);
+					int maxN = Integer.parseInt(maxNucleusSizeTextF.getText());
+					int minN = Integer.parseInt(minNucleusSizeTextF.getText());
+					int nSeed = Integer.parseInt(seedThresholdTextF.getText());
+					String pathImg = nucleiChannel.getOriginalFileInfo().directory;
+					NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,pathImg,maxN,minN,nSeed,prefilteringCheckB.isSelected());
+					imp_segmented = nucSeg3D.segment();
+					btRun.setEnabled(true);
 					imp_segmented.show();
 					RoiManager rm = getNucleiROIs(imp_segmented);
-					btPreLimeSeg.setEnabled(true);
 					executor1.shutdown();
 				});
 
@@ -141,27 +101,8 @@ public class PanelPreProcessing extends JPanel {
 				}
 			}
 		});
+		
 
-		btThresholdMethod.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				nucleiChannel.duplicate().show();
-				IJ.run("Threshold...");
-
-			}
-		});
-
-		btThresholdMethod.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				btThresholdMethod.setForeground((Color.BLUE));
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				btThresholdMethod.setForeground((Color.BLACK));
-			}
-		});
 	}
 	
 	/**
@@ -192,20 +133,6 @@ public class PanelPreProcessing extends JPanel {
 		this.imp_segmented = imp_segmented;
 	}
 
-	/**
-	 * @return the thresholdMethodPanel
-	 */
-	public JPanel getThresholdMethodPanel() {
-		return ThresholdMethodPanel;
-	}
-
-	/**
-	 * @param thresholdMethodPanel
-	 *            the thresholdMethodPanel to set
-	 */
-	public void setThresholdMethodPanel(JPanel thresholdMethodPanel) {
-		ThresholdMethodPanel = thresholdMethodPanel;
-	}
 	
 	/**
 	 * 
@@ -214,40 +141,37 @@ public class PanelPreProcessing extends JPanel {
 		imp_segmented = new ImagePlus();
 
 		// Init GUI elements
-		btPreLimeSeg = new JButton("Run!");
-		btShowNuclei = new JButton("Show Nuclei");
-		jcbGPUEnable = new JCheckBox("Enable GPU operations");
-		jcbGPUEnable.setSelected(true);
-		progressBar = new ProgressBar(100, 25);
-
-		cbPredefinedTypeSegmentation = new JComboBox<String>();
-		cbPredefinedTypeSegmentation.addItem("Select a type of DAPI segmentation");
-		cbPredefinedTypeSegmentation.addItem("Default");
-		cbPredefinedTypeSegmentation.addItem("Salivary glands (cylinder monolayer)");
-		cbPredefinedTypeSegmentation.addItem("Zebrafish multilayer");
-		cbPredefinedTypeSegmentation.addItem("Big and overlapped nuclei");
-
-		cbThresholdMethod = new JComboBox<ThresholdMethod>(ThresholdMethod.values());
-		cbThresholdMethod.setSelectedIndex(15);
-		lbThresholdMethod = new JLabel("Threshold method:");
-		ThresholdMethodPanel = new JPanel();
-		btThresholdMethod = new JButton("Info about Threshold methods");
-		btThresholdMethod.setBorderPainted(false);
-		Map attributes = btThresholdMethod.getFont().getAttributes();
-		attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
-		btThresholdMethod.setFont(btThresholdMethod.getFont().deriveFont(attributes));
-
+		btRun = new JButton("Run");	
+		btCancel = new JButton("Cancel");
+		btLoad = new JButton("Load labelled 3D nuclei");
+		btShowNuclei = new JButton("Show nuclei");
+		prefilteringCheckB = new JCheckBox("Pre-filtering (3D median 4-4-2");
+		prefilteringCheckB.setSelected(false);
+		maxNucleusSizeLb = new JLabel("Maximal nucleus size");
+		minNucleusSizeLb = new JLabel("Minimal nucleus size");
+		seedThresholdLb = new JLabel("Seed threshold");
+		maxNucleusSizeTextF = new JTextField(String.valueOf(max_nuc_radius),10);
+		minNucleusSizeTextF = new JTextField(String.valueOf(min_nuc_radius),10);
+		seedThresholdTextF = new JTextField(String.valueOf(seed_threshold),10);
+		progressBar = new ProgressBar(100, 25);		
+		
+		//panelPreproc = new JPanel();
+		
 		// Add components
-		ThresholdMethodPanel.add(lbThresholdMethod);
-		ThresholdMethodPanel.add(cbThresholdMethod);
+		this.add(btShowNuclei, "align center,wrap");
+		this.add(prefilteringCheckB,"align left,wrap");
+		this.add(maxNucleusSizeLb,"align left");
+		this.add(maxNucleusSizeTextF, "wrap,align left");
+		this.add(minNucleusSizeLb,"align left");
+		this.add(minNucleusSizeTextF, "wrap,align left");
+		this.add(seedThresholdLb,"align left");
+		this.add(seedThresholdTextF, "wrap,align left");
+		this.add(btRun,"align left,wrap");
+		this.add(btCancel,"align left");
+		this.add(progressBar,"wrap, align left");	
+		this.add(btLoad);
 
-		this.add(btShowNuclei, "wrap");
-		this.add(ThresholdMethodPanel);
-		this.add(btThresholdMethod, "wrap, align left");
-		this.add(cbPredefinedTypeSegmentation, "wrap");
-		cbPredefinedTypeSegmentation.setSelectedIndex(0);
-		this.add(btPreLimeSeg, "wrap");
-		this.add(progressBar, "align center");
+		
 	}
 
 	public synchronized ImagePlus RunThreshold() {
@@ -306,4 +230,5 @@ public class PanelPreProcessing extends JPanel {
 		}
 		return rm;
 	}
+	
 }
