@@ -37,7 +37,7 @@ public interface genericSegmentation {
 	/**
 	 * Enhance Stack contrast with median threshold
 	 * 
-	 * @param initImp
+	 * @param nucleiImp
 	 * @param clij
 	 * @param strelRadius3D
 	 * @return

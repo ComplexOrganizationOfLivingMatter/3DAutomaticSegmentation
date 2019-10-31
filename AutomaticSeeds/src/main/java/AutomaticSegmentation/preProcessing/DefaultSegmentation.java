@@ -29,6 +29,10 @@ public class DefaultSegmentation implements genericSegmentation {
 	private int toleranceWatershed;
 	private int pixelsToOpenVolume;
 
+	/**
+	 * 
+	 * @param impNuclei
+	 */
 	public DefaultSegmentation(ImagePlus impNuclei) {
 		this.strelRadius2D = 4;
 		this.strelRadius3D = 3;
@@ -39,6 +43,14 @@ public class DefaultSegmentation implements genericSegmentation {
 		this.pixelsToOpenVolume = 50;
 	}
 
+	/**
+	 * 
+	 * @param impNuclei
+	 * @param radius2D
+	 * @param radius3D
+	 * @param tolerance
+	 * @param pixelsToOpenVolume
+	 */
 	public DefaultSegmentation(ImagePlus impNuclei,int radius2D, int radius3D, int tolerance, int pixelsToOpenVolume) {
 		this.strelRadius2D = radius2D;
 		this.strelRadius3D = radius3D;
@@ -55,7 +67,9 @@ public class DefaultSegmentation implements genericSegmentation {
 	}
 
 	/**
-	 * @return the segmentedImage
+	 * 
+	 * @param clij
+	 * @param thresholdMethod
 	 */
 	public void segmentationProtocol(CLIJ clij, String thresholdMethod) {
 

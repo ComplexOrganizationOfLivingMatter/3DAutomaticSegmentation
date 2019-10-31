@@ -10,9 +10,16 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.plugin.PlugIn;
 
+/**
+ * 
+ * @author
+ *
+ */
 public class MainAutomatic3DSegmentation implements PlugIn {
 
-	// Window
+	/**
+	 * 
+	 */
 	MainWindow mainWindow;
 
 	/**
@@ -42,8 +49,6 @@ public class MainAutomatic3DSegmentation implements PlugIn {
 
 		// run the plugin
 		IJ.runPlugIn(clazz.getName(), "");
-		
-		
 	}
 
 	/*
@@ -64,14 +69,15 @@ public class MainAutomatic3DSegmentation implements PlugIn {
 	}
 
 	/**
-	 * Static method to enable oval selection It is mainly used to create
-	 * ROIs
+	 * Static method to enable oval selection It is mainly used to create ROIs
 	 */
 	public static void callToolbarOval() {
 		ij.gui.Toolbar.getInstance().setTool(ij.gui.Toolbar.OVAL);
 	}
+
 	/**
-	 * Static method to enable polygon selection It is mainly used to create ROIs
+	 * Static method to enable polygon selection It is mainly used to create
+	 * ROIs
 	 */
 	public static void callToolbarPolygon() {
 		ij.gui.Toolbar.getInstance().setTool(ij.gui.Toolbar.POLYGON);

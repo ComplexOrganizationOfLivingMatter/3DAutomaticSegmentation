@@ -65,7 +65,7 @@ import ij.gui.ShapeRoi;
 import ij.process.ImageProcessor;
 
 /**
- * @author
+ * @author Victor Hugo Arriaga, Antonio Tagua, Pablo Vicente-Munuera
  *
  */
 public class PanelPostProcessing extends JPanel implements ActionListener, ChangeListener {
