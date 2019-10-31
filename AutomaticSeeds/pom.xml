@@ -244,13 +244,6 @@
 			<scope>system</scope>
 			<systemPath>${basedir}/externalJARs/droplet_finder.jar</systemPath>
 		</dependency>
-		<dependency>
-			<groupId>mcib_testing</groupId>
-			<artifactId>mcib_testing</artifactId>
-			<version>0</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/externalJARs/tissueanalysis_.jar</systemPath>
-		</dependency>
 		
 	</dependencies>
 	<build>
