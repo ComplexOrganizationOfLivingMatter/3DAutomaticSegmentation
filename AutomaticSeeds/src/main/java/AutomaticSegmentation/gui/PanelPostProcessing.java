@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -83,12 +84,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 	private RoiAdjustment newCell;
 	private Cell LimeSegCell;
-	private ArrayList<Cell> allCells;
-	public String initialDirectory;
+	private JFileChooser fileChooser;
 	private Cell3D PostProcessCell;
 	private ArrayList<Cell3D> all3dCells;
 	private PolygonRoi polyRoi;
-	private PolygonRoi polyRoi2;
 	private PolygonRoi[][] lumenDots;
 	private ImagePlus cellOutlineChannel;
 
@@ -120,6 +119,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		LimeSeg.allCells = new ArrayList<Cell>();
 		LimeSegCell = new Cell();
 		all3dCells = new ArrayList<Cell3D>();
+		
+		fileChooser = new JFileChooser();
+		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		
 		initPostLimeSegPanel();
 	}
 
@@ -143,9 +146,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			
 			if (all3dCells.isEmpty()) {
 				btPostLimeSeg.setEnabled(false);
+				setFileChooserProperties("Select the output LimeSeg folder");
+				if (fileChooser.showOpenDialog(this) == fileChooser.APPROVE_OPTION) {
+				
 				this.cellOutlineChannel.show();
-				initialDirectory = new OpenDialog("Select OutputLimeSeg folder", cellOutlineChannel.getOriginalFileInfo().directory, "OutputLimeSeg").getDirectory();
-					if (initialDirectory != null) {
 						ExecutorService executor1 = Executors.newSingleThreadExecutor();
 						executor1.submit(() -> {
 							openPlyFiles();
@@ -168,7 +172,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							executor1.shutdown();
 						});
 					} else{
-						IJ.log("Not OutputLimeSeg folder found");
+						IJ.log("Not output LimeSeg folder selected");
 					}
 				
 			}
@@ -202,7 +206,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == btnPostSave) {
-			savePlyFiles(all3dCells, initialDirectory);
+			savePlyFiles();
 			// After saved the plyFiles show a message to inform the user
 			JOptionPane.showMessageDialog(getParent(), "Saved results.");
 		}
@@ -220,12 +224,20 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == btn3DDisplay) {
-			String path_in = initialDirectory;
+			String path_in = fileChooser.getSelectedFile().toString();
 			LimeSeg.loadStateFromXmlPly(path_in);
 			LimeSeg.make3DViewVisible();
 			LimeSeg.putAllCellsTo3DDisplay();
 			System.out.println("READY");
 		}
+	}
+
+	/**
+	 * 
+	 */
+	private void setFileChooserProperties(String title) {
+		fileChooser.setCurrentDirectory(new File(cellOutlineChannel.getOriginalFileInfo().directory));
+		fileChooser.setDialogTitle(title);
 	}
 
 	/*-------------------- GETTERS AND SETTERS ----------------------*/
@@ -319,7 +331,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 * 
 	 */
 	public void openPlyFiles() {
-		File dir = new File(this.initialDirectory.toString());
+		File dir = new File(fileChooser.getSelectedFile().toString());
 		File[] files = dir.listFiles(new FilenameFilter() {
 			public boolean accept(File dir, String name) {
 				return name.startsWith("cell_");
@@ -610,9 +622,9 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 */
 	public void loadLumen() {
 		try {
-			String lumenDirectory = new OpenDialog("").getDirectory();
-			if (lumenDirectory != null) {
-				File dirLumen = new File(lumenDirectory);
+			setFileChooserProperties("Select the segmented lumen folder");
+			if (fileChooser.showOpenDialog(this) == fileChooser.APPROVE_OPTION) {
+				File dirLumen = fileChooser.getSelectedFile();
 				File[] filesLumen = dirLumen.listFiles(new FilenameFilter() {
 					public boolean accept(File dir, String name) {
 						return name.startsWith("");
@@ -729,7 +741,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				} 
 				checkLumen.setEnabled(true);
 			} else {
-				IJ.log("Any file readed");
+				IJ.log("Any lumen file selected");
 			}
 
 		} catch (IOException e1) {
@@ -742,14 +754,11 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	/**
 	 * Save ply files, xml and copy limeSegParams from original LimeSeg Output
 	 * 
-	 * @param allCells
-	 * @param path_in
 	 */
-	public void savePlyFiles(ArrayList<Cell3D> allCells, String path_in) {
-		if (!path_in.endsWith(File.separator)) {
-			path_in = path_in + File.separator;
-		}
-		String path = path_in + "/newOutputLimeSeg";
+	public void savePlyFiles() {
+		setFileChooserProperties("Select the segmented lumen folder");
+		if (fileChooser.showOpenDialog(this) == fileChooser.APPROVE_OPTION) {
+		String path = fileChooser.getSelectedFile().toString() + "/newOutputLimeSeg";
 		// instance of a DocumentBuilderFactory
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		try {
@@ -769,11 +778,11 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 			DocumentBuilder db = dbf.newDocumentBuilder();
 
-			String fromFile = path_in + "/OutputLimeSeg/LimeSegParams.xml";
-			String toFile = path_in + "/newOutputLimeSeg/LimeSegParams.xml";
+			String fromFile = fileChooser.getSelectedFile().toString() + "/OutputLimeSeg/LimeSegParams.xml";
+			String toFile = fileChooser.getSelectedFile().toString() + "/newOutputLimeSeg/LimeSegParams.xml";
 			copyFile(fromFile, toFile);
 
-			allCells.forEach(c -> {
+			all3dCells.forEach(c -> {
 				// Cell Channel
 				Document domCell = db.newDocument();
 				Element cellParams = domCell.createElement("CellParameters");
@@ -820,6 +829,9 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			});
 		} catch (ParserConfigurationException pce) {
 			System.out.println("Save State: Error trying to instantiate DocumentBuilder " + pce);
+		}
+		} else {
+			IJ.log("Any folder selected");
 		}
 	}
 
