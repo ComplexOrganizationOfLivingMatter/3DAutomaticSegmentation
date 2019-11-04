@@ -25,6 +25,7 @@ import eu.kiaru.limeseg.commands.ClearAll;
 import eu.kiaru.limeseg.struct.Cell;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.io.OpenDialog;
 import ij.plugin.frame.RoiManager;
 
 /**
@@ -67,7 +68,8 @@ public class PanelLimeSeg extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				ArrayList<Cell> cell = LimeSeg.allCells;
 				if (cell.size() > 0) {
-					String path = cellOutlineChannel.getOriginalFileInfo().directory + "OutputLimeSeg";
+					//String path = cellOutlineChannel.getOriginalFileInfo().directory + "OutputLimeSeg";
+					String path = (new OpenDialog("Select save folder", cellOutlineChannel.getOriginalFileInfo().directory, "limeseg").getDirectory() + "OutputLimeSeg");
 					File dir = new File(path);
 					if (!dir.isDirectory()) {
 						System.out.println("New folder created");

@@ -144,28 +144,33 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			if (all3dCells.isEmpty()) {
 				btPostLimeSeg.setEnabled(false);
 				this.cellOutlineChannel.show();
-				initialDirectory = cellOutlineChannel.getOriginalFileInfo().directory;
-				ExecutorService executor1 = Executors.newSingleThreadExecutor();
-				executor1.submit(() -> {
-				openPlyFiles();
-				MainAutomatic3DSegmentation.callToolbarPolygon();
-				lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
-				removeCellOverlap();
-				removeCellLumenOverlap();
-				cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(), all3dCells,
-						cellOutlineChannel, false, lumenDots));
-				cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
-				checkOverlay.addActionListener(this);
-				checkLumen.addActionListener(this);
-				btnInsert.addActionListener(this);
-				btnPostSave.addActionListener(this);
-				btnLumen.addActionListener(this);
-				btn3DDisplay.addActionListener(this);
-				cellSpinner.addChangeListener(this);
-				this.setEnablePanel(true);
-				checkLumen.setEnabled(false);
-				executor1.shutdown();
-				});
+				initialDirectory = new OpenDialog("Select OutputLimeSeg folder", cellOutlineChannel.getOriginalFileInfo().directory, "OutputLimeSeg").getDirectory();
+					if (initialDirectory != null) {
+						ExecutorService executor1 = Executors.newSingleThreadExecutor();
+						executor1.submit(() -> {
+							openPlyFiles();
+							MainAutomatic3DSegmentation.callToolbarPolygon();
+							lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
+							removeCellOverlap();
+							removeCellLumenOverlap();
+							cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(),
+									all3dCells, cellOutlineChannel, false, lumenDots));
+							cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
+							checkOverlay.addActionListener(this);
+							checkLumen.addActionListener(this);
+							btnInsert.addActionListener(this);
+							btnPostSave.addActionListener(this);
+							btnLumen.addActionListener(this);
+							btn3DDisplay.addActionListener(this);
+							cellSpinner.addChangeListener(this);
+							this.setEnablePanel(true);
+							checkLumen.setEnabled(false);
+							executor1.shutdown();
+						});
+					} else{
+						IJ.log("Not OutputLimeSeg folder found");
+					}
+				
 			}
 
 		}
@@ -255,7 +260,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			@Override
 			public void imageClosed(ImagePlus imp) {
 				// TODO Auto-generated method stub
-
+				setEnablePanel(false);
+				btPostLimeSeg.setEnabled(true);
 			}
 		});
 	}
@@ -313,7 +319,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 * 
 	 */
 	public void openPlyFiles() {
-		File dir = new File(this.initialDirectory.toString() + "/OutputLimeSeg");
+		File dir = new File(this.initialDirectory.toString());
 		File[] files = dir.listFiles(new FilenameFilter() {
 			public boolean accept(File dir, String name) {
 				return name.startsWith("cell_");
@@ -931,7 +937,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 * @param enabled
 	 * @param panel
 	 */
-	private void setEnablePanel(boolean enabled) {
+	public void setEnablePanel(boolean enabled) {
 		for (Component c : this.getComponents()) {
 			c.setEnabled(enabled);
 		}
