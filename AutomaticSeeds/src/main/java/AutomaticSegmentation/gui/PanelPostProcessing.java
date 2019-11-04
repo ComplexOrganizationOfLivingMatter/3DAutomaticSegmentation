@@ -66,8 +66,6 @@ import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
-import ij.io.OpenDialog;
-import ij.plugin.FolderOpener;
 import ij.process.ImageProcessor;
 
 /**
