@@ -150,7 +150,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				this.cellOutlineChannel.show();
 						ExecutorService executor1 = Executors.newSingleThreadExecutor();
 						executor1.submit(() -> {
-							openPlyFiles();
+							loadPlyFiles();
 							MainAutomatic3DSegmentation.callToolbarPolygon();
 							lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
 							removeCellOverlap();
@@ -307,7 +307,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	/**
 	 * 
 	 */
-	public void openPlyFiles() {
+	public void loadPlyFiles() {
 		File dir = new File(fileChooser.getSelectedFile().toString());
 		File[] files = dir.listFiles(new FilenameFilter() {
 			public boolean accept(File dir, String name) {
