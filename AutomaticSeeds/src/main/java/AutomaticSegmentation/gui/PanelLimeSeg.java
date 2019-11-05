@@ -25,6 +25,7 @@ import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.commands.ClearAll;
 import eu.kiaru.limeseg.struct.Cell;
 import ij.IJ;
+import ij.ImageListener;
 import ij.ImagePlus;
 import ij.plugin.frame.RoiManager;
 
