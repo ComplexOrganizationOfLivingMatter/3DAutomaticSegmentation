@@ -20,6 +20,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.WindowConstants;
 
 import ij.IJ;
+import ij.ImageListener;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij3d.ContentConstants;
@@ -121,7 +122,7 @@ public class MainWindow extends JFrame {
 					tpPreLimeSeg.setNucleiChannel(null);
 					setEnablePanels(false, tpPreLimeSeg);
 				} else {
-					nucleiChannel = ImpArraylist.get(cbNucleiChannel.getSelectedIndex());
+					nucleiChannel = duplicateImp(ImpArraylist.get(cbNucleiChannel.getSelectedIndex()));
 					tpPreLimeSeg.setNucleiChannel(nucleiChannel);
 					setEnablePanels(true, tpPreLimeSeg);
 				}
@@ -139,17 +140,42 @@ public class MainWindow extends JFrame {
 					setEnablePanels(false, tpPostLimeSeg);
 					setEnablePanels(false, tpLimeSeg);
 				} else {
-					cellOutlineChannel = ImpArraylist.get(cbSegmentableChannel.getSelectedIndex());
+					cellOutlineChannel = duplicateImp(ImpArraylist.get(cbSegmentableChannel.getSelectedIndex()));
 					tpPostLimeSeg.setCellOutlineChannel(cellOutlineChannel);
 					tpLimeSeg.setCellOutlineChannel(cellOutlineChannel);
 					tpPostLimeSeg.btPostLimeSeg.setEnabled(true);
 					setEnablePanels(true, tpLimeSeg);
 					tpLimeSeg.setZScale((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
 							/ cellOutlineChannel.getOriginalFileInfo().pixelWidth);
+					
+					cellOutlineChannel.addImageListener(new ImageListener() {
+
+						@Override
+						public void imageUpdated(ImagePlus imp) {
+							// TODO Auto-generated method stub
+							if (tabbedPane.getSelectedIndex() == 2) {
+								tpPostLimeSeg.updateOverlay();
+							}
+						}
+
+						@Override
+						public void imageOpened(ImagePlus imp) {
+							// TODO Auto-generated method stub
+
+						}
+
+						@Override
+						public void imageClosed(ImagePlus imp) {
+							// TODO Auto-generated method stub
+							setEnablePanels(false, tpPostLimeSeg);
+							tpPostLimeSeg.btPostLimeSeg.setEnabled(true);
+						}
+					});
 
 				}
 			}
 		});
+	
 	}
 
 	/**
@@ -207,6 +233,14 @@ public class MainWindow extends JFrame {
 		for (Component c : panel.getComponents()) {
 			c.setEnabled(enabled);
 		}
+	}
+	/**
+	 * 
+	 */
+	private ImagePlus duplicateImp(ImagePlus imp) {
+		ImagePlus impDuplicated = imp.duplicate();
+		impDuplicated.setFileInfo(imp.getOriginalFileInfo());
+		return impDuplicated;
 	}
 
 	/**
