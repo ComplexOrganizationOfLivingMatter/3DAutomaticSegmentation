@@ -171,6 +171,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						});
 					} else{
 						IJ.log("Not output LimeSeg folder selected");
+						btPostLimeSeg.setEnabled(true);
 					}
 				
 			}
@@ -230,17 +231,9 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 	}
 
-	/**
-	 * 
-	 */
-	private void setFileChooserProperties(String title) {
-		fileChooser.setCurrentDirectory(new File(cellOutlineChannel.getOriginalFileInfo().directory));
-		fileChooser.setDialogTitle(title);
-	}
-
 	/*-------------------- GETTERS AND SETTERS ----------------------*/
 	/**
-	 * 
+	 *
 	 * @return
 	 */
 	public ImagePlus getCellOutlineChannel() {
@@ -253,6 +246,25 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 */
 	public void setCellOutlineChannel(ImagePlus cellOutlineChannel) {
 		this.cellOutlineChannel = cellOutlineChannel;
+	}
+	
+	/**
+	 * 
+	 */
+	private void setFileChooserProperties(String title) {
+		fileChooser.setCurrentDirectory(new File(cellOutlineChannel.getOriginalFileInfo().directory));
+		fileChooser.setDialogTitle(title);
+	}
+	
+	/**
+	 * 
+	 * @param enabled
+	 * @param panel
+	 */
+	public void setEnablePanel(boolean enabled) {
+		for (Component c : this.getComponents()) {
+			c.setEnabled(enabled);
+		}
 	}
 
 	/*-------------------- METHODS ----------------------*/
@@ -314,31 +326,35 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				return name.startsWith("cell_");
 			}
 		});
-		for (File f : files) {
-			String path = f.toString();
-			LimeSegCell.id_Cell = path.substring(path.indexOf("_") + 1);
-			IOXmlPlyLimeSeg.hydrateCellT(LimeSegCell, path);
-			Cell3D PostProcessCellCopy = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
-			PostProcessCell = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
-			PostProcessCell.clearCell();
-			for (int i = 0; i < cellOutlineChannel.getStackSize(); i++) {
-				if (PostProcessCellCopy.getCell3DAt(i).size() != 0) {
-					PostProcessCell.addDotsList(processLimeSegOutput(PostProcessCellCopy.getCell3DAt(i), i));
+		
+		if (files.length >= 1) {
+			for (File f : files) {
+				String path = f.toString();
+				LimeSegCell.id_Cell = path.substring(path.indexOf("_") + 1);
+				IOXmlPlyLimeSeg.hydrateCellT(LimeSegCell, path);
+				Cell3D PostProcessCellCopy = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
+				PostProcessCell = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
+				PostProcessCell.clearCell();
+				for (int i = 0; i < cellOutlineChannel.getStackSize(); i++) {
+					if (PostProcessCellCopy.getCell3DAt(i).size() != 0) {
+						PostProcessCell.addDotsList(processLimeSegOutput(PostProcessCellCopy.getCell3DAt(i), i));
+					}
+
 				}
 
+				PostProcessCell.labelCell = Integer.parseInt(LimeSegCell.id_Cell);
+				all3dCells.add(PostProcessCell);
 			}
+			Collections.sort(all3dCells, new Comparator<Cell3D>() {
 
-			PostProcessCell.labelCell = Integer.parseInt(LimeSegCell.id_Cell);
-			all3dCells.add(PostProcessCell);
+				@Override
+				public int compare(Cell3D cel1, Cell3D cel2) {
+					return cel1.getID().compareTo(cel2.getID());
+				}
+			});
+		} else {
+			IJ.log("Any ply file found");
 		}
-
-		Collections.sort(all3dCells, new Comparator<Cell3D>() {
-
-			@Override
-			public int compare(Cell3D cel1, Cell3D cel2) {
-				return cel1.getID().compareTo(cel2.getID());
-			}
-		});
 	}
 
 	/**
@@ -886,6 +902,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			return false;
 		}
 	}
+	
+	/**
+	 * 
+	 */
 
 	public void updateOverlay() {
 
@@ -920,16 +940,12 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		super(layout, isDoubleBuffered);
 		// TODO Auto-generated constructor stub
 	}
-
+	
 	/**
 	 * 
-	 * @param enabled
-	 * @param panel
 	 */
-	public void setEnablePanel(boolean enabled) {
-		for (Component c : this.getComponents()) {
-			c.setEnabled(enabled);
-		}
+	public void clear3dCells(){
+		this.all3dCells.clear();
 	}
 
 }

@@ -166,9 +166,13 @@ public class MainWindow extends JFrame {
 
 						@Override
 						public void imageClosed(ImagePlus imp) {
-							// TODO Auto-generated method stub
-							setEnablePanels(false, tpPostLimeSeg);
-							tpPostLimeSeg.btPostLimeSeg.setEnabled(true);
+							if (tabbedPane.getSelectedIndex() == 2) {
+								// TODO Auto-generated method stub
+								setEnablePanels(false, tpPostLimeSeg);
+								tpPostLimeSeg.btPostLimeSeg.setEnabled(true);
+								tpPostLimeSeg.clear3dCells();
+								tpPostLimeSeg.setCellOutlineChannel(duplicateImp(ImpArraylist.get(cbSegmentableChannel.getSelectedIndex())));
+							}
 						}
 					});
 
