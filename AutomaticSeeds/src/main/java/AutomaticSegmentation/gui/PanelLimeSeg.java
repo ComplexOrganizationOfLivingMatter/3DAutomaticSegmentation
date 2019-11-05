@@ -205,7 +205,7 @@ public class PanelLimeSeg extends JPanel implements ActionListener {
 		this.add(js_fPressure, "wrap, align center");
 
 		label_zScale = new JLabel("Z scale:");
-		js_zScale = new JSpinner(new SpinnerNumberModel(1.0, null, null, 0.1));
+		js_zScale = new JSpinner(new SpinnerNumberModel(1.0, null, null, 0.01));
 		js_zScale.setMinimumSize(new Dimension(100, 10));
 		this.add(label_zScale, "align center");
 		this.add(js_zScale, "wrap, align center");

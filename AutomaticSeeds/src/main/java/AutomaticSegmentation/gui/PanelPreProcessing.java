@@ -52,37 +52,37 @@ public class PanelPreProcessing extends JPanel {
 	String dir = null;
     int max_nuc_radius = 28,min_nuc_radius = 18, seed_threshold = 29000;
     private JCheckBox prefilteringCheckB;
-	private JLabel maxNucleusSizeLb,minNucleusSizeLb,seedThresholdLb;
-	private JSpinner maxNucleusSizeSpin,minNucleusSizeSpin,seedThresholdSpin;
+	private JLabel maxNucleusSizeLb,minNucleusSizeLb,localMaximaThresholdLb,zScaleLb;
+	private JSpinner maxNucleusSizeSpin,minNucleusSizeSpin,localMaximaThresholdSpin,zScaleSpin;
 	private JButton btRun, btCancel,btLoad,btShowNuclei;
 	private static final long serialVersionUID = 1L;
 	private ImagePlus imp_segmented,nucleiChannel;
 	private ProgressBar progressBar;
-
+	private ExecutorService executor1;
 	/**
 	 * @param layout
 	 */
 	public PanelPreProcessing(LayoutManager layout) {
 		super(layout);
-		
 		initPreLimeSegPanel();
-
 		
+		executor1 = Executors.newSingleThreadExecutor();
 		btRun.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 
-				ExecutorService executor1 = Executors.newSingleThreadExecutor();
+				executor1 = Executors.newSingleThreadExecutor();
 				executor1.submit(() -> {
 					btRun.setEnabled(false);
 									
 					int maxN = Integer.valueOf(maxNucleusSizeSpin.getValue().toString()).intValue();
 					int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
-					int nSeed = Integer.valueOf(seedThresholdSpin.getValue().toString()).intValue();
-					String pathImg = nucleiChannel.getOriginalFileInfo().directory;
-					NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,pathImg,maxN,minN,nSeed,prefilteringCheckB.isSelected());
-					imp_segmented = nucSeg3D.segment();
+					int maxThresh = Integer.valueOf(localMaximaThresholdSpin.getValue().toString()).intValue();
+					float zStep = Float.valueOf(zScaleSpin.getValue().toString()).floatValue();
+
+					NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,maxN,minN,zStep,maxThresh,prefilteringCheckB.isSelected());
+					imp_segmented = nucSeg3D.impSegmented.duplicate();
 					btRun.setEnabled(true);
 					imp_segmented.show();
 					RoiManager rm = getNucleiROIs(imp_segmented);
@@ -104,6 +104,14 @@ public class PanelPreProcessing extends JPanel {
 			}
 		});
 		
+		btCancel.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				executor1.shutdownNow().clear();
+				btRun.setEnabled(true);
+			}
+		});
 
 	}
 	
@@ -119,6 +127,8 @@ public class PanelPreProcessing extends JPanel {
 	 */
 	public void setNucleiChannel(ImagePlus nucleiChannel) {
 		this.nucleiChannel = nucleiChannel;
+		zScaleSpin.setValue((float) nucleiChannel.getOriginalFileInfo().pixelDepth/nucleiChannel.getOriginalFileInfo().pixelWidth);
+
 	}
 
 	/**
@@ -136,6 +146,7 @@ public class PanelPreProcessing extends JPanel {
 	}
 
 	
+	
 	/**
 	 * 
 	 */
@@ -151,15 +162,20 @@ public class PanelPreProcessing extends JPanel {
 		prefilteringCheckB.setSelected(false);
 		maxNucleusSizeLb = new JLabel("Maximal nucleus size");
 		minNucleusSizeLb = new JLabel("Minimal nucleus size");
-		seedThresholdLb = new JLabel("Seed threshold");
+		localMaximaThresholdLb = new JLabel("Seed threshold");
+		zScaleLb = new JLabel("Z scale");
+
 		
 		/*MODIFY the limits of JSPinners*/
 		maxNucleusSizeSpin = new JSpinner(new SpinnerNumberModel(max_nuc_radius, null, null, 1));
 		maxNucleusSizeSpin.setMinimumSize(new Dimension(100, 10));
 		minNucleusSizeSpin = new JSpinner(new SpinnerNumberModel(min_nuc_radius, null, null, 1));
 		minNucleusSizeSpin.setMinimumSize(new Dimension(100, 10));
-		seedThresholdSpin = new JSpinner(new SpinnerNumberModel(seed_threshold, null, null, 1));
-		seedThresholdSpin.setMinimumSize(new Dimension(100, 10));
+		localMaximaThresholdSpin = new JSpinner(new SpinnerNumberModel(seed_threshold, null, null, 1));
+		localMaximaThresholdSpin.setMinimumSize(new Dimension(100, 10));
+		zScaleSpin = new JSpinner(new SpinnerNumberModel(1.00, null, null, 0.01));
+		zScaleSpin.setMinimumSize(new Dimension(100, 10));
+		
 		
 		progressBar = new ProgressBar(100, 25);		
 		
@@ -172,29 +188,16 @@ public class PanelPreProcessing extends JPanel {
 		this.add(maxNucleusSizeSpin, "wrap,align left");
 		this.add(minNucleusSizeLb,"align left");
 		this.add(minNucleusSizeSpin, "wrap,align left");
-		this.add(seedThresholdLb,"align left");
-		this.add(seedThresholdSpin, "wrap,align left");
+		this.add(localMaximaThresholdLb,"align left");
+		this.add(localMaximaThresholdSpin, "wrap,align left");
+		this.add(zScaleLb,"align left");
+		this.add(zScaleSpin, "wrap,align left");
 		this.add(btRun,"align left,wrap");
 		this.add(btCancel,"align left");
 		this.add(progressBar,"wrap, align left");	
 		this.add(btLoad);
 
 		
-	}
-
-	public synchronized ImagePlus RunThreshold() {
-		nucleiChannel.duplicate().show();
-		IJ.run("Threshold...");
-		while (IJ.getImage().getProcessor().isBinary() != true) {
-			try {
-				Thread.sleep(5000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		return IJ.getImage().duplicate();
 	}
 
 	public RoiManager getNucleiROIs(ImagePlus imp_segmented) {
