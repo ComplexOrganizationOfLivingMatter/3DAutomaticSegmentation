@@ -17,8 +17,9 @@ import filters.Bandpass3D;
  *
  * @author pedgomgal1
  */
+
 public class NucleiSegmentation3D{
-	
+
 	public ImagePlus impPreprocessed;
 	public ImagePlus impSegmented;
 	public String dir;
@@ -32,12 +33,6 @@ public class NucleiSegmentation3D{
     public NucleiSegmentation3D(ImagePlus nucleiImg, int max_nuc_radius, int min_nuc_radius, float zDepth, int maxThresh,boolean prefilter) {
 				
     	dir = nucleiImg.getOriginalFileInfo().directory;
-    	impPreprocessed = nucleiImg.duplicate();
-        if(prefilter){
-            IJ.log("Pre-filtering...");
-            IJ.run(impPreprocessed, "Median 3D...", "x=4 y=4 z=2");
-        }
-        impPreprocessed.setTitle("Dapi_channel");
     	String subdir = null;
         File fl = new File(dir+"SEG");
         if (!fl.exists()){
@@ -51,9 +46,19 @@ public class NucleiSegmentation3D{
             subdir = dir + "SEG/";
         }
         
-        IJ.selectWindow(impPreprocessed.getTitle());
+        
+    	impPreprocessed = nucleiImg.duplicate();
+        impPreprocessed.setTitle("Dapi_channel");
+        if(prefilter){
+            IJ.log("Pre-filtering start");
+            IJ.run(impPreprocessed, "Median 3D...", "x=4 y=4 z=2");
+            IJ.log("Pre-filtering completed");
+            
+            
+        }
+        
         IJ.saveAs(impPreprocessed,"Tiff", subdir+impPreprocessed.getTitle()+".tif");
-        IJ.log("Save the nuclei image as Dapi_channel.tif in "+dir);
+        IJ.log("Save the nuclei image as Dapi_channel.tif in "+subdir);
             
         //band pass filtering
         IJ.run(impPreprocessed, "32-bit", "");
