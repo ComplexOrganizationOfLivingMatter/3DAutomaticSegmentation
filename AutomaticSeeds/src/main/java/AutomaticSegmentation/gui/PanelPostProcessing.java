@@ -84,7 +84,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	private JFileChooser fileChooser;
 	private ArrayList<Cell3D> all3dCells;
 	private PolygonRoi polyRoi;
-	private ArrayList<TextRoi> labelCells;
+	private TextRoi[][] labelCells;
 	private PolygonRoi[][] lumenDots;
 	private ImagePlus cellOutlineChannel;
 
@@ -114,7 +114,6 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		// TODO Auto-generated constructor stub
 
 		all3dCells = new ArrayList<Cell3D>();
-		labelCells = new ArrayList<TextRoi>();
 		fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
@@ -149,6 +148,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					ExecutorService executor1 = Executors.newSingleThreadExecutor();
 					executor1.submit(() -> {
 						loadPlyFiles();
+						labelCells = RoiAdjustment.getLabelCells(all3dCells, cellOutlineChannel);
 						MainAutomatic3DSegmentation.callToolbarPolygon();
 						lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
 						removeCellOverlap();
@@ -229,11 +229,6 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == checkIdCells) {
-			if (checkIdCells.isSelected()) {
-				labelCells = RoiAdjustment.getLabelCells(all3dCells);
-			} else {
-				labelCells.clear();
-			}
 			updateOverlay();
 		}
 	}
@@ -253,6 +248,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 */
 	public void setCellOutlineChannel(ImagePlus cellOutlineChannel) {
 		this.cellOutlineChannel = cellOutlineChannel;
+		labelCells = new TextRoi[cellOutlineChannel.getStackSize()][all3dCells.size()];
 	}
 
 	/**
@@ -418,6 +414,13 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							roi.setStrokeColor(colorCurrentCell);
 						}
 						ov.addElement(roi);
+
+						if (labelCells.length > 0 & checkIdCells.isSelected()) {
+							if (labelCells[nCell][frame] != null) {
+								ov.addElement(labelCells[nCell][frame]);
+							}
+
+						}
 					}
 				}
 			} else {
@@ -430,6 +433,11 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					roi.setStrokeColor(colorCurrentCell);
 					ov.addElement(roi);
 				}
+				if (labelCells.length > 0 & checkIdCells.isSelected()) {
+					if (labelCells[id][frame] != null) {
+						ov.addElement(labelCells[id][frame]);
+					}
+				}
 			}
 
 			if (lumen[lumen.length / 2] != null & checkLumen.isSelected()) {
@@ -438,12 +446,6 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					ov.addElement(lumen[frame - 1][1]);
 			}
 			// TODO: change this part of the code
-			if (labelCells.size() > 0) {
-				for (TextRoi text : labelCells) {
-					ov.addElement(text);
-				}
-
-			}
 
 		}
 		return ov;
