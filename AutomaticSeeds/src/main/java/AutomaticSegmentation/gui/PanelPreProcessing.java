@@ -71,59 +71,6 @@ public class PanelPreProcessing extends JPanel {
 		initPreLimeSegPanel();
 		preprocessingTask = new Thread() {};
 		btCancel.setEnabled(false);
-		
-//		executor = Executors.newSingleThreadExecutor();
-		btRun.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-
-				//executor = Executors.newSingleThreadExecutor();
-				//executor.submit(() -> 
-				preprocessingTask = new Thread() { 
-					public void run(){
-						btRun.setEnabled(false);
-						btCancel.setEnabled(true);
-						
-						int maxN = Integer.valueOf(maxNucleusSizeSpin.getValue().toString()).intValue();
-						int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
-						int maxThresh = Integer.valueOf(localMaximaThresholdSpin.getValue().toString()).intValue();
-						float zStep = Float.valueOf(zScaleSpin.getValue().toString()).floatValue();
-	
-						NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,maxN,minN,zStep,maxThresh,prefilteringCheckB.isSelected());
-						imp_segmented = nucSeg3D.impSegmented.duplicate();
-						btRun.setEnabled(true);
-						imp_segmented.show();
-						RoiManager rm = getNucleiROIs(imp_segmented);
-						//executor.shutdown();
-					}
-				};
-				preprocessingTask.run();
-				// visualization3D (imp_segmented);
-			}
-
-		});
-
-		btShowNuclei.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (nucleiChannel != null) {
-					nucleiChannel.duplicate().show();
-				}
-			}
-		});
-		
-		btCancel.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				preprocessingTask.interrupt();
-				preprocessingTask = null;
-				//executor.shutdown();
-				btRun.setEnabled(true);
-			}
-		});
 
 	}
 	
@@ -289,18 +236,19 @@ public class PanelPreProcessing extends JPanel {
 							}
 						};
 						preprocessingTask.run();
+						preprocessingTask.start();
 					}
 					else if(e.getSource() == btCancel){
 						try { 
 							
 							if(null != preprocessingTask){
 								Thread newTask = new Thread();
-								newTask = preprocessingTask;
-								newTask.interrupt();
+								preprocessingTask.interrupt();
 								// Although not recommended and already deprecated,
 								// use stop command so WEKA classifiers are actually
 								// stopped.
-								newTask.stop();
+								preprocessingTask.stop();
+								preprocessingTask = null;
 							}else {
 								IJ.log("Error: interrupting training failed becaused the thread is null!");
 							}
@@ -314,7 +262,9 @@ public class PanelPreProcessing extends JPanel {
 						//
 					}
 					else if(e.getSource() == btShowNuclei){
-						// 
+						if (nucleiChannel != null) {
+							nucleiChannel.duplicate().show();
+						}
 					}
 				}			
 			});
