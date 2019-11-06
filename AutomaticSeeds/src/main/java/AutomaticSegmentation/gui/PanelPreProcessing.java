@@ -216,9 +216,14 @@ public class PanelPreProcessing extends JPanel {
 							int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
 							int maxThresh = Integer.valueOf(localMaximaThresholdSpin.getValue().toString()).intValue();
 							float zStep = Float.valueOf(zScaleSpin.getValue().toString()).floatValue();
-							preprocessingTask = new Thread() { 
+							
+							preprocessingTask = new Thread() {
+								
 								public void run(){
+									
+																	
 									btRunCancel.setText("Cancel");
+						
 									NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,maxN,minN,zStep,maxThresh,prefilteringCheckB.isSelected());
 									imp_segmented = nucSeg3D.impSegmented.duplicate();
 									imp_segmented.show();
@@ -229,23 +234,30 @@ public class PanelPreProcessing extends JPanel {
 							preprocessingTask.start();
 						}
 						else if(command.equals("Cancel")){
-							try { 
-								btRunCancel.setText("Run");
-								if(null != preprocessingTask){
-									//exec.shutdown();
-									Thread.currentThread().interrupt();
-									//preprocessingTask.interrupt();
-									// Although not recommended and already deprecated,
-									// use stop command so WEKA classifiers are actually
-									// stopped.
-									//preprocessingTask.stop();
-									btRunCancel.setEnabled(true);
-								}else {
-									IJ.log("Error: interrupting training failed becaused the thread is null!");
+							btRunCancel.setText("Run");
+							if(null != preprocessingTask){
+								
+								try {
+									Thread.sleep(6500);
+								} catch (InterruptedException e2) {
+									// TODO Auto-generated catch block
+									e2.printStackTrace();
 								}
-							}
-							catch(Exception ex){
-								ex.printStackTrace();
+								preprocessingTask.interrupt();
+								try {
+									preprocessingTask.join();
+								} catch (InterruptedException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								}
+								
+								exec.shutdownNow();
+								// Although not recommended and already deprecated,
+								// use stop command
+								//preprocessingTask.stop();
+								btRunCancel.setEnabled(true);
+							}else {
+								IJ.log("Error: interrupting training failed becaused the thread is null!");
 							}	
 						}
 					

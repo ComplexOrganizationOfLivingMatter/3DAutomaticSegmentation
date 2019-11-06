@@ -1,15 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package AutomaticSegmentation.preProcessing;
 
 import ij.IJ;
 import ij.ImagePlus;
-import ij.WindowManager;
-import ij.gui.GenericDialog;
-import ij.plugin.PlugIn;
 import java.io.File;
 import filters.Bandpass3D;
 
@@ -52,9 +44,7 @@ public class NucleiSegmentation3D{
         if(prefilter){
             IJ.log("Pre-filtering start");
             IJ.run(impPreprocessed, "Median 3D...", "x=4 y=4 z=2");
-            IJ.log("Pre-filtering completed");
-            
-            
+            IJ.log("Pre-filtering completed");           
         }
         
         IJ.saveAs(impPreprocessed,"Tiff", subdir+impPreprocessed.getTitle()+".tif");
