@@ -70,7 +70,7 @@ public class NucleiSegmentation3D{
 		bp3d.in_hprad = max_nuc_radius;
  		bp3d.in_lprad = min_nuc_radius;
  		bp3d.in_xz_ratio = zDepth;
-		bp3d.in_image = impSegmented.getStack();
+		bp3d.in_image = impPreprocessed.getStack();
 		if (!bp3d.checkInputParams().equals("")) {
 			IJ.showMessage(bp3d.checkInputParams());
 			return;

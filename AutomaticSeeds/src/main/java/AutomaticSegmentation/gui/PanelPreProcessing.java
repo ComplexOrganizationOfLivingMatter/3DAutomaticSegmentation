@@ -211,37 +211,34 @@ public class PanelPreProcessing extends JPanel {
 				{
 					if(e.getSource() == btRunCancel){
 						final String command = e.getActionCommand();
-						if (command.equals("Run")) {				
-						preprocessingTask = new Thread() { 
-							public void run(){
-								btRunCancel.setText("Cancel");
-								
-								int maxN = Integer.valueOf(maxNucleusSizeSpin.getValue().toString()).intValue();
-								int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
-								int maxThresh = Integer.valueOf(localMaximaThresholdSpin.getValue().toString()).intValue();
-								float zStep = Float.valueOf(zScaleSpin.getValue().toString()).floatValue();
-			
-								NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,maxN,minN,zStep,maxThresh,prefilteringCheckB.isSelected());
-								imp_segmented = nucSeg3D.impSegmented.duplicate();
-								btRunCancel.setEnabled(true);
-								imp_segmented.show();
-								RoiManager rm = getNucleiROIs(imp_segmented);
-								//executor.shutdown();
-							}
-						};
-						preprocessingTask.run();
-						preprocessingTask.start();
+						if (command.equals("Run")) {	
+							int maxN = Integer.valueOf(maxNucleusSizeSpin.getValue().toString()).intValue();
+							int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
+							int maxThresh = Integer.valueOf(localMaximaThresholdSpin.getValue().toString()).intValue();
+							float zStep = Float.valueOf(zScaleSpin.getValue().toString()).floatValue();
+							preprocessingTask = new Thread() { 
+								public void run(){
+									btRunCancel.setText("Cancel");
+									NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,maxN,minN,zStep,maxThresh,prefilteringCheckB.isSelected());
+									imp_segmented = nucSeg3D.impSegmented.duplicate();
+									imp_segmented.show();
+									RoiManager rm = getNucleiROIs(imp_segmented);
+									//executor.shutdown();
+								}
+							};
+							preprocessingTask.start();
 						}
 						else if(command.equals("Cancel")){
 							try { 
 								btRunCancel.setText("Run");
 								if(null != preprocessingTask){
-									preprocessingTask.interrupt();
+									//exec.shutdown();
+									Thread.currentThread().interrupt();
+									//preprocessingTask.interrupt();
 									// Although not recommended and already deprecated,
 									// use stop command so WEKA classifiers are actually
 									// stopped.
-									preprocessingTask.stop();
-									preprocessingTask = null;
+									//preprocessingTask.stop();
 									btRunCancel.setEnabled(true);
 								}else {
 									IJ.log("Error: interrupting training failed becaused the thread is null!");
