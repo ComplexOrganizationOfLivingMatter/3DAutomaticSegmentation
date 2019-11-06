@@ -20,10 +20,12 @@ import ij.gui.ShapeRoi;
 import ij.gui.TextRoi;
 import ij.process.FloatPolygon;
 
+/**
+ * 
+ * @author
+ *
+ */
 public class RoiAdjustment {
-
-	public float zScale = (float) 4.06;
-	public int selectedCell;
 
 	/**
 	 * 
@@ -32,80 +34,84 @@ public class RoiAdjustment {
 	 * @param frame
 	 * @param id
 	 */
-	
-	public ArrayList<Cell3D> removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame, String id, PolygonRoi[][] lumen) 
-	{
-		//fill the selection with points
+	public static ArrayList<Cell3D> removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon,
+			int frame, String id, PolygonRoi[][] lumen, float zScale) {
+		// fill the selection with points
 		PolygonRoi newPolygonInterpolated = new PolygonRoi(newPolygon.getInterpolatedPolygon(2, false), 2);
-		//star to read all the cells
-		for (int nCell = 0; nCell < allCells.size(); nCell++) 
-		{		
-			//if the cell is not empty in the frame do the calculation
-			if (allCells.get(nCell).getCell3DAt(frame).size() > 0)
-			{
-				//get the x,y points of the cell
+		int selectedCell = -1;
+		// star to read all the cells
+		for (int nCell = 0; nCell < allCells.size(); nCell++) {
+			// if the cell is not empty in the frame do the calculation
+			if (allCells.get(nCell).getCell3DAt(frame).size() > 0) {
+				// get the x,y points of the cell
 				float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).getCell3DAt(frame));
 				float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).getCell3DAt(frame));
-				
-				//create the shape of the cell
+
+				// create the shape of the cell
 				PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
 				double[] centroid = overlappingCell.getContourCentroid();
 				ShapeRoi s = new ShapeRoi(overlappingCell);
 				ShapeRoi r = new ShapeRoi(overlappingCell);
-				//create the shape of the selection
+				// create the shape of the selection
 				ShapeRoi sNewPolygon = new ShapeRoi(newPolygon);
-				
+
 				ShapeRoi sOverlappingCell = new ShapeRoi(sNewPolygon);
-				//verify if the selection is contain in the current cell with and
+				// verify if the selection is contain in the current cell with
+				// and
 				ShapeRoi overlappingZone = new ShapeRoi(sNewPolygon.and(s));
-				//if the cell share the space width o height will be different to 0
-				//also verify the cell is different of the cell to change
+				// if the cell share the space width o height will be different
+				// to 0
+				// also verify the cell is different of the cell to change
 				if ((overlappingZone.getFloatWidth() != 0 | overlappingZone.getFloatHeight() != 0)
-						& allCells.get(nCell).id_Cell != id) 
-					{
-					//if the cell share space, function not will return the new polygon of the cell 
-					//without share points
-					PolygonRoi polygon = new PolygonRoi(r.not(sOverlappingCell).getContainedFloatPoints(),6);					
-					
+						& allCells.get(nCell).id_Cell != id) {
+					// if the cell share space, function not will return the new
+					// polygon of the cell
+					// without share points
+					PolygonRoi polygon = new PolygonRoi(r.not(sOverlappingCell).getContainedFloatPoints(), 6);
+
 					Roi[] overRoi = getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
-					//get the border with ConcaveHull and threshold as 1 to have all the points															
-					PolygonRoi poly = getConcaveHull(overRoi,1);	
-					// Convert the PolygonRoi in Dots and integrate with the dots of
+					// get the border with ConcaveHull and threshold as 1 to
+					// have all the points
+					PolygonRoi poly = getConcaveHull(overRoi, 1);
+					// Convert the PolygonRoi in Dots and integrate with the
+					// dots of
 					// the other frames.
 					// Later, replace the selected cell by the cell with the new
 					// region
-					ArrayList<DotN> dotsNewRegion = setNewRegion(frame, poly);	
-					ArrayList<DotN> integratedDots = integrateNewRegion(dotsNewRegion, allCells.get(nCell).dotsList, frame);
-	
-					Cell3D newCell = new Cell3D(allCells.get(nCell).id_Cell, integratedDots);
-					allCells.set(nCell, newCell);
-				} 
-				else if (allCells.get(nCell).id_Cell == id)
-				{
-					//if the cell is the same only save the value in selectedCell to add later
+					ArrayList<DotN> dotsNewRegion = setNewRegion(frame, poly, zScale);
+					ArrayList<DotN> integratedDots = integrateNewRegion(dotsNewRegion, allCells.get(nCell).dotsList,
+							frame, zScale);
+
+					allCells.get(nCell).setDotsList(integratedDots);
+
+				} else if (allCells.get(nCell).id_Cell == id) {
+					// if the cell is the same only save the value in
+					// selectedCell to add later
 					selectedCell = nCell;
 				}
 			}
 		}
 		// Replace the cell with the mistaken overlay by the new cell.
-		ArrayList<DotN> dotsNewRegion = setNewRegion(frame, newPolygonInterpolated);
-		ArrayList<DotN> integratedDots = integrateNewRegion(dotsNewRegion, allCells.get(selectedCell).dotsList, frame);
-		Cell3D newCell = new Cell3D(id, integratedDots);
-		allCells.set(selectedCell, newCell);
-		//verify if the frame has lumen and do the fuction to remove lumen overlaps
-		if (lumen[frame-1] != null)
-			removeLumenOverlap(allCells, frame, lumen);	
+		ArrayList<DotN> dotsNewRegion = setNewRegion(frame, newPolygonInterpolated, zScale);
+		ArrayList<DotN> integratedDots = integrateNewRegion(dotsNewRegion, allCells.get(selectedCell).dotsList, frame,
+				zScale);
+		allCells.get(selectedCell).setDotsList(integratedDots);
+		// verify if the frame has lumen and do the fuction to remove lumen
+		// overlaps
+		if (lumen[frame - 1] != null)
+			removeLumenOverlap(allCells, frame, lumen, zScale);
+
 		return allCells;
 	}
-	 
+
 	/**
 	 * @param xCell
 	 * @param yCell
 	 */
-	public Roi[] getRois(int[] xCell, int[] yCell, Roi r) {
+	public static Roi[] getRois(int[] xCell, int[] yCell, Roi r) {
 		Roi[] overRoi = new Roi[xCell.length];
 		for (int nDot = 0; nDot < xCell.length; nDot++) {
-			PointRoi point = new PointRoi(xCell[nDot] +(int) r.getXBase(),yCell[nDot] + (int) r.getYBase());
+			PointRoi point = new PointRoi(xCell[nDot] + (int) r.getXBase(), yCell[nDot] + (int) r.getYBase());
 			overRoi[nDot] = point;
 		}
 		return overRoi;
@@ -115,57 +121,57 @@ public class RoiAdjustment {
 	 * @param shapeRoi
 	 * @return
 	 */
-	public Roi[] preProcessingConcaveHull(ShapeRoi shape) {
-		PolygonRoi polygon = new PolygonRoi(shape.getContainedFloatPoints(),6);
+	public static Roi[] preProcessingConcaveHull(ShapeRoi shape) {
+		PolygonRoi polygon = new PolygonRoi(shape.getContainedFloatPoints(), 6);
 		ArrayList<Roi> overRoiList = new ArrayList<Roi>();
 		Rectangle mask = new Rectangle(polygon.getBounds());
 
-			for (int x = 0; x < mask.getWidth(); x++) {
-				 for (int y = 0; y < mask.getHeight(); y++) {
-					 if (polygon.contains(x+mask.getLocation().x, y+mask.getLocation().y)) {
-						PointRoi point = new PointRoi((x + mask.getLocation().x), (y + mask.getLocation().y));
-						overRoiList.add(point);
-					}
+		for (int x = 0; x < mask.getWidth(); x++) {
+			for (int y = 0; y < mask.getHeight(); y++) {
+				if (polygon.contains(x + mask.getLocation().x, y + mask.getLocation().y)) {
+					PointRoi point = new PointRoi((x + mask.getLocation().x), (y + mask.getLocation().y));
+					overRoiList.add(point);
 				}
-				
 			}
-		
+
+		}
+
 		Roi[] overRois = overRoiList.toArray(new Roi[overRoiList.size()]);
 		return overRois;
-	}	
-	
+	}
+
 	// ConcaveHull algoritm
-	public PolygonRoi getConcaveHull(Roi[] rois, double threshold) {
-	GeometryFactory geoF = new GeometryFactory();
-	com.vividsolutions.jts.geom.Point[] allPoints = new com.vividsolutions.jts.geom.Point[rois.length];
-	
-	for (int i = 0; i < rois.length; i++) {
-		Coordinate coordinate = new Coordinate(rois[i].getXBase(), rois[i].getYBase());
-		allPoints[i] = geoF.createPoint(coordinate);
+	public static PolygonRoi getConcaveHull(Roi[] rois, double threshold) {
+		GeometryFactory geoF = new GeometryFactory();
+		com.vividsolutions.jts.geom.Point[] allPoints = new com.vividsolutions.jts.geom.Point[rois.length];
+
+		for (int i = 0; i < rois.length; i++) {
+			Coordinate coordinate = new Coordinate(rois[i].getXBase(), rois[i].getYBase());
+			allPoints[i] = geoF.createPoint(coordinate);
+		}
+
+		ArrayList<com.vividsolutions.jts.geom.Point> geoList = new ArrayList<com.vividsolutions.jts.geom.Point>(
+				Arrays.asList(allPoints));
+
+		Geometry geoP = geoF.buildGeometry(geoList);
+
+		ConcaveHull ch = new ConcaveHull(geoP, threshold);
+
+		Geometry newGeoP = ch.getConcaveHull();
+		Coordinate[] coords = newGeoP.getCoordinates();
+		int[] xPoints = new int[coords.length];
+		int[] yPoints = new int[coords.length];
+
+		for (int i = 0; i < yPoints.length; i++) {
+			xPoints[i] = (int) coords[i].x;
+			yPoints[i] = (int) coords[i].y;
+		}
+
+		PolygonRoi poly = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
+
+		return poly;
 	}
 
-	ArrayList<com.vividsolutions.jts.geom.Point> geoList = new ArrayList<com.vividsolutions.jts.geom.Point>(
-			Arrays.asList(allPoints));
-
-	Geometry geoP = geoF.buildGeometry(geoList);
-	
-	ConcaveHull ch = new ConcaveHull(geoP, threshold);
-	
-	Geometry newGeoP = ch.getConcaveHull();
-	Coordinate[] coords = newGeoP.getCoordinates();
-	int[] xPoints = new int[coords.length];
-	int[] yPoints = new int[coords.length];
-
-	for (int i = 0; i < yPoints.length; i++) {
-		xPoints[i] = (int) coords[i].x;
-		yPoints[i] = (int) coords[i].y;
-	}
-
-	PolygonRoi poly = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
-	
-	return poly;
-}
-	
 	/**
 	 * 
 	 * @param newDots
@@ -176,7 +182,8 @@ public class RoiAdjustment {
 	 * @return all the dots which will represent the new Cell3D: (newDots +
 	 *         oldDots - oldDots(frame))
 	 */
-	public ArrayList<DotN> integrateNewRegion(ArrayList<DotN> newDots, ArrayList<DotN> oldDots, int frame) {
+	public static ArrayList<DotN> integrateNewRegion(ArrayList<DotN> newDots, ArrayList<DotN> oldDots, int frame,
+			float zScale) {
 		ArrayList<DotN> currentDots = new ArrayList<DotN>();
 		for (int i = 0; i < oldDots.size(); i++) {
 			DotN dot = oldDots.get(i);
@@ -201,7 +208,7 @@ public class RoiAdjustment {
 	 * @param poly:
 	 *            PolygonRoi which represent the new Region
 	 */
-	public ArrayList<DotN> setNewRegion(int frame, PolygonRoi poly) {
+	public static ArrayList<DotN> setNewRegion(int frame, PolygonRoi poly, float zScale) {
 		ArrayList<DotN> dotsNewRegion = new ArrayList<DotN>();
 		int[] xPolygon = poly.getXCoordinates();
 		int[] yPolygon = poly.getYCoordinates();
@@ -215,13 +222,13 @@ public class RoiAdjustment {
 		return dotsNewRegion;
 	}
 
-/**
- * 
- * @param frame
- * @param rois
- * @return
- */
-	public ArrayList<DotN> RoisToDots(int frame, Roi[] rois) {
+	/**
+	 * 
+	 * @param frame
+	 * @param rois
+	 * @return
+	 */
+	public static ArrayList<DotN> RoisToDots(int frame, Roi[] rois, float zScale) {
 		ArrayList<DotN> dotsNewRegion = new ArrayList<DotN>();
 		for (int nDot = 0; nDot < rois.length; nDot++) {
 			DotN newDot = new DotN();
@@ -232,19 +239,17 @@ public class RoiAdjustment {
 		}
 		return dotsNewRegion;
 	}
-	
-	//Calculate the euclidean distance between two points
-	//x1 is the current point, x2 is the next point
-	public float distEu (float x2,float x1, float y2, float y1)
-	{
+
+	// Calculate the euclidean distance between two points
+	// x1 is the current point, x2 is the next point
+	public static float distEu(float x2, float x1, float y2, float y1) {
 		float disEu = 0;
-			disEu = (float) Math.sqrt(Math.pow((x2-x1), 2) + Math.pow((y2-y1), 2));
+		disEu = (float) Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));
 		return disEu;
 	}
-	
-	//If the dots are less than 2 return the same polygon
-	public PolygonRoi getOrderDots(PolygonRoi poly)
-	{
+
+	// If the dots are less than 2 return the same polygon
+	public static PolygonRoi getOrderDots(PolygonRoi poly) {
 		FloatPolygon p = poly.getFloatPolygon();
 		int dis = p.npoints;
 		if (dis == 0) {
@@ -256,15 +261,13 @@ public class RoiAdjustment {
 		if (dis == 2) {
 			return poly;
 		}
-		//if dots are more than 2 return orderDots
+		// if dots are more than 2 return orderDots
 		return orderDots(poly);
 	}
-	
-	
-	//Order the dots according there euclidean distance
-	public PolygonRoi orderDots(PolygonRoi poly)
-	{
-		//get the x,y points from poly
+
+	// Order the dots according there euclidean distance
+	public static PolygonRoi orderDots(PolygonRoi poly) {
+		// get the x,y points from poly
 		FloatPolygon p = poly.getFloatPolygon();
 		float[] x = p.xpoints;
 		float[] y = p.ypoints;
@@ -273,93 +276,83 @@ public class RoiAdjustment {
 		float[] NAX = new float[dis];
 		float[] NAY = new float[dis];
 		int pos = 0;
-		//order the dots with the nearest points
-		for(int i = 0; i < dis; i++)
-		{
-			//start the cicle with the same first point 
-			if(i == 0)
-			{
-				NAX[i] = x[i];//migrate the first position to new array
+		// order the dots with the nearest points
+		for (int i = 0; i < dis; i++) {
+			// start the cicle with the same first point
+			if (i == 0) {
+				NAX[i] = x[i];// migrate the first position to new array
 				NAY[i] = y[i];
-				x[i] = 0; //empty the old position
+				x[i] = 0; // empty the old position
 				y[i] = 0;
-			}
-			else
-			{	
-				//calculate the distance between the current point (i) with the next point (k)
-				for(int k = 0; k < dis; k++)
-					disEu[k] = distEu(x[k],NAX[i-1],y[k],NAY[i-1]);
+			} else {
+				// calculate the distance between the current point (i) with the
+				// next point (k)
+				for (int k = 0; k < dis; k++)
+					disEu[k] = distEu(x[k], NAX[i - 1], y[k], NAY[i - 1]);
 				float men = disEu[0];
-				//calculate the less distance and save the position
-				for(int k = 0; k < dis; k++)
-				{
+				// calculate the less distance and save the position
+				for (int k = 0; k < dis; k++) {
 					float comp = disEu[k];
-					if(men > comp)
-					{
+					if (men > comp) {
 						men = comp;
 						pos = k;
 					}
 				}
-				//put in the new array the point with less distances 
+				// put in the new array the point with less distances
 				NAX[i] = x[pos];
 				NAY[i] = y[pos];
-				//erase the number from the old array
+				// erase the number from the old array
 				x[pos] = 0;
 				y[pos] = 0;
 			}
-				
+
 		}
-		
-		//order the final dots
+
+		// order the final dots
 		float sum = 0;
-		//calculate all the distances and sum the values
-		for (int i = 0; i < dis; i++)
-		{
-			if (i == dis-1)
-			{
-				//the last distance is compared with the first position to verify if the polygon is closed
-				disEu[i] = distEu(NAX[0],NAX[i],NAY[0],NAY[i]);
+		// calculate all the distances and sum the values
+		for (int i = 0; i < dis; i++) {
+			if (i == dis - 1) {
+				// the last distance is compared with the first position to
+				// verify if the polygon is closed
+				disEu[i] = distEu(NAX[0], NAX[i], NAY[0], NAY[i]);
 				sum = sum + disEu[i];
-			}
-			else
-			{
-				disEu[i] = distEu(NAX[i+1],NAX[i],NAY[i+1],NAY[i]);	
+			} else {
+				disEu[i] = distEu(NAX[i + 1], NAX[i], NAY[i + 1], NAY[i]);
 				sum = sum + disEu[i];
 			}
 		}
-		//calculate the distance average
-		float av = (sum/dis);
-		int fin = dis-1;
+		// calculate the distance average
+		float av = (sum / dis);
+		int fin = dis - 1;
 		float cond = 0;
-		//create a condition if the average is bigger than 5 multiply for 5
-		//with this calculation we define the less distance around 25
-		if(av > 5)
-			cond = av*5;
+		// create a condition if the average is bigger than 5 multiply for 5
+		// with this calculation we define the less distance around 25
+		if (av > 5)
+			cond = av * 5;
 		else
-			cond = av*10;
-		//check and order all the points until the polygon is closed
-		//if the polygon never close the cicle have limit of tries to not create a infinite cicle
-		for(int j = 0; j < fin; j++)
-		{
-			//verify if the last point is separate to the initial (polygon doesn't closed)
-			if(disEu[fin] > cond)
-			{
-				//if the polygon is not close, calculate the distance again to find the nearest point
-				for (int i = 0; i < dis; i++)
-				{
+			cond = av * 10;
+		// check and order all the points until the polygon is closed
+		// if the polygon never close the cicle have limit of tries to not
+		// create a infinite cicle
+		for (int j = 0; j < fin; j++) {
+			// verify if the last point is separate to the initial (polygon
+			// doesn't closed)
+			if (disEu[fin] > cond) {
+				// if the polygon is not close, calculate the distance again to
+				// find the nearest point
+				for (int i = 0; i < dis; i++) {
 					if (i == fin)
-						disEu[i] = distEu(NAX[0],NAX[fin],NAY[0],NAY[fin]);
+						disEu[i] = distEu(NAX[0], NAX[fin], NAY[0], NAY[fin]);
 					else
-						disEu[i] = distEu(NAX[i],NAX[fin],NAY[i],NAY[fin]);
+						disEu[i] = distEu(NAX[i], NAX[fin], NAY[i], NAY[fin]);
 				}
 				float men = disEu[0];
 				pos = 0;
-				//looking for the nearest point
-				for(int k = 0; k < dis; k++)
-				{
+				// looking for the nearest point
+				for (int k = 0; k < dis; k++) {
 					float comp = disEu[k];
-					if(men > comp && k != fin-1)
-					{
+					if (men > comp && k != fin - 1) {
 						men = comp;
 						pos = k;
 					}
@@ -367,154 +360,143 @@ public class RoiAdjustment {
 				// X and Y will save the last position to insert in the new one
 				float X = NAX[fin];
 				float Y = NAY[fin];
-				//Move the numbers to delate the last position 
-				//the position now is empty to insert the last number
-				for(int i = fin; i > pos+1; i--)
-				{
-					NAX[i] = NAX[i-1];
-					NAY[i] = NAY[i-1];
+				// Move the numbers to delate the last position
+				// the position now is empty to insert the last number
+				for (int i = fin; i > pos + 1; i--) {
+					NAX[i] = NAX[i - 1];
+					NAY[i] = NAY[i - 1];
 				}
-				//Insert the last position in the new position after the nearest point
-				NAX[pos+1] = X;
-				NAY[pos+1] = Y;
-				//calculate again the distance to verify if the polygon is closed and repeat
-				for (int i = 0; i < dis; i++)
-				{
-					if (i == dis-1)
-						disEu[i] = distEu(NAX[0],NAX[i],NAY[0],NAY[i]);
+				// Insert the last position in the new position after the
+				// nearest point
+				NAX[pos + 1] = X;
+				NAY[pos + 1] = Y;
+				// calculate again the distance to verify if the polygon is
+				// closed and repeat
+				for (int i = 0; i < dis; i++) {
+					if (i == dis - 1)
+						disEu[i] = distEu(NAX[0], NAX[i], NAY[0], NAY[i]);
 					else
-						disEu[i] = distEu(NAX[i+1],NAX[i],NAY[i+1],NAY[i]);	
-	
+						disEu[i] = distEu(NAX[i + 1], NAX[i], NAY[i + 1], NAY[i]);
+
 				}
 			}
 		}
-		//transform the array to polygon
-		PolygonRoi pol = new PolygonRoi(NAX,NAY,dis,2);
-		//fill the distance between points with more points to define correctly the polygon
-		PolygonRoi postPol = new PolygonRoi(pol.getInterpolatedPolygon(2, true),2);
+		// transform the array to polygon
+		PolygonRoi pol = new PolygonRoi(NAX, NAY, dis, 2);
+		// fill the distance between points with more points to define correctly
+		// the polygon
+		PolygonRoi postPol = new PolygonRoi(pol.getInterpolatedPolygon(2, true), 2);
 		return postPol;
 	}
-	
-	public void removeLumenOverlap(ArrayList<Cell3D> allCells, int frame, PolygonRoi[][] lumen)
-	{
-		//start to verify all the cells
-		for (int nCell = 0; nCell < allCells.size(); nCell++) 
-		{
-			//only will do if the frame have lumen and the cell size is major to 0 
-			if (lumen[frame-1] != null & allCells.get(nCell).getCell3DAt(frame).size() > 0) 
-			{
-				//get the x, y points of the current cell
+
+	public static void removeLumenOverlap(ArrayList<Cell3D> allCells, int frame, PolygonRoi[][] lumen, float zScale) {
+		// start to verify all the cells
+		for (int nCell = 0; nCell < allCells.size(); nCell++) {
+			// only will do if the frame have lumen and the cell size is major
+			// to 0
+			if (lumen[frame - 1] != null & allCells.get(nCell).getCell3DAt(frame).size() > 0) {
+				// get the x, y points of the current cell
 				float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).getCell3DAt(frame));
 				float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).getCell3DAt(frame));
-				//create the polygon and the shape with the curren cell			
+				// create the polygon and the shape with the curren cell
 				PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
 				ShapeRoi r = new ShapeRoi(overlappingCell);
 				ShapeRoi s = new ShapeRoi(overlappingCell);
 				ShapeRoi s2 = new ShapeRoi(overlappingCell);
-				//verify if lumen have 2 polygon
-				if(lumen[frame-1][1] != null)
-				{
-					//transform the lumen to polygon and shape
-					java.awt.Polygon l = lumen[frame-1][0].getPolygon();
+				// verify if lumen have 2 polygon
+				if (lumen[frame - 1][1] != null) {
+					// transform the lumen to polygon and shape
+					java.awt.Polygon l = lumen[frame - 1][0].getPolygon();
 					ShapeRoi lum = new ShapeRoi(l);
-					//verify if the cell overlap with the lumen
+					// verify if the cell overlap with the lumen
 					s.and(lum);
-					java.awt.Polygon l2 = lumen[frame-1][1].getPolygon();
+					java.awt.Polygon l2 = lumen[frame - 1][1].getPolygon();
 					ShapeRoi lum2 = new ShapeRoi(l2);
-					s2.and(lum2);	
-					//if the cell overlap with lumen width and height must be different to 0 
-					//this step will do twice for each part of the lumen
-					if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) 
-						{
-							//get the point without lumen
-							//not return all the points not contained in lumen
-							PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(),6);					
-								
-							Roi[] overRoi = getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
-							//get the border of the new polygon															
-							PolygonRoi poly = getConcaveHull(overRoi,1);	
-							//save the new polygon as dots
-							ArrayList<DotN> dotsNewRegion1 = setNewRegion(frame, poly);
-							ArrayList<DotN> integratedDots1 = integrateNewRegion(dotsNewRegion1,
-									allCells.get(nCell).dotsList, frame);
-									
-							Cell3D newCell1 = new Cell3D(allCells.get(nCell).id_Cell, integratedDots1);
-							allCells.set(nCell, newCell1);
-							
-						}
-					//repeat the same action as above
-					if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0)
-							{						
-								PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(),6);	
-									
-								Roi[] overRoi2 = getRois(polygon2.getXCoordinates(), polygon2.getYCoordinates(), polygon2);
-									
-								PolygonRoi poly2 = getConcaveHull(overRoi2,1);
-									
-								ArrayList<DotN> dotsNewRegion2 = setNewRegion(frame, poly2);
-								ArrayList<DotN> integratedDots2 = integrateNewRegion(dotsNewRegion2,
-										allCells.get(nCell).dotsList, frame);
-									
-								Cell3D newCell2 = new Cell3D(allCells.get(nCell).id_Cell, integratedDots2);
-								allCells.set(nCell, newCell2);
-							}
-					
-				}	
-				//if the lumen only have one polygon do the same action as above once
-				else if(lumen[frame-1][0] != null)
-				{
-					java.awt.Polygon l1 = lumen[frame-1][0].getPolygon();											
-					ShapeRoi lum1 = new ShapeRoi(l1);
-					s.and(lum1);					
-					
-					if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0)
-					{
-						PolygonRoi polygon = new PolygonRoi(r.not(lum1).getContainedFloatPoints(),6);
-							
+					s2.and(lum2);
+					// if the cell overlap with lumen width and height must be
+					// different to 0
+					// this step will do twice for each part of the lumen
+					if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
+						// get the point without lumen
+						// not return all the points not contained in lumen
+						PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(), 6);
+
 						Roi[] overRoi = getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
-							
-						PolygonRoi poly = getConcaveHull(overRoi,1);							
-							
-						ArrayList<DotN> dotsNewRegion2 = setNewRegion(frame, poly);
-							
+						// get the border of the new polygon
+						PolygonRoi poly = getConcaveHull(overRoi, 1);
+						// save the new polygon as dots
+						ArrayList<DotN> dotsNewRegion1 = setNewRegion(frame, poly, zScale);
+						ArrayList<DotN> integratedDots1 = integrateNewRegion(dotsNewRegion1,
+								allCells.get(nCell).dotsList, frame, zScale);
+
+						allCells.get(nCell).setDotsList(integratedDots1);
+
+					}
+					// repeat the same action as above
+					if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0) {
+						PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(), 6);
+
+						Roi[] overRoi2 = getRois(polygon2.getXCoordinates(), polygon2.getYCoordinates(), polygon2);
+
+						PolygonRoi poly2 = getConcaveHull(overRoi2, 1);
+
+						ArrayList<DotN> dotsNewRegion2 = setNewRegion(frame, poly2, zScale);
 						ArrayList<DotN> integratedDots2 = integrateNewRegion(dotsNewRegion2,
-								allCells.get(nCell).dotsList, frame);
-															
+								allCells.get(nCell).dotsList, frame, zScale);
 
-						Cell3D newCell2 = new Cell3D(allCells.get(nCell).id_Cell, integratedDots2);
-						allCells.set(nCell, newCell2);
+						allCells.get(nCell).setDotsList(integratedDots2);
+					}
 
-					
-					}	
+				}
+				// if the lumen only have one polygon do the same action as
+				// above once
+				else if (lumen[frame - 1][0] != null) {
+					java.awt.Polygon l1 = lumen[frame - 1][0].getPolygon();
+					ShapeRoi lum1 = new ShapeRoi(l1);
+					s.and(lum1);
+
+					if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
+						PolygonRoi polygon = new PolygonRoi(r.not(lum1).getContainedFloatPoints(), 6);
+
+						Roi[] overRoi = getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
+
+						PolygonRoi poly = getConcaveHull(overRoi, 1);
+
+						ArrayList<DotN> dotsNewRegion2 = setNewRegion(frame, poly, zScale);
+
+						ArrayList<DotN> integratedDots2 = integrateNewRegion(dotsNewRegion2,
+								allCells.get(nCell).dotsList, frame, zScale);
+
+						allCells.get(nCell).setDotsList(integratedDots2);
+
+					}
 				}
 			}
 		}
 	}
-	
-	public ArrayList<TextRoi> getLabelCells(ArrayList<Cell3D> allCells) {
+
+	public static ArrayList<TextRoi> getLabelCells(ArrayList<Cell3D> allCells) {
 		ArrayList<TextRoi> textRois = new ArrayList<TextRoi>();
-		for (int nCell = 0; nCell < allCells.size(); nCell++) 
-			{		
-			//if the cell is not empty in the frame do the calculation
-				if (allCells.get(nCell).dotsList.size() > 0) {
-				//get the x,y points of the cell
+		for (int nCell = 0; nCell < allCells.size(); nCell++) {
+			// if the cell is not empty in the frame do the calculation
+			if (allCells.get(nCell).dotsList.size() > 0) {
+				// get the x,y points of the cell
 				float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).dotsList);
 				float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).dotsList);
-				
-				//create the shape of the cell
+
+				// create the shape of the cell
 				PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
 				double[] centroid = overlappingCell.getContourCentroid();
-				TextRoi labelCell = new TextRoi(centroid[0], centroid[1], Integer.toString(nCell+1));
+				TextRoi labelCell = new TextRoi(centroid[0], centroid[1], Integer.toString(nCell + 1));
 				labelCell.setColor(Color.WHITE);
 				textRois.add(labelCell);
-			//}
-				
-		//}
-				
-				
-				}
+				// }
+
+				// }
+
 			}
+		}
 		return textRois;
-	
+
 	}
 }
