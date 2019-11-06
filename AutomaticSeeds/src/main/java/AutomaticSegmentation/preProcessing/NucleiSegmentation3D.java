@@ -1,15 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package AutomaticSegmentation.preProcessing;
 
 import ij.IJ;
 import ij.ImagePlus;
-import ij.WindowManager;
-import ij.gui.GenericDialog;
-import ij.plugin.PlugIn;
 import java.io.File;
 import filters.Bandpass3D;
 
