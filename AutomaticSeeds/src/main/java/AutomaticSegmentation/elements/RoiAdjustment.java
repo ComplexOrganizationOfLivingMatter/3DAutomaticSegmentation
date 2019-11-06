@@ -13,6 +13,7 @@ import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 
 import eu.kiaru.limeseg.struct.DotN;
+import ij.ImagePlus;
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
@@ -475,25 +476,29 @@ public class RoiAdjustment {
 		}
 	}
 
-	public static ArrayList<TextRoi> getLabelCells(ArrayList<Cell3D> allCells) {
-		ArrayList<TextRoi> textRois = new ArrayList<TextRoi>();
-		for (int nCell = 0; nCell < allCells.size(); nCell++) {
-			// if the cell is not empty in the frame do the calculation
-			if (allCells.get(nCell).dotsList.size() > 0) {
-				// get the x,y points of the cell
-				float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).dotsList);
-				float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).dotsList);
+	public static TextRoi[][] getLabelCells(ArrayList<Cell3D> allCells, ImagePlus imp) {
+		TextRoi[][] textRois = new TextRoi[allCells.size()][imp.getStackSize()];
+		for (int nSlice = 0; nSlice < imp.getStackSize(); nSlice++) {
+			for (int nCell = 0; nCell < allCells.size(); nCell++) {
+				// if the cell is not empty in the frame do the calculation
+				if (allCells.get(nCell).getCell3DAt(nSlice).size() > 0) {
+					// get the x,y points of the cell
+					float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).getCell3DAt(nSlice));
+					float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).getCell3DAt(nSlice));
 
-				// create the shape of the cell
-				PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
-				double[] centroid = overlappingCell.getContourCentroid();
-				TextRoi labelCell = new TextRoi(centroid[0], centroid[1], Integer.toString(nCell + 1));
-				labelCell.setColor(Color.WHITE);
-				textRois.add(labelCell);
-				// }
+					// create the shape of the cell
+					PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
+					double[] centroid = overlappingCell.getContourCentroid();
+					TextRoi labelCell = new TextRoi(centroid[0], centroid[1], Integer.toString(nCell + 1));
+					labelCell.setColor(Color.WHITE);
+					textRois[nCell][nSlice] = labelCell;
+					// }
 
-				// }
+					// }
 
+				} else {
+					textRois[nCell][nSlice] = null;
+				}
 			}
 		}
 		return textRois;
