@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -59,13 +60,13 @@ import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
 import ij.IJ;
-import ij.ImageListener;
 import ij.ImagePlus;
 import ij.gui.Overlay;
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
+import ij.gui.TextRoi;
 import ij.process.ImageProcessor;
 
 /**
@@ -86,6 +87,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	private Cell3D PostProcessCell;
 	private ArrayList<Cell3D> all3dCells;
 	private PolygonRoi polyRoi;
+	private ArrayList<TextRoi> labelCells;
 	private PolygonRoi[][] lumenDots;
 	private ImagePlus cellOutlineChannel;
 
@@ -98,6 +100,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	private JComboBox<String> checkOverlay;
 	private JComboBox<String> checkLumen;
 	private JSpinner cellSpinner;
+	private JCheckBox checkIdCells;
 
 	/**
 	 * 
@@ -117,7 +120,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		LimeSeg.allCells = new ArrayList<Cell>();
 		LimeSegCell = new Cell();
 		all3dCells = new ArrayList<Cell3D>();
-		
+		labelCells = new ArrayList<TextRoi>();
 		fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		
@@ -229,6 +232,15 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			LimeSeg.putAllCellsTo3DDisplay();
 			System.out.println("READY");
 		}
+		
+		if (e.getSource() == checkIdCells) {
+			if (checkIdCells.isSelected()) {
+			labelCells = newCell.getLabelCells(all3dCells);
+			} else {
+				labelCells.clear();
+			}
+				updateOverlay();
+		}
 	}
 
 	/*-------------------- GETTERS AND SETTERS ----------------------*/
@@ -302,9 +314,13 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		btn3DDisplay.setMinimumSize(new Dimension(150, 20));
 		btPostLimeSeg = new JButton("Run PostProcessing");
 		btPostLimeSeg.addActionListener(this);
+		
+		checkIdCells= new JCheckBox("Label cells");
+		checkIdCells.addActionListener(this);
 
 		// Add components
-		this.add(btn3DDisplay, "align center");
+		//this.add(btn3DDisplay, "align center");
+		this.add(checkIdCells, "align center");
 		this.add(cellsLabel, "align right");
 		this.add(cellSpinner, "align center, wrap");
 		this.add(btPostLimeSeg, "align center");
@@ -427,6 +443,12 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					ov.addElement(lumen[frame - 1][1]);
 			}
 			// TODO: change this part of the code
+			if (labelCells.size() > 0) {
+				for (TextRoi text : labelCells) {
+					ov.addElement(text);
+				}
+				
+			}
 
 		}
 		return ov;
