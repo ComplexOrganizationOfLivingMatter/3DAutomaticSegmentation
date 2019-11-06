@@ -158,6 +158,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
 						cbOverlay.addActionListener(this);
 						checkLumen.addActionListener(this);
+						checkIdCells.addActionListener(this);
+						checkIdCells.setSelected(true);
 						btnInsert.addActionListener(this);
 						btnPostSave.addActionListener(this);
 						btnLumen.addActionListener(this);
@@ -304,7 +306,6 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		btPostLimeSeg.addActionListener(this);
 
 		checkIdCells = new JCheckBox("Label cells");
-		checkIdCells.addActionListener(this);
 
 		// Add components
 		// this.add(btn3DDisplay, "align center");
@@ -732,6 +733,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					zIndex++;
 				}
 				checkLumen.setEnabled(true);
+				checkLumen.setSelected(true);
 			} else {
 				IJ.log("Any lumen file selected");
 			}

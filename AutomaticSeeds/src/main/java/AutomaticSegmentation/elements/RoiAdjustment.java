@@ -489,12 +489,18 @@ public class RoiAdjustment {
 					// create the shape of the cell
 					PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
 					double[] centroid = overlappingCell.getContourCentroid();
-					TextRoi labelCell = new TextRoi(centroid[0], centroid[1], Integer.toString(nCell + 1));
-					labelCell.setColor(Color.WHITE);
-					textRois[nCell][nSlice] = labelCell;
-					// }
+					double pepe = centroid[0];
+					double pepe2 = centroid[1];
+					if (centroid[0] > 1 & centroid[1] > 1) {
+						TextRoi labelCell = new TextRoi(centroid[0], centroid[1], Integer.toString(nCell + 1));
+						labelCell.setColor(Color.WHITE);
+						labelCell.setLocation(centroid[0] - (labelCell.getFloatWidth() / 2),
+								centroid[1] - (labelCell.getFloatHeight() / 2));
+						textRois[nCell][nSlice] = labelCell;
 
-					// }
+					} else {
+						textRois[nCell][nSlice] = null;
+					}
 
 				} else {
 					textRois[nCell][nSlice] = null;
