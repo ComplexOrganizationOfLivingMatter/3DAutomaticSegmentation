@@ -3,6 +3,7 @@ package AutomaticSegmentation.elements;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.List;
 
 import AutomaticSegmentation.gui.PanelPostProcessing;
 import eu.kiaru.limeseg.struct.Cell;
@@ -194,17 +195,22 @@ public class Cell3D extends Cell {
 	public ArrayList<DotN> processLimeSegOutput(ArrayList<DotN> allDots, float zScale) {
 		ArrayList<DotN> newDots = new ArrayList<DotN>();
 		for (int numFrame = 0; numFrame < this.totalFrames; numFrame++) {
-			ArrayList<DotN> dots = getCell3DAt(allDots, numFrame);
 
-			if (dots.size() > 0) {
-				int[] xPoints = new int[dots.size()];
-				int[] yPoints = new int[dots.size()];
+			List<Integer> xPoints = new ArrayList<Integer>();
+			List<Integer> yPoints = new ArrayList<Integer>();
 
-				for (int i = 0; i < yPoints.length; i++) {
-					xPoints[i] = (int) dots.get(i).pos.x;
-					yPoints[i] = (int) dots.get(i).pos.y;
+			for (int i = 0; i < allDots.size(); i++) {
+				int zpos = 1 + (int) ((float) (allDots.get(i).pos.z / zScale));
+				if (zpos == numFrame) {
+					xPoints.add((int) allDots.get(i).pos.x);
+					yPoints.add((int) allDots.get(i).pos.y);
 				}
-				PolygonRoi PrePolygon = new PolygonRoi(xPoints, yPoints, xPoints.length, 2);
+			}
+			if (xPoints.size() > 0) {
+				int[] xPoints_array = xPoints.stream().mapToInt(i -> i).toArray();
+				int[] yPoints_array = yPoints.stream().mapToInt(i -> i).toArray();
+
+				PolygonRoi PrePolygon = new PolygonRoi(xPoints_array, yPoints_array, yPoints_array.length, 2);
 				// order the dots according the nearest dots
 				PolygonRoi prePolygon = RoiAdjustment.getOrderDots(PrePolygon);
 				// create a Roi with the polygon from orderDots
