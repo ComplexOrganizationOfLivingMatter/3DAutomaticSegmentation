@@ -22,7 +22,7 @@ import ij.process.FloatPolygon;
 
 /**
  * 
- * @author 
+ * @author
  *
  */
 public class RoiAdjustment {
@@ -34,8 +34,8 @@ public class RoiAdjustment {
 	 * @param frame
 	 * @param id
 	 */
-	public static ArrayList<Cell3D> removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon, int frame,
-			String id, PolygonRoi[][] lumen, float zScale) {
+	public static ArrayList<Cell3D> removeOverlappingRegions(ArrayList<Cell3D> allCells, PolygonRoi newPolygon,
+			int frame, String id, PolygonRoi[][] lumen, float zScale) {
 		// fill the selection with points
 		PolygonRoi newPolygonInterpolated = new PolygonRoi(newPolygon.getInterpolatedPolygon(2, false), 2);
 		int selectedCell = -1;
@@ -83,7 +83,7 @@ public class RoiAdjustment {
 							frame, zScale);
 
 					allCells.get(nCell).setDotsList(integratedDots);
-					
+
 				} else if (allCells.get(nCell).id_Cell == id) {
 					// if the cell is the same only save the value in
 					// selectedCell to add later
@@ -93,13 +93,14 @@ public class RoiAdjustment {
 		}
 		// Replace the cell with the mistaken overlay by the new cell.
 		ArrayList<DotN> dotsNewRegion = setNewRegion(frame, newPolygonInterpolated, zScale);
-		ArrayList<DotN> integratedDots = integrateNewRegion(dotsNewRegion, allCells.get(selectedCell).dotsList, frame, zScale);
+		ArrayList<DotN> integratedDots = integrateNewRegion(dotsNewRegion, allCells.get(selectedCell).dotsList, frame,
+				zScale);
 		allCells.get(selectedCell).setDotsList(integratedDots);
 		// verify if the frame has lumen and do the fuction to remove lumen
 		// overlaps
 		if (lumen[frame - 1] != null)
 			removeLumenOverlap(allCells, frame, lumen, zScale);
-		
+
 		return allCells;
 	}
 
@@ -181,7 +182,8 @@ public class RoiAdjustment {
 	 * @return all the dots which will represent the new Cell3D: (newDots +
 	 *         oldDots - oldDots(frame))
 	 */
-	public static ArrayList<DotN> integrateNewRegion(ArrayList<DotN> newDots, ArrayList<DotN> oldDots, int frame, float zScale) {
+	public static ArrayList<DotN> integrateNewRegion(ArrayList<DotN> newDots, ArrayList<DotN> oldDots, int frame,
+			float zScale) {
 		ArrayList<DotN> currentDots = new ArrayList<DotN>();
 		for (int i = 0; i < oldDots.size(); i++) {
 			DotN dot = oldDots.get(i);
@@ -472,31 +474,29 @@ public class RoiAdjustment {
 			}
 		}
 	}
-	
-	public ArrayList<TextRoi> getLabelCells(ArrayList<Cell3D> allCells) {
+
+	public static ArrayList<TextRoi> getLabelCells(ArrayList<Cell3D> allCells) {
 		ArrayList<TextRoi> textRois = new ArrayList<TextRoi>();
-		for (int nCell = 0; nCell < allCells.size(); nCell++) 
-			{		
-			//if the cell is not empty in the frame do the calculation
-				if (allCells.get(nCell).dotsList.size() > 0) {
-				//get the x,y points of the cell
+		for (int nCell = 0; nCell < allCells.size(); nCell++) {
+			// if the cell is not empty in the frame do the calculation
+			if (allCells.get(nCell).dotsList.size() > 0) {
+				// get the x,y points of the cell
 				float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).dotsList);
 				float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).dotsList);
-				
-				//create the shape of the cell
+
+				// create the shape of the cell
 				PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
 				double[] centroid = overlappingCell.getContourCentroid();
-				TextRoi labelCell = new TextRoi(centroid[0], centroid[1], Integer.toString(nCell+1));
+				TextRoi labelCell = new TextRoi(centroid[0], centroid[1], Integer.toString(nCell + 1));
 				labelCell.setColor(Color.WHITE);
 				textRois.add(labelCell);
-			//}
-				
-		//}
-				
-				
-				}
+				// }
+
+				// }
+
 			}
+		}
 		return textRois;
-	
+
 	}
 }

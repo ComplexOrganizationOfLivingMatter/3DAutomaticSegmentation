@@ -112,13 +112,12 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	public PanelPostProcessing(LayoutManager layout) {
 		super(layout);
 		// TODO Auto-generated constructor stub
-		
+
 		all3dCells = new ArrayList<Cell3D>();
 		labelCells = new ArrayList<TextRoi>();
 		fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-		
-		
+
 		initPostLimeSegPanel();
 	}
 
@@ -139,41 +138,40 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	public void actionPerformed(ActionEvent e) {
 
 		if (e.getSource() == btPostLimeSeg) {
-			
+
 			if (all3dCells.isEmpty()) {
 				btPostLimeSeg.setEnabled(false);
 				setFileChooserProperties("Select the output LimeSeg folder");
 				if (fileChooser.showOpenDialog(this) == fileChooser.APPROVE_OPTION) {
 
-				
-				this.cellOutlineChannel.show();
+					this.cellOutlineChannel.show();
 
-						ExecutorService executor1 = Executors.newSingleThreadExecutor();
-						executor1.submit(() -> {
-							loadPlyFiles();
-							MainAutomatic3DSegmentation.callToolbarPolygon();
-							lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
-							removeCellOverlap();
-							removeCellLumenOverlap();
-							cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(),
-									all3dCells, cellOutlineChannel, false, lumenDots));
-							cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
-							cbOverlay.addActionListener(this);
-							checkLumen.addActionListener(this);
-							btnInsert.addActionListener(this);
-							btnPostSave.addActionListener(this);
-							btnLumen.addActionListener(this);
-							btn3DDisplay.addActionListener(this);
-							cellSpinner.addChangeListener(this);
-							this.setEnablePanel(true);
-							checkLumen.setEnabled(false);
-							executor1.shutdown();
-						});
-					} else{
-						IJ.log("Not output LimeSeg folder selected");
-						btPostLimeSeg.setEnabled(true);
-					}
-				
+					ExecutorService executor1 = Executors.newSingleThreadExecutor();
+					executor1.submit(() -> {
+						loadPlyFiles();
+						MainAutomatic3DSegmentation.callToolbarPolygon();
+						lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
+						removeCellOverlap();
+						removeCellLumenOverlap();
+						cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(), all3dCells,
+								cellOutlineChannel, false, lumenDots));
+						cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
+						cbOverlay.addActionListener(this);
+						checkLumen.addActionListener(this);
+						btnInsert.addActionListener(this);
+						btnPostSave.addActionListener(this);
+						btnLumen.addActionListener(this);
+						btn3DDisplay.addActionListener(this);
+						cellSpinner.addChangeListener(this);
+						this.setEnablePanel(true);
+						checkLumen.setEnabled(false);
+						executor1.shutdown();
+					});
+				} else {
+					IJ.log("Not output LimeSeg folder selected");
+					btPostLimeSeg.setEnabled(true);
+				}
+
 			}
 
 		}
@@ -190,8 +188,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			addROI();
 			// Check if polyRoi is different to null, if is do the modify cell
 			if (polyRoi != null) {
-				all3dCells = RoiAdjustment.removeOverlappingRegions(all3dCells, polyRoi, cellOutlineChannel.getCurrentSlice(),
-						all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, lumenDots, (float) LimeSeg.opt.getOptParam("ZScale"));
+				all3dCells = RoiAdjustment.removeOverlappingRegions(all3dCells, polyRoi,
+						cellOutlineChannel.getCurrentSlice(),
+						all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, lumenDots,
+						(float) LimeSeg.opt.getOptParam("ZScale"));
 				cbOverlay.setSelectedIndex(1);
 				updateOverlay();
 				// After modify cell return poly to null, clean the roi
@@ -225,16 +225,16 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		if (e.getSource() == btn3DDisplay) {
 			LimeSeg.make3DViewVisible();
 			LimeSeg.putAllCellsTo3DDisplay();
-			//LimeSeg.set3DViewCenter(avgX/NCells,avgY/NCells,avgZ/NCells);
+			// LimeSeg.set3DViewCenter(avgX/NCells,avgY/NCells,avgZ/NCells);
 		}
-		
+
 		if (e.getSource() == checkIdCells) {
 			if (checkIdCells.isSelected()) {
-			labelCells = newCell.getLabelCells(all3dCells);
+				labelCells = RoiAdjustment.getLabelCells(all3dCells);
 			} else {
 				labelCells.clear();
 			}
-				updateOverlay();
+			updateOverlay();
 		}
 	}
 
@@ -254,7 +254,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	public void setCellOutlineChannel(ImagePlus cellOutlineChannel) {
 		this.cellOutlineChannel = cellOutlineChannel;
 	}
-	
+
 	/**
 	 * 
 	 */
@@ -262,7 +262,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		fileChooser.setCurrentDirectory(new File(cellOutlineChannel.getOriginalFileInfo().directory));
 		fileChooser.setDialogTitle(title);
 	}
-	
+
 	/**
 	 * 
 	 * @param enabled
@@ -306,12 +306,12 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		btn3DDisplay.setMinimumSize(new Dimension(150, 20));
 		btPostLimeSeg = new JButton("Run PostProcessing");
 		btPostLimeSeg.addActionListener(this);
-		
-		checkIdCells= new JCheckBox("Label cells");
+
+		checkIdCells = new JCheckBox("Label cells");
 		checkIdCells.addActionListener(this);
 
 		// Add components
-		//this.add(btn3DDisplay, "align center");
+		// this.add(btn3DDisplay, "align center");
 		this.add(checkIdCells, "align center");
 		this.add(cellsLabel, "align right");
 		this.add(cellSpinner, "align center, wrap");
@@ -334,22 +334,23 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				return name.startsWith("cell_");
 			}
 		});
-		
-		if (LimeSeg.allCells == null){
+
+		if (LimeSeg.allCells == null) {
 			LimeSeg lms = new LimeSeg();
-	        lms.initialize();
+			lms.initialize();
 			LimeSeg.saveOptState();
 		}
-		
+
 		LimeSeg.opt.setOptParam("ZScale", (float) ((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
 				/ cellOutlineChannel.getOriginalFileInfo().pixelWidth));
-		
+
 		for (File f : files) {
 			String path = f.toString();
 			Cell newBasicCell = new Cell();
 			newBasicCell.id_Cell = path.substring(path.indexOf("_") + 1);
 			IOXmlPlyLimeSeg.hydrateCellT(newBasicCell, path);
-			Cell3D newCell3D = new Cell3D(newBasicCell, (float) LimeSeg.opt.getOptParam("ZScale"), cellOutlineChannel.getStackSize());
+			Cell3D newCell3D = new Cell3D(newBasicCell, (float) LimeSeg.opt.getOptParam("ZScale"),
+					cellOutlineChannel.getStackSize());
 			newCell3D.id = Integer.parseInt(newBasicCell.id_Cell);
 			all3dCells.add(newCell3D);
 			LimeSeg.allCells.add(newCell3D);
@@ -362,8 +363,9 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			}
 		});
 
-		if (files.size > 0)
-			//Display dialog "No ply found"
+		if (files.length == 0)
+			IJ.log("No ply found");
+		// Display dialog "No ply found"
 	}
 
 	/**
@@ -440,7 +442,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				for (TextRoi text : labelCells) {
 					ov.addElement(text);
 				}
-				
+
 			}
 
 		}
@@ -492,7 +494,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							// Later, replace the selected cell by the cell with
 							// the new
 							// region
-							ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly, (float) LimeSeg.opt.getOptParam("ZScale"));
+							ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
+									(float) LimeSeg.opt.getOptParam("ZScale"));
 							ArrayList<DotN> integratedDots = RoiAdjustment.integrateNewRegion(dotsNewRegion,
 									all3dCells.get(nCell).dotsList, nFrame, (float) LimeSeg.opt.getOptParam("ZScale"));
 
@@ -503,12 +506,13 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0) {
 							PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(), 6);
 
-							Roi[] overRoi2 = RoiAdjustment.getRois(polygon2.getXCoordinates(), polygon2.getYCoordinates(),
-									polygon2);
+							Roi[] overRoi2 = RoiAdjustment.getRois(polygon2.getXCoordinates(),
+									polygon2.getYCoordinates(), polygon2);
 
 							PolygonRoi poly2 = RoiAdjustment.getConcaveHull(overRoi2, 1);
 
-							ArrayList<DotN> dotsNewRegion2 = RoiAdjustment.setNewRegion(nFrame, poly2, (float) LimeSeg.opt.getOptParam("ZScale"));
+							ArrayList<DotN> dotsNewRegion2 = RoiAdjustment.setNewRegion(nFrame, poly2,
+									(float) LimeSeg.opt.getOptParam("ZScale"));
 							ArrayList<DotN> integratedDots2 = RoiAdjustment.integrateNewRegion(dotsNewRegion2,
 									all3dCells.get(nCell).dotsList, nFrame, (float) LimeSeg.opt.getOptParam("ZScale"));
 
@@ -531,7 +535,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 							PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
 
-							ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly, (float) LimeSeg.opt.getOptParam("ZScale"));
+							ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
+									(float) LimeSeg.opt.getOptParam("ZScale"));
 
 							ArrayList<DotN> integratedDots = RoiAdjustment.integrateNewRegion(dotsNewRegion,
 									all3dCells.get(nCell).dotsList, nFrame, (float) LimeSeg.opt.getOptParam("ZScale"));
@@ -580,10 +585,11 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 								PolygonRoi polygon = new PolygonRoi(sOverlappingCell.not(r).getContainedFloatPoints(),
 										6);
 
-								Roi[] overRoi = RoiAdjustment.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(),
-										polygon);
+								Roi[] overRoi = RoiAdjustment.getRois(polygon.getXCoordinates(),
+										polygon.getYCoordinates(), polygon);
 								PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
-								ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly, (float) LimeSeg.opt.getOptParam("ZScale"));
+								ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
+										(float) LimeSeg.opt.getOptParam("ZScale"));
 								ArrayList<DotN> integratedDots = RoiAdjustment.integrateNewRegion(dotsNewRegion,
 										all3dCells.get(nC).dotsList, nFrame, (float) LimeSeg.opt.getOptParam("ZScale"));
 
@@ -656,11 +662,13 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 						int pos = dis;
 						int rest = 0;
-						// check if the distance between is less than 100 to split
+						// check if the distance between is less than 100 to
+						// split
 						// in two polygons
 						for (int i = 0; i < dis; i++) {
 							if (disEu[i] > 100) {
-								// if distance more than 100 save the position and
+								// if distance more than 100 save the position
+								// and
 								// the qty of points after the position
 								pos = i;
 								rest = dis - i;
@@ -669,7 +677,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						// if the qty is different to 0 split the roi in two
 						// polygons
 						if (rest != 0) {
-							// save the points after position, this points are the
+							// save the points after position, this points are
+							// the
 							// 2nd polygon
 							float x[] = new float[rest - 1];
 							float y[] = new float[rest - 1];
@@ -693,12 +702,14 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							// find the border with ConcavHull
 							PolygonRoi lum = RoiAdjustment.getConcaveHull(roiDots, THRESHOLD);
 							PolygonRoi lum2 = RoiAdjustment.getConcaveHull(roiDots2, THRESHOLD);
-							lumenDots[zIndex][0] = lum; // save the border in matrix
+							lumenDots[zIndex][0] = lum; // save the border in
+														// matrix
 														// position 0
 							lumenDots[zIndex][1] = lum2; // save the border in
 															// position 1
 						} else {
-							// if is only one polygon, get the polygon, border and
+							// if is only one polygon, get the polygon, border
+							// and
 							// save
 							PolygonRoi poly = new PolygonRoi(xPoints, yPoints, 6);
 							PolygonRoi postpol = new PolygonRoi(poly.getInterpolatedPolygon(2, false), 6);
@@ -717,7 +728,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					}
 
 					zIndex++;
-				} 
+				}
 				checkLumen.setEnabled(true);
 			} else {
 				IJ.log("Any lumen file selected");
@@ -737,78 +748,78 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	public void savePlyFiles() {
 		setFileChooserProperties("Select the segmented lumen folder");
 		if (fileChooser.showOpenDialog(this) == fileChooser.APPROVE_OPTION) {
-		String path = fileChooser.getSelectedFile().toString() + "/newOutputLimeSeg";
-		// instance of a DocumentBuilderFactory
-		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		try {
+			String path = fileChooser.getSelectedFile().toString() + "/newOutputLimeSeg";
+			// instance of a DocumentBuilderFactory
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			try {
 
-			File dir = new File(path);
-			if (!dir.isDirectory()) {
-				System.out.println("New folder created");
-				dir.mkdir();
-			}
-			// By default removes all files in the folder
-			// But ask for confirmation if the folder is not empty...
-			if (dir.listFiles().length != 0) {
-				System.out.println("Saving will remove the content of the folder " + path + " that contains "
-						+ dir.listFiles().length + " files and folders.");
-			}
-			purgeDirectory(dir, 1);
-
-			DocumentBuilder db = dbf.newDocumentBuilder();
-
-			String fromFile = fileChooser.getSelectedFile().toString() + "/OutputLimeSeg/LimeSegParams.xml";
-			String toFile = fileChooser.getSelectedFile().toString() + "/newOutputLimeSeg/LimeSegParams.xml";
-			copyFile(fromFile, toFile);
-
-			all3dCells.forEach(c -> {
-				// Cell Channel
-				Document domCell = db.newDocument();
-				Element cellParams = domCell.createElement("CellParameters");
-				Element channel = domCell.createElement("channel");
-				channel.appendChild(domCell.createTextNode(Integer.toString(c.cellChannel)));
-				cellParams.appendChild(channel);
-				// Cell color
-				// create random light colors for each cell
-				Random rand = new Random();
-				float R = (float) (rand.nextFloat() / 2f + 0.5);
-				float G = (float) (rand.nextFloat() / 2f + 0.5);
-				float B = (float) (rand.nextFloat() / 2f + 0.5);
-
-				Element color = domCell.createElement("color");
-				Element r = domCell.createElement("R");
-				r.appendChild(domCell.createTextNode(Float.toString(R)));
-				color.appendChild(r);
-
-				Element g = domCell.createElement("G");
-				g.appendChild(domCell.createTextNode(Float.toString(G)));
-				color.appendChild(g);
-
-				Element b = domCell.createElement("B");
-				b.appendChild(domCell.createTextNode(Float.toString(B)));
-				color.appendChild(b);
-
-				Element a = domCell.createElement("A");
-				a.appendChild(domCell.createTextNode(Float.toString(100)));
-				color.appendChild(a);
-				cellParams.appendChild(color);
-
-				// Now writes all ply files for CellT object
-				String pathCell = path + File.separator + "cell_" + c.id_Cell + File.separator;
-				File dirCell = new File(pathCell);
-				dirCell.mkdir(); // attempt to create the directory here
-				domCell.appendChild(cellParams);
-				saveXmlFile(pathCell + "CellParams.xml", domCell);
-
-				CellT cellt = new CellT(c, 1);
-				cellt.dots = c.dotsList;
-				if (dirCell.exists()) {
-					IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
+				File dir = new File(path);
+				if (!dir.isDirectory()) {
+					System.out.println("New folder created");
+					dir.mkdir();
 				}
-			});
-		} catch (ParserConfigurationException pce) {
-			System.out.println("Save State: Error trying to instantiate DocumentBuilder " + pce);
-		}
+				// By default removes all files in the folder
+				// But ask for confirmation if the folder is not empty...
+				if (dir.listFiles().length != 0) {
+					System.out.println("Saving will remove the content of the folder " + path + " that contains "
+							+ dir.listFiles().length + " files and folders.");
+				}
+				purgeDirectory(dir, 1);
+
+				DocumentBuilder db = dbf.newDocumentBuilder();
+
+				String fromFile = fileChooser.getSelectedFile().toString() + "/OutputLimeSeg/LimeSegParams.xml";
+				String toFile = fileChooser.getSelectedFile().toString() + "/newOutputLimeSeg/LimeSegParams.xml";
+				copyFile(fromFile, toFile);
+
+				all3dCells.forEach(c -> {
+					// Cell Channel
+					Document domCell = db.newDocument();
+					Element cellParams = domCell.createElement("CellParameters");
+					Element channel = domCell.createElement("channel");
+					channel.appendChild(domCell.createTextNode(Integer.toString(c.cellChannel)));
+					cellParams.appendChild(channel);
+					// Cell color
+					// create random light colors for each cell
+					Random rand = new Random();
+					float R = (float) (rand.nextFloat() / 2f + 0.5);
+					float G = (float) (rand.nextFloat() / 2f + 0.5);
+					float B = (float) (rand.nextFloat() / 2f + 0.5);
+
+					Element color = domCell.createElement("color");
+					Element r = domCell.createElement("R");
+					r.appendChild(domCell.createTextNode(Float.toString(R)));
+					color.appendChild(r);
+
+					Element g = domCell.createElement("G");
+					g.appendChild(domCell.createTextNode(Float.toString(G)));
+					color.appendChild(g);
+
+					Element b = domCell.createElement("B");
+					b.appendChild(domCell.createTextNode(Float.toString(B)));
+					color.appendChild(b);
+
+					Element a = domCell.createElement("A");
+					a.appendChild(domCell.createTextNode(Float.toString(100)));
+					color.appendChild(a);
+					cellParams.appendChild(color);
+
+					// Now writes all ply files for CellT object
+					String pathCell = path + File.separator + "cell_" + c.id_Cell + File.separator;
+					File dirCell = new File(pathCell);
+					dirCell.mkdir(); // attempt to create the directory here
+					domCell.appendChild(cellParams);
+					saveXmlFile(pathCell + "CellParams.xml", domCell);
+
+					CellT cellt = new CellT(c, 1);
+					cellt.dots = c.dotsList;
+					if (dirCell.exists()) {
+						IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
+					}
+				});
+			} catch (ParserConfigurationException pce) {
+				System.out.println("Save State: Error trying to instantiate DocumentBuilder " + pce);
+			}
 		} else {
 			IJ.log("Any folder selected");
 		}
@@ -888,7 +899,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			return false;
 		}
 	}
-	
+
 	/**
 	 * 
 	 */
@@ -926,11 +937,11 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		super(layout, isDoubleBuffered);
 		// TODO Auto-generated constructor stub
 	}
-	
+
 	/**
 	 * 
 	 */
-	public void clear3dCells(){
+	public void clear3dCells() {
 		this.all3dCells.clear();
 	}
 

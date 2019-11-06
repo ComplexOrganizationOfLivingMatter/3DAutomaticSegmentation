@@ -11,8 +11,9 @@ import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 
 /**
- * Class adding some behaviour to LimeSeg's cell.
- * It is used as basic element for the postprocessing protocol.
+ * Class adding some behaviour to LimeSeg's cell. It is used as basic element
+ * for the postprocessing protocol.
+ * 
  * @author Antonio Tagua, Pablo Vicente-Munuera
  *
  */
@@ -54,7 +55,8 @@ public class Cell3D extends Cell {
 	/**
 	 * Get the dots at a specific frame for this Cell
 	 * 
-	 * @param frame z of this Cell
+	 * @param frame
+	 *            z of this Cell
 	 * @return the list of dots at this z frame, if it exists. returns null
 	 *         otherwise
 	 */
@@ -71,11 +73,12 @@ public class Cell3D extends Cell {
 		}
 		return allDots;
 	}
-	
+
 	/**
 	 * Get the dots at a specific frame for this Cell
 	 * 
-	 * @param frame z of this Cell
+	 * @param frame
+	 *            z of this Cell
 	 * @return the list of dots at this z frame, if it exists. returns null
 	 *         otherwise
 	 */
@@ -94,7 +97,8 @@ public class Cell3D extends Cell {
 	}
 
 	/**
-	 * @param id the id to set
+	 * @param id
+	 *            the id to set
 	 */
 	public void setId(Integer id) {
 		this.id = id;
@@ -143,7 +147,7 @@ public class Cell3D extends Cell {
 		for (int nDot = 0; nDot < cellZDots.size(); nDot++) {
 			cellPoints[nDot] = new Point((int) cellZDots.get(nDot).pos.x, (int) cellZDots.get(nDot).pos.y);
 		}
-		
+
 		return cellPoints;
 	}
 
@@ -155,7 +159,8 @@ public class Cell3D extends Cell {
 	}
 
 	/**
-	 * @param dotsList the dotsList to set
+	 * @param dotsList
+	 *            the dotsList to set
 	 */
 	public void setDotsList(ArrayList<DotN> dotsList) {
 		this.dotsList = dotsList;
@@ -169,7 +174,7 @@ public class Cell3D extends Cell {
 			this.dotsList.clear();
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param dots
@@ -179,7 +184,7 @@ public class Cell3D extends Cell {
 			this.dotsList.add(dots.get(nDot));
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @param allDots
@@ -190,11 +195,11 @@ public class Cell3D extends Cell {
 		ArrayList<DotN> newDots = new ArrayList<DotN>();
 		for (int numFrame = 0; numFrame < this.totalFrames; numFrame++) {
 			ArrayList<DotN> dots = getCell3DAt(allDots, numFrame);
-			
+
 			if (dots.size() > 0) {
 				int[] xPoints = new int[dots.size()];
 				int[] yPoints = new int[dots.size()];
-	
+
 				for (int i = 0; i < yPoints.length; i++) {
 					xPoints[i] = (int) dots.get(i).pos.x;
 					yPoints[i] = (int) dots.get(i).pos.y;
@@ -203,17 +208,18 @@ public class Cell3D extends Cell {
 				// order the dots according the nearest dots
 				PolygonRoi prePolygon = RoiAdjustment.getOrderDots(PrePolygon);
 				// create a Roi with the polygon from orderDots
-				Roi[] allRoi = RoiAdjustment.getRois(prePolygon.getXCoordinates(), prePolygon.getYCoordinates(), prePolygon);
+				Roi[] allRoi = RoiAdjustment.getRois(prePolygon.getXCoordinates(), prePolygon.getYCoordinates(),
+						prePolygon);
 				// Calculate the boarder with concave hull
 				PolygonRoi poly = RoiAdjustment.getConcaveHull(allRoi, PanelPostProcessing.THRESHOLD);
 				// Full fill the border with dots
 				PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(1, false), 2);
-	
+
 				Roi[] allRois = RoiAdjustment.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
 				newDots.addAll(RoiAdjustment.RoisToDots(numFrame, allRois, zScale));
 			}
 		}
-		
+
 		return newDots;
 	}
 }
