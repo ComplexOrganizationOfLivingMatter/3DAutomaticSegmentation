@@ -25,6 +25,7 @@ import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.commands.ClearAll;
 import eu.kiaru.limeseg.struct.Cell;
 import ij.IJ;
+import ij.ImageListener;
 import ij.ImagePlus;
 import ij.plugin.frame.RoiManager;
 
@@ -122,8 +123,12 @@ public class PanelLimeSeg extends JPanel implements ActionListener {
 			}
 
 			if (e.getSource() == btShowOutlines) {
-				if (cellOutlineChannel != null) {
+				if (cellOutlineChannel != null && cellOutlineChannel.getStackSize() != 1) {
+					//cellOutlineChannel.show();
+					cellOutlineChannel.close();
 					cellOutlineChannel.duplicate().show();
+				} else {
+					IJ.log("Reselect the cell outline channel");
 				}
 			}
 
@@ -200,7 +205,7 @@ public class PanelLimeSeg extends JPanel implements ActionListener {
 		this.add(js_fPressure, "wrap, align center");
 
 		label_zScale = new JLabel("Z scale:");
-		js_zScale = new JSpinner(new SpinnerNumberModel(1.0, null, null, 0.1));
+		js_zScale = new JSpinner(new SpinnerNumberModel(1.0, null, null, 0.01));
 		js_zScale.setMinimumSize(new Dimension(100, 10));
 		this.add(label_zScale, "align center");
 		this.add(js_zScale, "wrap, align center");

@@ -14,6 +14,8 @@ import java.awt.font.TextAttribute;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -52,58 +54,23 @@ public class PanelPreProcessing extends JPanel {
 	String dir = null;
     int max_nuc_radius = 28,min_nuc_radius = 18, seed_threshold = 29000;
     private JCheckBox prefilteringCheckB;
-	private JLabel maxNucleusSizeLb,minNucleusSizeLb,seedThresholdLb;
-	private JSpinner maxNucleusSizeSpin,minNucleusSizeSpin,seedThresholdSpin;
+	private JLabel maxNucleusSizeLb,minNucleusSizeLb,localMaximaThresholdLb,zScaleLb;
+	private JSpinner maxNucleusSizeSpin,minNucleusSizeSpin,localMaximaThresholdSpin,zScaleSpin;
 	private JButton btRun, btCancel,btLoad,btShowNuclei;
 	private static final long serialVersionUID = 1L;
 	private ImagePlus imp_segmented,nucleiChannel;
 	private ProgressBar progressBar;
+    private Thread preprocessingTask;
+	private final ExecutorService exec = Executors.newFixedThreadPool(1);
 
 	/**
 	 * @param layout
 	 */
-	public PanelPreProcessing(LayoutManager layout) {
+	public PanelPreProcessing(LayoutManager layout)  {
 		super(layout);
-		
 		initPreLimeSegPanel();
-
-		
-		btRun.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-
-				ExecutorService executor1 = Executors.newSingleThreadExecutor();
-				executor1.submit(() -> {
-					btRun.setEnabled(false);
-									
-					int maxN = Integer.valueOf(maxNucleusSizeSpin.getValue().toString()).intValue();
-					int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
-					int nSeed = Integer.valueOf(seedThresholdSpin.getValue().toString()).intValue();
-					String pathImg = nucleiChannel.getOriginalFileInfo().directory;
-					NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,pathImg,maxN,minN,nSeed,prefilteringCheckB.isSelected());
-					imp_segmented = nucSeg3D.segment();
-					btRun.setEnabled(true);
-					imp_segmented.show();
-					RoiManager rm = getNucleiROIs(imp_segmented);
-					executor1.shutdown();
-				});
-
-				// visualization3D (imp_segmented);
-			}
-
-		});
-
-		btShowNuclei.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (nucleiChannel != null) {
-					nucleiChannel.duplicate().show();
-				}
-			}
-		});
-		
+		preprocessingTask = new Thread() {};
+		btCancel.setEnabled(false);
 
 	}
 	
@@ -119,6 +86,8 @@ public class PanelPreProcessing extends JPanel {
 	 */
 	public void setNucleiChannel(ImagePlus nucleiChannel) {
 		this.nucleiChannel = nucleiChannel;
+		zScaleSpin.setValue((float) nucleiChannel.getOriginalFileInfo().pixelDepth/nucleiChannel.getOriginalFileInfo().pixelWidth);
+
 	}
 
 	/**
@@ -136,6 +105,7 @@ public class PanelPreProcessing extends JPanel {
 	}
 
 	
+	
 	/**
 	 * 
 	 */
@@ -145,21 +115,27 @@ public class PanelPreProcessing extends JPanel {
 		// Init GUI elements
 		btRun = new JButton("Run");	
 		btCancel = new JButton("Cancel");
+		btCancel.setEnabled(false);
 		btLoad = new JButton("Load labelled 3D nuclei");
 		btShowNuclei = new JButton("Show nuclei");
 		prefilteringCheckB = new JCheckBox("Pre-filtering (3D median 4-4-2");
 		prefilteringCheckB.setSelected(false);
 		maxNucleusSizeLb = new JLabel("Maximal nucleus size");
 		minNucleusSizeLb = new JLabel("Minimal nucleus size");
-		seedThresholdLb = new JLabel("Seed threshold");
+		localMaximaThresholdLb = new JLabel("Seed threshold");
+		zScaleLb = new JLabel("Z scale");
+
 		
 		/*MODIFY the limits of JSPinners*/
 		maxNucleusSizeSpin = new JSpinner(new SpinnerNumberModel(max_nuc_radius, null, null, 1));
 		maxNucleusSizeSpin.setMinimumSize(new Dimension(100, 10));
 		minNucleusSizeSpin = new JSpinner(new SpinnerNumberModel(min_nuc_radius, null, null, 1));
 		minNucleusSizeSpin.setMinimumSize(new Dimension(100, 10));
-		seedThresholdSpin = new JSpinner(new SpinnerNumberModel(seed_threshold, null, null, 1));
-		seedThresholdSpin.setMinimumSize(new Dimension(100, 10));
+		localMaximaThresholdSpin = new JSpinner(new SpinnerNumberModel(seed_threshold, null, null, 1));
+		localMaximaThresholdSpin.setMinimumSize(new Dimension(100, 10));
+		zScaleSpin = new JSpinner(new SpinnerNumberModel(1.00, null, null, 0.01));
+		zScaleSpin.setMinimumSize(new Dimension(100, 10));
+		
 		
 		progressBar = new ProgressBar(100, 25);		
 		
@@ -172,29 +148,20 @@ public class PanelPreProcessing extends JPanel {
 		this.add(maxNucleusSizeSpin, "wrap,align left");
 		this.add(minNucleusSizeLb,"align left");
 		this.add(minNucleusSizeSpin, "wrap,align left");
-		this.add(seedThresholdLb,"align left");
-		this.add(seedThresholdSpin, "wrap,align left");
+		this.add(localMaximaThresholdLb,"align left");
+		this.add(localMaximaThresholdSpin, "wrap,align left");
+		this.add(zScaleLb,"align left");
+		this.add(zScaleSpin, "wrap,align left");
 		this.add(btRun,"align left,wrap");
 		this.add(btCancel,"align left");
 		this.add(progressBar,"wrap, align left");	
 		this.add(btLoad);
 
+		btRun.addActionListener(listener);
+		btCancel.addActionListener(listener);
+		btLoad.addActionListener(listener);
+		btShowNuclei.addActionListener(listener);
 		
-	}
-
-	public synchronized ImagePlus RunThreshold() {
-		nucleiChannel.duplicate().show();
-		IJ.run("Threshold...");
-		while (IJ.getImage().getProcessor().isBinary() != true) {
-			try {
-				Thread.sleep(5000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		return IJ.getImage().duplicate();
 	}
 
 	public RoiManager getNucleiROIs(ImagePlus imp_segmented) {
@@ -238,5 +205,70 @@ public class PanelPreProcessing extends JPanel {
 		}
 		return rm;
 	}
+	
+	private ActionListener listener = new ActionListener() {
+
+		public void actionPerformed(final ActionEvent e) {
+			
+			// listen to the buttons on separate threads not to block
+			// the event dispatch thread
+			exec.submit(new Runnable() {
+				public void run()
+				{
+					if(e.getSource() == btRun)
+					{
+						preprocessingTask = new Thread() { 
+							public void run(){
+								btRun.setEnabled(false);
+								btCancel.setEnabled(true);
+								
+								int maxN = Integer.valueOf(maxNucleusSizeSpin.getValue().toString()).intValue();
+								int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
+								int maxThresh = Integer.valueOf(localMaximaThresholdSpin.getValue().toString()).intValue();
+								float zStep = Float.valueOf(zScaleSpin.getValue().toString()).floatValue();
+			
+								NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,maxN,minN,zStep,maxThresh,prefilteringCheckB.isSelected());
+								imp_segmented = nucSeg3D.impSegmented.duplicate();
+								btRun.setEnabled(true);
+								imp_segmented.show();
+								RoiManager rm = getNucleiROIs(imp_segmented);
+								//executor.shutdown();
+							}
+						};
+						preprocessingTask.run();
+						preprocessingTask.start();
+					}
+					else if(e.getSource() == btCancel){
+						try { 
+							
+							if(null != preprocessingTask){
+								Thread newTask = new Thread();
+								preprocessingTask.interrupt();
+								// Although not recommended and already deprecated,
+								// use stop command so WEKA classifiers are actually
+								// stopped.
+								preprocessingTask.stop();
+								preprocessingTask = null;
+							}else {
+								IJ.log("Error: interrupting training failed becaused the thread is null!");
+							}
+						}
+						catch(Exception ex){
+							ex.printStackTrace();
+						}
+						
+					}
+					else if(e.getSource() == btLoad){
+						//
+					}
+					else if(e.getSource() == btShowNuclei){
+						if (nucleiChannel != null) {
+							nucleiChannel.duplicate().show();
+						}
+					}
+				}			
+			});
+		}
+	};
 	
 }

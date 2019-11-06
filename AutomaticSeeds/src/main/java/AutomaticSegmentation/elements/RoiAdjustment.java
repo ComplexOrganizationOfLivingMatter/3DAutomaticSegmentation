@@ -1,6 +1,7 @@
 
 package AutomaticSegmentation.elements;
 
+import java.awt.Color;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +17,7 @@ import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
+import ij.gui.TextRoi;
 import ij.process.FloatPolygon;
 
 /**
@@ -47,6 +49,7 @@ public class RoiAdjustment {
 
 				// create the shape of the cell
 				PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
+				double[] centroid = overlappingCell.getContourCentroid();
 				ShapeRoi s = new ShapeRoi(overlappingCell);
 				ShapeRoi r = new ShapeRoi(overlappingCell);
 				// create the shape of the selection
@@ -469,5 +472,31 @@ public class RoiAdjustment {
 			}
 		}
 	}
-
+	
+	public ArrayList<TextRoi> getLabelCells(ArrayList<Cell3D> allCells) {
+		ArrayList<TextRoi> textRois = new ArrayList<TextRoi>();
+		for (int nCell = 0; nCell < allCells.size(); nCell++) 
+			{		
+			//if the cell is not empty in the frame do the calculation
+				if (allCells.get(nCell).dotsList.size() > 0) {
+				//get the x,y points of the cell
+				float[] xCell = allCells.get(nCell).getCoordinate("x", allCells.get(nCell).dotsList);
+				float[] yCell = allCells.get(nCell).getCoordinate("y", allCells.get(nCell).dotsList);
+				
+				//create the shape of the cell
+				PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
+				double[] centroid = overlappingCell.getContourCentroid();
+				TextRoi labelCell = new TextRoi(centroid[0], centroid[1], Integer.toString(nCell+1));
+				labelCell.setColor(Color.WHITE);
+				textRois.add(labelCell);
+			//}
+				
+		//}
+				
+				
+				}
+			}
+		return textRois;
+	
+	}
 }

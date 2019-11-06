@@ -10,6 +10,8 @@ import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -20,11 +22,13 @@ import javax.swing.JTabbedPane;
 import javax.swing.WindowConstants;
 
 import ij.IJ;
+import ij.ImageListener;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij3d.ContentConstants;
 import ij3d.Image3DUniverse;
 import net.miginfocom.swing.MigLayout;
+
 
 /**
  * @author Pablo Vicente-Munuera, Pedro Gómez-Gálvez
@@ -58,7 +62,98 @@ public class MainWindow extends JFrame {
 	private PanelPostProcessing tpPostLimeSeg;
 	private JButton btOpenOriginalImage;
 	private JButton btRemoveItems;
+	private ExecutorService exec;
+	
+	private ActionListener listener = new ActionListener() {				
+		public void actionPerformed(final ActionEvent e) {
+			
+			// listen to the buttons on separate threads not to block
+			// the event dispatch thread
+			exec.submit(new Runnable() {
+												
+				@SuppressWarnings("static-access")
+				public void run(){
+					if(e.getSource() == btOpenOriginalImage){
+						try {
+							// We just can't open multiple images
+							originalImp = IJ.openImage();
+							newOriginalFileName();
+							tabbedPane.setEnabled(true);
+						} catch (Exception ex) {
+							
+						}
+					}
+					else if(e.getSource() == btRemoveItems){
+						cbNucleiChannel.removeAllItems();
+						cbNucleiChannel.addItem("");
+						cbSegmentableChannel.removeAllItems();
+						cbSegmentableChannel.addItem("");
+						ImpArraylist.removeAll(ImpArraylist);
+						ImpArraylist.add(null);
+						setEnablePanels(false, tpPreLimeSeg);
+						setEnablePanels(false, tpLimeSeg);
+						setEnablePanels(false, tpPostLimeSeg);
+					}
+					else if(e.getSource() == cbNucleiChannel){
+						if (cbNucleiChannel.getSelectedItem() == "" | cbNucleiChannel.getSelectedIndex() == -1) {
+							nucleiChannel = null;
+							tpPreLimeSeg.setNucleiChannel(null);
+							setEnablePanels(false, tpPreLimeSeg);
+						} else {
+							nucleiChannel = duplicateImp(ImpArraylist.get(cbNucleiChannel.getSelectedIndex()));
+							tpPreLimeSeg.setNucleiChannel(nucleiChannel);
+							setEnablePanels(true, tpPreLimeSeg);
+						}
+					}
+					else if(e.getSource() == cbSegmentableChannel){
+						if (cbSegmentableChannel.getSelectedItem() == "" | cbSegmentableChannel.getSelectedIndex() == -1) {
+							cellOutlineChannel = null;
+							tpPostLimeSeg.setCellOutlineChannel(null);
+							tpLimeSeg.setCellOutlineChannel(null);
+							setEnablePanels(false, tpPostLimeSeg);
+							setEnablePanels(false, tpLimeSeg);
+						} else {
+							cellOutlineChannel = duplicateImp(ImpArraylist.get(cbSegmentableChannel.getSelectedIndex()));
+							tpPostLimeSeg.setCellOutlineChannel(cellOutlineChannel);
+							tpLimeSeg.setCellOutlineChannel(cellOutlineChannel);
+							tpPostLimeSeg.btPostLimeSeg.setEnabled(true);
+							setEnablePanels(true, tpLimeSeg);
+							tpLimeSeg.setZScale((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
+									/ cellOutlineChannel.getOriginalFileInfo().pixelWidth);
+							
+							cellOutlineChannel.addImageListener(new ImageListener() {
+								@Override
+								public void imageUpdated(ImagePlus imp) {
+									// TODO Auto-generated method stub
+									if (tabbedPane.getSelectedIndex() == 2) {
+										tpPostLimeSeg.updateOverlay();
+									}
+								}
 
+								@Override
+								public void imageOpened(ImagePlus imp) {
+									// TODO Auto-generated method stub
+
+								}
+
+								@Override
+								public void imageClosed(ImagePlus imp) {
+									if (tabbedPane.getSelectedIndex() == 2) {
+										// TODO Auto-generated method stub
+										setEnablePanels(false, tpPostLimeSeg);
+										tpPostLimeSeg.btPostLimeSeg.setEnabled(true);
+										tpPostLimeSeg.clear3dCells();
+										tpPostLimeSeg.setCellOutlineChannel(duplicateImp(ImpArraylist.get(cbSegmentableChannel.getSelectedIndex())));
+									}
+						}
+							});
+
+						}
+					}
+				}			
+			});
+		}
+	};
 	/**
 	 * @throws HeadlessException
 	 */
@@ -78,78 +173,10 @@ public class MainWindow extends JFrame {
 		getContentPane().add(mainPanel, "wrap");
 		getContentPane().add(tabbedPane);
 		tabbedPane.setEnabled(false);
+		exec = Executors.newFixedThreadPool(1);
 
 		initMainPanel();
-
-		btOpenOriginalImage.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				try {
-					// We just can't open multiple images
-					originalImp = IJ.openImage();
-					newOriginalFileName();
-					tabbedPane.setEnabled(true);
-				} catch (Exception ex) {
-					
-				}
-			}
-		});
-
-		btRemoveItems.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				cbNucleiChannel.removeAllItems();
-				cbNucleiChannel.addItem("");
-				cbSegmentableChannel.removeAllItems();
-				cbSegmentableChannel.addItem("");
-				ImpArraylist.removeAll(ImpArraylist);
-				ImpArraylist.add(null);
-				setEnablePanels(false, tpPreLimeSeg);
-				setEnablePanels(false, tpLimeSeg);
-				setEnablePanels(false, tpPostLimeSeg);
-			}
-		});
-
-		cbNucleiChannel.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (cbNucleiChannel.getSelectedItem() == "" | cbNucleiChannel.getSelectedIndex() == -1) {
-					nucleiChannel = null;
-					tpPreLimeSeg.setNucleiChannel(null);
-					setEnablePanels(false, tpPreLimeSeg);
-				} else {
-					nucleiChannel = ImpArraylist.get(cbNucleiChannel.getSelectedIndex());
-					tpPreLimeSeg.setNucleiChannel(nucleiChannel);
-					setEnablePanels(true, tpPreLimeSeg);
-				}
-			}
-		});
-
-		cbSegmentableChannel.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (cbSegmentableChannel.getSelectedItem() == "" | cbSegmentableChannel.getSelectedIndex() == -1) {
-					cellOutlineChannel = null;
-					tpPostLimeSeg.setCellOutlineChannel(null);
-					tpLimeSeg.setCellOutlineChannel(null);
-					setEnablePanels(false, tpPostLimeSeg);
-					setEnablePanels(false, tpLimeSeg);
-				} else {
-					cellOutlineChannel = ImpArraylist.get(cbSegmentableChannel.getSelectedIndex());
-					tpPostLimeSeg.setCellOutlineChannel(cellOutlineChannel);
-					tpLimeSeg.setCellOutlineChannel(cellOutlineChannel);
-					tpPostLimeSeg.btPostLimeSeg.setEnabled(true);
-					setEnablePanels(true, tpLimeSeg);
-					tpLimeSeg.setZScale((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
-							/ cellOutlineChannel.getOriginalFileInfo().pixelWidth);
-
-				}
-			}
-		});
+	
 	}
 
 	/**
@@ -161,7 +188,7 @@ public class MainWindow extends JFrame {
 		// Row 1: Original image
 		btRemoveItems = new JButton("Clear All");
 		btOpenOriginalImage = new JButton("Open Stack");
-
+		
 		mainPanel.add(btRemoveItems);
 		mainPanel.add(btOpenOriginalImage, "wrap");
 
@@ -169,6 +196,8 @@ public class MainWindow extends JFrame {
 		cbNucleiChannel = new JComboBox<String>();
 		cbNucleiChannel.setMinimumSize(new Dimension(100, 10));
 		cbNucleiChannel.addItem("");
+		
+
 		lbNucleiChannel = new JLabel("Nuclei channel");
 		lbNucleiChannel.setLabelFor(cbNucleiChannel);
 
@@ -178,7 +207,7 @@ public class MainWindow extends JFrame {
 		// Row 3: Cell outline channel
 		cbSegmentableChannel = new JComboBox<String>();
 		cbSegmentableChannel.setMinimumSize(new Dimension(100, 10));
-		cbSegmentableChannel.addItem("");
+		cbSegmentableChannel.addItem("");	
 		lbSegmentableChannel = new JLabel("Cell outline channel");
 		lbSegmentableChannel.setLabelFor(cbSegmentableChannel);
 
@@ -196,6 +225,12 @@ public class MainWindow extends JFrame {
 		tpPostLimeSeg = new PanelPostProcessing(new MigLayout("fill"));
 		tabbedPane.addTab("PostLimeSeg", tpPostLimeSeg);
 		this.setEnablePanels(false, tpPostLimeSeg);
+		
+		
+		cbSegmentableChannel.addActionListener(listener);
+		btOpenOriginalImage.addActionListener(listener);
+		cbNucleiChannel.addActionListener(listener);
+		btRemoveItems.addActionListener(listener);
 	}
 
 	/**
@@ -207,6 +242,14 @@ public class MainWindow extends JFrame {
 		for (Component c : panel.getComponents()) {
 			c.setEnabled(enabled);
 		}
+	}
+	/**
+	 * 
+	 */
+	private ImagePlus duplicateImp(ImagePlus imp) {
+		ImagePlus impDuplicated = imp.duplicate();
+		impDuplicated.setFileInfo(imp.getOriginalFileInfo());
+		return impDuplicated;
 	}
 
 	/**
