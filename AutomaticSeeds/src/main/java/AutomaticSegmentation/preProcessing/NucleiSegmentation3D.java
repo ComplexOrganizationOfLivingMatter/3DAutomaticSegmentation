@@ -52,9 +52,7 @@ public class NucleiSegmentation3D{
         if(prefilter){
             IJ.log("Pre-filtering start");
             IJ.run(impPreprocessed, "Median 3D...", "x=4 y=4 z=2");
-            IJ.log("Pre-filtering completed");
-            
-            
+            IJ.log("Pre-filtering completed");           
         }
         
         IJ.saveAs(impPreprocessed,"Tiff", subdir+impPreprocessed.getTitle()+".tif");
