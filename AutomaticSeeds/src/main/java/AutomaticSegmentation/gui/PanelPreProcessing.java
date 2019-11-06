@@ -50,13 +50,12 @@ public class PanelPreProcessing extends JPanel {
 	/**
 	 * 
 	 */
-	
 	String dir = null;
     int max_nuc_radius = 28,min_nuc_radius = 18, seed_threshold = 29000;
     private JCheckBox prefilteringCheckB;
 	private JLabel maxNucleusSizeLb,minNucleusSizeLb,localMaximaThresholdLb,zScaleLb;
 	private JSpinner maxNucleusSizeSpin,minNucleusSizeSpin,localMaximaThresholdSpin,zScaleSpin;
-	private JButton btRun, btCancel,btLoad,btShowNuclei;
+	private JButton btRunCancel, btLoad,btShowNuclei;
 	private static final long serialVersionUID = 1L;
 	private ImagePlus imp_segmented,nucleiChannel;
 	private ProgressBar progressBar;
@@ -69,8 +68,6 @@ public class PanelPreProcessing extends JPanel {
 	public PanelPreProcessing(LayoutManager layout)  {
 		super(layout);
 		initPreLimeSegPanel();
-		preprocessingTask = new Thread() {};
-		btCancel.setEnabled(false);
 
 	}
 	
@@ -113,9 +110,8 @@ public class PanelPreProcessing extends JPanel {
 		imp_segmented = new ImagePlus();
 
 		// Init GUI elements
-		btRun = new JButton("Run");	
-		btCancel = new JButton("Cancel");
-		btCancel.setEnabled(false);
+		btRunCancel = new JButton("Run");	
+
 		btLoad = new JButton("Load labelled 3D nuclei");
 		btShowNuclei = new JButton("Show nuclei");
 		prefilteringCheckB = new JCheckBox("Pre-filtering (3D median 4-4-2");
@@ -152,13 +148,11 @@ public class PanelPreProcessing extends JPanel {
 		this.add(localMaximaThresholdSpin, "wrap,align left");
 		this.add(zScaleLb,"align left");
 		this.add(zScaleSpin, "wrap,align left");
-		this.add(btRun,"align left,wrap");
-		this.add(btCancel,"align left");
+		this.add(btRunCancel,"align left,wrap");
 		this.add(progressBar,"wrap, align left");	
 		this.add(btLoad);
 
-		btRun.addActionListener(listener);
-		btCancel.addActionListener(listener);
+		btRunCancel.addActionListener(listener);
 		btLoad.addActionListener(listener);
 		btShowNuclei.addActionListener(listener);
 		
@@ -215,12 +209,12 @@ public class PanelPreProcessing extends JPanel {
 			exec.submit(new Runnable() {
 				public void run()
 				{
-					if(e.getSource() == btRun)
-					{
+					if(e.getSource() == btRunCancel){
+						final String command = e.getActionCommand();
+						if (command.equals("Run")) {				
 						preprocessingTask = new Thread() { 
 							public void run(){
-								btRun.setEnabled(false);
-								btCancel.setEnabled(true);
+								btRunCancel.setText("Cancel");
 								
 								int maxN = Integer.valueOf(maxNucleusSizeSpin.getValue().toString()).intValue();
 								int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
@@ -229,7 +223,7 @@ public class PanelPreProcessing extends JPanel {
 			
 								NucleiSegmentation3D nucSeg3D = new NucleiSegmentation3D(nucleiChannel,maxN,minN,zStep,maxThresh,prefilteringCheckB.isSelected());
 								imp_segmented = nucSeg3D.impSegmented.duplicate();
-								btRun.setEnabled(true);
+								btRunCancel.setEnabled(true);
 								imp_segmented.show();
 								RoiManager rm = getNucleiROIs(imp_segmented);
 								//executor.shutdown();
@@ -237,27 +231,29 @@ public class PanelPreProcessing extends JPanel {
 						};
 						preprocessingTask.run();
 						preprocessingTask.start();
-					}
-					else if(e.getSource() == btCancel){
-						try { 
-							
-							if(null != preprocessingTask){
-								Thread newTask = new Thread();
-								preprocessingTask.interrupt();
-								// Although not recommended and already deprecated,
-								// use stop command so WEKA classifiers are actually
-								// stopped.
-								preprocessingTask.stop();
-								preprocessingTask = null;
-							}else {
-								IJ.log("Error: interrupting training failed becaused the thread is null!");
+						}
+						else if(command.equals("Cancel")){
+							try { 
+								btRunCancel.setText("Run");
+								if(null != preprocessingTask){
+									preprocessingTask.interrupt();
+									// Although not recommended and already deprecated,
+									// use stop command so WEKA classifiers are actually
+									// stopped.
+									preprocessingTask.stop();
+									preprocessingTask = null;
+									btRunCancel.setEnabled(true);
+								}else {
+									IJ.log("Error: interrupting training failed becaused the thread is null!");
+								}
 							}
+							catch(Exception ex){
+								ex.printStackTrace();
+							}	
 						}
-						catch(Exception ex){
-							ex.printStackTrace();
-						}
-						
+					
 					}
+											
 					else if(e.getSource() == btLoad){
 						//
 					}
