@@ -236,14 +236,26 @@ public class PanelPreProcessing extends JPanel {
 						else if(command.equals("Cancel")){
 							btRunCancel.setText("Run");
 							if(null != preprocessingTask){
-								//exec.shutdown();
+								
+								try {
+									Thread.sleep(6500);
+								} catch (InterruptedException e2) {
+									// TODO Auto-generated catch block
+									e2.printStackTrace();
+								}
+								preprocessingTask.interrupt();
+								try {
+									preprocessingTask.join();
+								} catch (InterruptedException e1) {
+									// TODO Auto-generated catch block
+									e1.printStackTrace();
+								}
+								
 								exec.shutdownNow();
 								// Although not recommended and already deprecated,
-								// use stop command so WEKA classifiers are actually
-								// stopped.
+								// use stop command
 								//preprocessingTask.stop();
 								btRunCancel.setEnabled(true);
-								Thread.currentThread().interrupt();
 							}else {
 								IJ.log("Error: interrupting training failed becaused the thread is null!");
 							}	

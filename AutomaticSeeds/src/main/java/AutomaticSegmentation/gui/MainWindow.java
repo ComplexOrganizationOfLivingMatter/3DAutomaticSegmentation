@@ -93,6 +93,7 @@ public class MainWindow extends JFrame {
 						setEnablePanels(false, tpPreLimeSeg);
 						setEnablePanels(false, tpLimeSeg);
 						setEnablePanels(false, tpPostLimeSeg);
+						
 					}
 					else if(e.getSource() == cbNucleiChannel){
 						if (cbNucleiChannel.getSelectedItem() == "" | cbNucleiChannel.getSelectedIndex() == -1) {
