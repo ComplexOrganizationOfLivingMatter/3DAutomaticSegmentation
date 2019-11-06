@@ -97,8 +97,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	private JButton btnLumen;
 	private JButton btn3DDisplay;
 	private JLabel cellsLabel;
-	private JComboBox<String> checkOverlay;
-	private JComboBox<String> checkLumen;
+	private JComboBox<String> cbOverlay;
+	private JCheckBox checkLumen;
 	private JSpinner cellSpinner;
 	private JCheckBox checkIdCells;
 
@@ -151,6 +151,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				if (fileChooser.showOpenDialog(this) == fileChooser.APPROVE_OPTION) {
 				
 				this.cellOutlineChannel.show();
+				newCell.setZScale((float) (cellOutlineChannel.getOriginalFileInfo().pixelDepth / cellOutlineChannel.getOriginalFileInfo().pixelWidth));
 						ExecutorService executor1 = Executors.newSingleThreadExecutor();
 						executor1.submit(() -> {
 							loadPlyFiles();
@@ -161,7 +162,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(),
 									all3dCells, cellOutlineChannel, false, lumenDots));
 							cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
-							checkOverlay.addActionListener(this);
+							cbOverlay.addActionListener(this);
 							checkLumen.addActionListener(this);
 							btnInsert.addActionListener(this);
 							btnPostSave.addActionListener(this);
@@ -181,7 +182,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 		}
 
-		if (e.getSource() == checkOverlay) {
+		if (e.getSource() == cbOverlay) {
 			updateOverlay();
 		}
 
@@ -195,7 +196,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			if (polyRoi != null) {
 				all3dCells = newCell.removeOverlappingRegions(all3dCells, polyRoi, cellOutlineChannel.getCurrentSlice(),
 						all3dCells.get((Integer) cellSpinner.getValue() - 1).id_Cell, lumenDots);
-				checkOverlay.setSelectedIndex(1);
+				cbOverlay.setSelectedIndex(1);
 				updateOverlay();
 				// After modify cell return poly to null, clean the roi
 				polyRoi = null;
@@ -291,18 +292,15 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		cellSpinner.setMinimumSize(new Dimension(125, 10));
 		cellsLabel = new JLabel("ID Cells:");
 
-		checkOverlay = new JComboBox<String>();
-		checkOverlay.addItem("None overlay");
-		checkOverlay.addItem("Cell overlay");
-		checkOverlay.addItem("All overlays");
-		checkOverlay.setSelectedIndex(2);
-		checkOverlay.setMinimumSize(new Dimension(125, 20));
+		cbOverlay = new JComboBox<String>();
+		cbOverlay.addItem("None overlay");
+		cbOverlay.addItem("Cell overlay");
+		cbOverlay.addItem("All overlays");
+		cbOverlay.setSelectedIndex(2);
+		cbOverlay.setMinimumSize(new Dimension(125, 20));
 
-		checkLumen = new JComboBox<String>();
-		checkLumen.addItem("Without lumen");
-		checkLumen.addItem("Show lumen");
-		checkLumen.setSelectedIndex(0);
-		checkLumen.setMinimumSize(new Dimension(125, 20));
+		checkLumen = new JCheckBox("Show lumen");
+		checkLumen.addActionListener(this);
 
 		btnInsert = new JButton("Modify Cell");
 		btnInsert.setMinimumSize(new Dimension(150, 20));
@@ -324,7 +322,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		this.add(cellsLabel, "align right");
 		this.add(cellSpinner, "align center, wrap");
 		this.add(btPostLimeSeg, "align center");
-		this.add(checkOverlay, "align center");
+		this.add(cbOverlay, "align center");
 		this.add(checkLumen, "wrap, align center");
 		this.add(btnInsert, "align center");
 		this.add(btnPostSave, "align center");
@@ -437,7 +435,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				}
 			}
 
-			if (lumen[lumen.length / 2] != null & checkLumen.getSelectedItem() == "Show lumen") {
+			if (lumen[lumen.length / 2] != null & checkLumen.isSelected()) {
 				ov.addElement(lumen[frame - 1][0]);
 				if (lumen[frame - 1][1] != null)
 					ov.addElement(lumen[frame - 1][1]);
@@ -933,11 +931,11 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 		if (cellOutlineChannel.getOverlay() != null) {
 			cellOutlineChannel.getOverlay().clear();
-			if (checkOverlay.getSelectedItem() == "All overlays") {
+			if (cbOverlay.getSelectedItem() == "All overlays") {
 				Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1),
 						cellOutlineChannel.getCurrentSlice(), all3dCells, cellOutlineChannel, true, lumenDots);
 				cellOutlineChannel.setOverlay(newOverlay);
-			} else if (checkOverlay.getSelectedItem() == "Cell overlay") {
+			} else if (cbOverlay.getSelectedItem() == "Cell overlay") {
 				Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1),
 						cellOutlineChannel.getCurrentSlice(), all3dCells, cellOutlineChannel, false, lumenDots);
 				cellOutlineChannel.setOverlay(newOverlay);

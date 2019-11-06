@@ -22,7 +22,7 @@ import ij.process.FloatPolygon;
 
 public class RoiAdjustment {
 
-	public float zScale = (float) 4.06;
+	public float zScale = (float) 1;
 	public int selectedCell;
 
 	/**
@@ -517,4 +517,9 @@ public class RoiAdjustment {
 		return textRois;
 	
 	}
+	
+	public void setZScale(float z_scale){
+		this.zScale = z_scale;	
+	}
+	
 }
