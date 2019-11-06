@@ -8,6 +8,7 @@ import java.util.List;
 import AutomaticSegmentation.gui.PanelPostProcessing;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.DotN;
+import eu.kiaru.limeseg.struct.CellT;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 
@@ -38,6 +39,8 @@ public class Cell3D extends Cell {
 		this.zScale = zScale;
 		this.dotsList = processLimeSegOutput(cell.cellTs.get(0).dots, zScale);
 		this.id_Cell = cell.id_Cell;
+		this.id = Integer.parseInt(cell.id_Cell);
+		this.cellTs = cell.cellTs;
 	}
 
 	/**
@@ -51,6 +54,7 @@ public class Cell3D extends Cell {
 		this.dotsList = new ArrayList<DotN>();
 		this.id = id;
 		this.zScale = zScale;
+		this.cellTs = new ArrayList<CellT>();
 	}
 
 	/**
