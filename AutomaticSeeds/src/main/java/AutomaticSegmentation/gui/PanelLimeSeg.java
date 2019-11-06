@@ -123,8 +123,12 @@ public class PanelLimeSeg extends JPanel implements ActionListener {
 			}
 
 			if (e.getSource() == btShowOutlines) {
-				if (cellOutlineChannel != null) {
+				if (cellOutlineChannel != null && cellOutlineChannel.getStackSize() != 1) {
+					//cellOutlineChannel.show();
+					cellOutlineChannel.close();
 					cellOutlineChannel.duplicate().show();
+				} else {
+					IJ.log("Reselect the cell outline channel");
 				}
 			}
 

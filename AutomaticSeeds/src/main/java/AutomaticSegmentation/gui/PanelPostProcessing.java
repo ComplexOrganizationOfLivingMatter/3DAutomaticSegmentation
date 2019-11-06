@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -59,13 +60,13 @@ import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
 import ij.IJ;
-import ij.ImageListener;
 import ij.ImagePlus;
 import ij.gui.Overlay;
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
+import ij.gui.TextRoi;
 import ij.process.ImageProcessor;
 
 /**
@@ -86,6 +87,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	private Cell3D PostProcessCell;
 	private ArrayList<Cell3D> all3dCells;
 	private PolygonRoi polyRoi;
+	private ArrayList<TextRoi> labelCells;
 	private PolygonRoi[][] lumenDots;
 	private ImagePlus cellOutlineChannel;
 
@@ -98,6 +100,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	private JComboBox<String> checkOverlay;
 	private JComboBox<String> checkLumen;
 	private JSpinner cellSpinner;
+	private JCheckBox checkIdCells;
 
 	/**
 	 * 
@@ -117,7 +120,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		LimeSeg.allCells = new ArrayList<Cell>();
 		LimeSegCell = new Cell();
 		all3dCells = new ArrayList<Cell3D>();
-		
+		labelCells = new ArrayList<TextRoi>();
 		fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		
@@ -171,6 +174,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						});
 					} else{
 						IJ.log("Not output LimeSeg folder selected");
+						btPostLimeSeg.setEnabled(true);
 					}
 				
 			}
@@ -228,19 +232,20 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			LimeSeg.putAllCellsTo3DDisplay();
 			System.out.println("READY");
 		}
-	}
-
-	/**
-	 * 
-	 */
-	private void setFileChooserProperties(String title) {
-		fileChooser.setCurrentDirectory(new File(cellOutlineChannel.getOriginalFileInfo().directory));
-		fileChooser.setDialogTitle(title);
+		
+		if (e.getSource() == checkIdCells) {
+			if (checkIdCells.isSelected()) {
+			labelCells = newCell.getLabelCells(all3dCells);
+			} else {
+				labelCells.clear();
+			}
+				updateOverlay();
+		}
 	}
 
 	/*-------------------- GETTERS AND SETTERS ----------------------*/
 	/**
-	 * 
+	 *
 	 * @return
 	 */
 	public ImagePlus getCellOutlineChannel() {
@@ -253,6 +258,25 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 */
 	public void setCellOutlineChannel(ImagePlus cellOutlineChannel) {
 		this.cellOutlineChannel = cellOutlineChannel;
+	}
+	
+	/**
+	 * 
+	 */
+	private void setFileChooserProperties(String title) {
+		fileChooser.setCurrentDirectory(new File(cellOutlineChannel.getOriginalFileInfo().directory));
+		fileChooser.setDialogTitle(title);
+	}
+	
+	/**
+	 * 
+	 * @param enabled
+	 * @param panel
+	 */
+	public void setEnablePanel(boolean enabled) {
+		for (Component c : this.getComponents()) {
+			c.setEnabled(enabled);
+		}
 	}
 
 	/*-------------------- METHODS ----------------------*/
@@ -290,9 +314,13 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		btn3DDisplay.setMinimumSize(new Dimension(150, 20));
 		btPostLimeSeg = new JButton("Run PostProcessing");
 		btPostLimeSeg.addActionListener(this);
+		
+		checkIdCells= new JCheckBox("Label cells");
+		checkIdCells.addActionListener(this);
 
 		// Add components
-		this.add(btn3DDisplay, "align center");
+		//this.add(btn3DDisplay, "align center");
+		this.add(checkIdCells, "align center");
 		this.add(cellsLabel, "align right");
 		this.add(cellSpinner, "align center, wrap");
 		this.add(btPostLimeSeg, "align center");
@@ -314,31 +342,35 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				return name.startsWith("cell_");
 			}
 		});
-		for (File f : files) {
-			String path = f.toString();
-			LimeSegCell.id_Cell = path.substring(path.indexOf("_") + 1);
-			IOXmlPlyLimeSeg.hydrateCellT(LimeSegCell, path);
-			Cell3D PostProcessCellCopy = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
-			PostProcessCell = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
-			PostProcessCell.clearCell();
-			for (int i = 0; i < cellOutlineChannel.getStackSize(); i++) {
-				if (PostProcessCellCopy.getCell3DAt(i).size() != 0) {
-					PostProcessCell.addDotsList(processLimeSegOutput(PostProcessCellCopy.getCell3DAt(i), i));
+		
+		if (files.length >= 1) {
+			for (File f : files) {
+				String path = f.toString();
+				LimeSegCell.id_Cell = path.substring(path.indexOf("_") + 1);
+				IOXmlPlyLimeSeg.hydrateCellT(LimeSegCell, path);
+				Cell3D PostProcessCellCopy = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
+				PostProcessCell = new Cell3D(LimeSegCell.id_Cell, LimeSegCell.cellTs.get(0).dots);
+				PostProcessCell.clearCell();
+				for (int i = 0; i < cellOutlineChannel.getStackSize(); i++) {
+					if (PostProcessCellCopy.getCell3DAt(i).size() != 0) {
+						PostProcessCell.addDotsList(processLimeSegOutput(PostProcessCellCopy.getCell3DAt(i), i));
+					}
+
 				}
 
+				PostProcessCell.labelCell = Integer.parseInt(LimeSegCell.id_Cell);
+				all3dCells.add(PostProcessCell);
 			}
+			Collections.sort(all3dCells, new Comparator<Cell3D>() {
 
-			PostProcessCell.labelCell = Integer.parseInt(LimeSegCell.id_Cell);
-			all3dCells.add(PostProcessCell);
+				@Override
+				public int compare(Cell3D cel1, Cell3D cel2) {
+					return cel1.getID().compareTo(cel2.getID());
+				}
+			});
+		} else {
+			IJ.log("Any ply file found");
 		}
-
-		Collections.sort(all3dCells, new Comparator<Cell3D>() {
-
-			@Override
-			public int compare(Cell3D cel1, Cell3D cel2) {
-				return cel1.getID().compareTo(cel2.getID());
-			}
-		});
 	}
 
 	/**
@@ -411,6 +443,12 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					ov.addElement(lumen[frame - 1][1]);
 			}
 			// TODO: change this part of the code
+			if (labelCells.size() > 0) {
+				for (TextRoi text : labelCells) {
+					ov.addElement(text);
+				}
+				
+			}
 
 		}
 		return ov;
@@ -886,6 +924,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			return false;
 		}
 	}
+	
+	/**
+	 * 
+	 */
 
 	public void updateOverlay() {
 
@@ -920,16 +962,12 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		super(layout, isDoubleBuffered);
 		// TODO Auto-generated constructor stub
 	}
-
+	
 	/**
 	 * 
-	 * @param enabled
-	 * @param panel
 	 */
-	public void setEnablePanel(boolean enabled) {
-		for (Component c : this.getComponents()) {
-			c.setEnabled(enabled);
-		}
+	public void clear3dCells(){
+		this.all3dCells.clear();
 	}
 
 }
