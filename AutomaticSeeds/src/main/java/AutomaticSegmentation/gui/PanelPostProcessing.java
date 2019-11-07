@@ -226,11 +226,13 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == btn3DDisplay) {
+			LimeSeg.constructMesh();
 			LimeSeg.make3DViewVisible();
-			LimeSeg.setCell3DDisplayMode(1);
 			LimeSeg.putAllCellsTo3DDisplay();
-			//LimeSeg.update3DDisplay();
-			// LimeSeg.set3DViewCenter(avgX/NCells,avgY/NCells,avgZ/NCells);
+			double[] objectCentroid = this.getObjectCentroid();
+			LimeSeg.set3DViewCenter(((float) objectCentroid[0]/this.all3dCells.size()), ((float) objectCentroid[1]/this.all3dCells.size()), (float) (objectCentroid[2]/this.all3dCells.size()));
+			
+			LimeSeg.update3DDisplay();
 		}
 
 		if (e.getSource() == checkIdCells) {
@@ -976,6 +978,19 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 */
 	public void clear3dCells() {
 		this.all3dCells.clear();
+	}
+	
+	public double[] getObjectCentroid(){
+		double[] centroid = {0, 0, 0};
+		
+		for (Cell3D cell3d : all3dCells) {
+			double[] cellCentroid = cell3d.getCellCentroid();
+			centroid[0] += cellCentroid[0];
+			centroid[1] += cellCentroid[1];
+			centroid[2] += cellCentroid[2];
+		}
+		
+		return centroid;
 	}
 
 }

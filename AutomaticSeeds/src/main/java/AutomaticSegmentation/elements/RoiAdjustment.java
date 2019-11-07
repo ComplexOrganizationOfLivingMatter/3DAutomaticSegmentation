@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.opensphere.geometry.algorithm.ConcaveHull;
 
@@ -12,6 +13,7 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 
+import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
 import ij.ImagePlus;
 import ij.gui.PointRoi;
@@ -227,15 +229,17 @@ public class RoiAdjustment {
 	 * 
 	 * @param frame
 	 * @param rois
+	 * @param cellT 
 	 * @return
 	 */
-	public static ArrayList<DotN> RoisToDots(int frame, Roi[] rois, float zScale) {
+	public static ArrayList<DotN> RoisToDots(int frame, Roi[] rois, float zScale, CellT cellT) {
 		ArrayList<DotN> dotsNewRegion = new ArrayList<DotN>();
 		for (int nDot = 0; nDot < rois.length; nDot++) {
 			DotN newDot = new DotN();
 			newDot.pos.x = (float) (rois[nDot].getXBase());
 			newDot.pos.y = (float) (rois[nDot].getYBase());
 			newDot.pos.z = (float) (frame * zScale - 1);
+			newDot.ct = cellT;
 			dotsNewRegion.add(newDot);
 		}
 		return dotsNewRegion;

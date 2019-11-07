@@ -3,11 +3,13 @@ package AutomaticSegmentation.elements;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import AutomaticSegmentation.gui.PanelPostProcessing;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.DotN;
+import eu.kiaru.limeseg.struct.Vector3D;
 import eu.kiaru.limeseg.struct.CellT;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
@@ -34,13 +36,20 @@ public class Cell3D extends Cell {
 	 */
 	public Cell3D(Cell cell, float zScale, int totalFrames) {
 		super();
+		//Copy father info
+		this.id_Cell = cell.id_Cell;
+		this.cellChannel = cell.cellChannel;
+		this.cellTs = cell.cellTs;
+		this.color = cell.color;
+		this.display_mode = 0;
+		
+		// New info of this class
 		this.totalFrames = totalFrames;
 		this.dotsList = new ArrayList<DotN>();
 		this.zScale = zScale;
-		this.dotsList = processLimeSegOutput(cell.cellTs.get(0).dots, zScale);
-		this.id_Cell = cell.id_Cell;
 		this.id = Integer.parseInt(cell.id_Cell);
-		this.cellTs = cell.cellTs;
+		this.dotsList = processLimeSegOutput(cell.cellTs.get(0).dots, zScale);
+		cell.cellTs.get(0).dots = this.dotsList;
 	}
 
 	/**
@@ -198,10 +207,13 @@ public class Cell3D extends Cell {
 	 */
 	public ArrayList<DotN> processLimeSegOutput(ArrayList<DotN> allDots, float zScale) {
 		ArrayList<DotN> newDots = new ArrayList<DotN>();
+		List<Integer> xPoints;
+		List<Integer> yPoints;
+		
 		for (int numFrame = 0; numFrame < this.totalFrames; numFrame++) {
 
-			List<Integer> xPoints = new ArrayList<Integer>();
-			List<Integer> yPoints = new ArrayList<Integer>();
+			xPoints = new ArrayList<Integer>();
+			yPoints = new ArrayList<Integer>();
 
 			for (int i = 0; i < allDots.size(); i++) {
 				int zpos = 1 + (int) ((float) (allDots.get(i).pos.z / zScale));
@@ -210,6 +222,7 @@ public class Cell3D extends Cell {
 					yPoints.add((int) allDots.get(i).pos.y);
 				}
 			}
+			
 			if (xPoints.size() > 0) {
 				int[] xPoints_array = xPoints.stream().mapToInt(i -> i).toArray();
 				int[] yPoints_array = yPoints.stream().mapToInt(i -> i).toArray();
@@ -226,10 +239,41 @@ public class Cell3D extends Cell {
 				PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(1, false), 2);
 
 				Roi[] allRois = RoiAdjustment.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
-				newDots.addAll(RoiAdjustment.RoisToDots(numFrame, allRois, zScale));
+				newDots.addAll(RoiAdjustment.RoisToDots(numFrame, allRois, zScale, this.cellTs.get(0)));
 			}
 		}
+		
+		updateDotsNormals(newDots);
 
 		return newDots;
+	}
+
+	public void updateDotsNormals(ArrayList<DotN> newDots) {
+		double[] cellCentroid = getCellCentroid();
+		
+		for (DotN dot : newDots) {
+			dot.Norm = new Vector3D(dot.pos.x - cellCentroid[0], dot.pos.y - cellCentroid[1], dot.pos.z - cellCentroid[2]);
+		}
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public double[] getCellCentroid() {
+		// TODO Auto-generated method stub
+		double[] centroid = {0, 0, 0};
+		
+		for (DotN singleDot : dotsList) {
+			centroid[0] += singleDot.pos.x;
+			centroid[1] += singleDot.pos.y;
+			centroid[2] += singleDot.pos.z;
+		}
+
+		centroid[0] = centroid[0] / dotsList.size();
+		centroid[1] = centroid[1] / dotsList.size();
+		centroid[2] = centroid[2] / dotsList.size();
+		
+		return centroid;
 	}
 }
