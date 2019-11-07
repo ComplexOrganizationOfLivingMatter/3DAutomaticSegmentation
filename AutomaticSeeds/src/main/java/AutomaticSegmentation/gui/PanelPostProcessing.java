@@ -230,8 +230,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			LimeSeg.make3DViewVisible();
 			LimeSeg.putAllCellsTo3DDisplay();
 			double[] objectCentroid = this.getObjectCentroid();
-			LimeSeg.set3DViewCenter(((float) objectCentroid[0]/this.all3dCells.size()), ((float) objectCentroid[1]/this.all3dCells.size()), (float) (objectCentroid[2]/this.all3dCells.size()));
-			
+			LimeSeg.set3DViewCenter(((float) objectCentroid[0]/this.all3dCells.size()), ((float) objectCentroid[1]/this.all3dCells.size()), (float) (objectCentroid[2]/this.all3dCells.size() / this.all3dCells.get(0).zScale));
 			LimeSeg.update3DDisplay();
 		}
 
