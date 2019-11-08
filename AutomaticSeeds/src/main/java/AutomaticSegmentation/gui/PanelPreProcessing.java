@@ -156,7 +156,7 @@ public class PanelPreProcessing extends JPanel {
 		this.add(btRunCancel,"align left,wrap");
 		this.add(progressBar,"align left");
 		this.add(btLoad,"wrap");
-		this.add(cbSegmentedImg,"align left,wrap");
+		this.add(cbSegmentedImg,"wrap,wrap,align left");
 		this.add(btCalculateROIs,"align left");
 
 		btRunCancel.addActionListener(listener);

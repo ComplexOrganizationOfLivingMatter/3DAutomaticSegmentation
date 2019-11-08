@@ -100,17 +100,17 @@ public class MainWindow extends JFrame {
 					}
 					else if(e.getSource() == cbNucleiChannel){
 						if (cbNucleiChannel.getSelectedItem() == "<select image>" | cbNucleiChannel.getSelectedIndex() == -1) {
-							nucleiChannel = null;
-							tpPreLimeSeg.setNucleiChannel(null);
+							//nucleiChannel = null;
+							//tpPreLimeSeg.setNucleiChannel(null);
 							setEnablePanels(false, tpPreLimeSeg);
 						} else {
 							nucleiChannel = duplicateImp(ImpArraylist.get(cbNucleiChannel.getSelectedIndex()));
-							tpPreLimeSeg.setNucleiChannel(nucleiChannel);
+							tpPreLimeSeg.setNucleiChannel(nucleiChannel.duplicate());
 							setEnablePanels(true, tpPreLimeSeg);
 						}
 					}
 					else if(e.getSource() == cbSegmentableChannel){
-						if (cbSegmentableChannel.getSelectedItem() =="<select image>" | cbSegmentableChannel.getSelectedIndex() == -1) {
+						if (cbSegmentableChannel.getSelectedItem() == "<select image>"| cbSegmentableChannel.getSelectedIndex() == -1) {
 							cellOutlineChannel = null;
 							tpPostLimeSeg.setCellOutlineChannel(null);
 							tpLimeSeg.setCellOutlineChannel(null);
