@@ -167,6 +167,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						cellSpinner.addChangeListener(this);
 						this.setEnablePanel(true);
 						checkLumen.setEnabled(false);
+						updateOverlay();
 						executor1.shutdown();
 					});
 				} else {
@@ -226,7 +227,9 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 		if (e.getSource() == btn3DDisplay) {
 			LimeSeg.make3DViewVisible();
+			LimeSeg.setCell3DDisplayMode(1);
 			LimeSeg.putAllCellsTo3DDisplay();
+			//LimeSeg.update3DDisplay();
 			// LimeSeg.set3DViewCenter(avgX/NCells,avgY/NCells,avgZ/NCells);
 		}
 
@@ -308,7 +311,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		checkIdCells = new JCheckBox("Label cells");
 
 		// Add components
-		// this.add(btn3DDisplay, "align center");
+		this.add(btn3DDisplay, "align center");
 		this.add(checkIdCells, "align center");
 		this.add(cellsLabel, "align right");
 		this.add(cellSpinner, "align center, wrap");
@@ -322,47 +325,73 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	}
 
 	/**
-	 * 
+	 * Very similar to "IOXmlPlyLimeSeg.loadState"
 	 */
 	public void loadPlyFiles() {
 		File dir = new File(fileChooser.getSelectedFile().toString());
-		File[] files = dir.listFiles(new FilenameFilter() {
-			public boolean accept(File dir, String name) {
-				return name.startsWith("cell_");
+		
+		File fXmlFile = new File(dir+File.separator+"LimeSegParams.xml");
+		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder dBuilder;
+		try {
+			dBuilder = dbFactory.newDocumentBuilder();			
+			Document doc = dBuilder.parse(fXmlFile);
+			//optional, but recommended
+			//read this - http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
+			doc.getDocumentElement().normalize();
+		
+			File[] files = dir.listFiles(new FilenameFilter() {
+				public boolean accept(File dir, String name) {
+					return name.startsWith("cell_");
+				}
+			});
+	
+			if (LimeSeg.allCells == null) {
+				LimeSeg lms = new LimeSeg();
+				lms.initialize();
+				LimeSeg.saveOptState();
 			}
-		});
-
-		if (LimeSeg.allCells == null) {
-			LimeSeg lms = new LimeSeg();
-			lms.initialize();
-			LimeSeg.saveOptState();
-		}
-
-		LimeSeg.opt.setOptParam("ZScale", (float) ((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
-				/ cellOutlineChannel.getOriginalFileInfo().pixelWidth));
-
-		for (File f : files) {
-			String path = f.toString();
-			Cell newBasicCell = new Cell();
-			newBasicCell.id_Cell = path.substring(path.indexOf("_") + 1);
-			IOXmlPlyLimeSeg.hydrateCellT(newBasicCell, path);
-			Cell3D newCell3D = new Cell3D(newBasicCell, (float) LimeSeg.opt.getOptParam("ZScale"),
-					cellOutlineChannel.getStackSize());
-			newCell3D.id = Integer.parseInt(newBasicCell.id_Cell);
-			all3dCells.add(newCell3D);
-			LimeSeg.allCells.add(newCell3D);
-		}
-
-		Collections.sort(all3dCells, new Comparator<Cell3D>() {
-			@Override
-			public int compare(Cell3D cel1, Cell3D cel2) {
-				return cel1.getID().compareTo(cel2.getID());
+	
+			LimeSeg.opt.setOptParam("ZScale", (float) ((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
+					/ cellOutlineChannel.getOriginalFileInfo().pixelWidth));
+	
+			for (File f : files) {
+				String path = f.toString();
+				File paramsCell = new File(f+File.separator+"CellParams.xml");
+				if (paramsCell.exists()) {
+					Cell newBasicCell = new Cell();
+					newBasicCell.id_Cell = path.substring(path.indexOf("_") + 1);
+	
+					Document docCell = dBuilder.parse(paramsCell);
+					docCell.getDocumentElement().normalize();
+					if (docCell.getDocumentElement().getNodeName().equals("CellParameters")) {
+						newBasicCell.color[0]=Float.valueOf(docCell.getElementsByTagName("R").item(0).getTextContent());
+						newBasicCell.color[1]=Float.valueOf(docCell.getElementsByTagName("G").item(0).getTextContent());
+						newBasicCell.color[2]=Float.valueOf(docCell.getElementsByTagName("B").item(0).getTextContent());
+						newBasicCell.color[3]=Float.valueOf(docCell.getElementsByTagName("A").item(0).getTextContent());
+						newBasicCell.cellChannel = Integer.valueOf(docCell.getElementsByTagName("channel").item(0).getTextContent());
+					}
+					IOXmlPlyLimeSeg.hydrateCellT(newBasicCell, path);
+					Cell3D newCell3D = new Cell3D(newBasicCell, (float) LimeSeg.opt.getOptParam("ZScale"),
+							cellOutlineChannel.getStackSize());
+					all3dCells.add(newCell3D);
+					LimeSeg.allCells.add(newCell3D);
+				}
 			}
-		});
-
-		if (files.length == 0)
-			IJ.log("No ply found");
-		// Display dialog "No ply found"
+	
+			Collections.sort(all3dCells, new Comparator<Cell3D>() {
+				@Override
+				public int compare(Cell3D cel1, Cell3D cel2) {
+					return cel1.getID().compareTo(cel2.getID());
+				}
+			});
+			
+			if (files.length == 0)
+				IJ.log("No ply found");
+			// Display dialog "No ply found"
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
