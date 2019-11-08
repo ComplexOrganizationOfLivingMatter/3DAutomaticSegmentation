@@ -8,15 +8,10 @@ import java.awt.Dimension;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.font.TextAttribute;
 import java.io.File;
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -25,7 +20,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JSpinner;
-import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 
 import AutomaticSegmentation.utils.Utils;
@@ -34,16 +28,12 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.gui.OvalRoi;
-import ij.gui.ProgressBar;
 import ij.gui.Roi;
 import ij.plugin.frame.RoiManager;
 import inra.ijpb.geometry.Box3D;
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.region3d.BoundingBox3D;
 import inra.ijpb.measure.region3d.Centroid3D;
-import mcib3d.image3d.processing.FastFilters3D;
-import net.haesleinhuepf.clij.CLIJ;
-import filters.Bandpass3D;
 
 
 /**
@@ -58,16 +48,18 @@ public class PanelPreProcessing extends JPanel {
 	String dir = null;
     int max_nuc_radius = 28,min_nuc_radius = 18, seed_threshold = 29000;
     private JCheckBox prefilteringCheckB;
+    public JComboBox<String> cbSegmentedImg;
 	private JLabel maxNucleusSizeLb,minNucleusSizeLb,localMaximaThresholdLb,zScaleLb;
 	private JSpinner maxNucleusSizeSpin,minNucleusSizeSpin,localMaximaThresholdSpin,zScaleSpin;
-	private JButton btRunCancel, btLoad,btShowNuclei;
+	private JButton btRunCancel, btLoad,btShowNuclei,btCalculateROIs;
 	private static final long serialVersionUID = 1L;
-	private ImagePlus nucleiChannel,preprocessedImp,segmentedImp;
+	private ImagePlus nucleiChannel,preprocessedImp,segmentedImp,segmentedLoadImg,auxImp;
 	private JProgressBar progressBar;
     private Thread preprocessingTask;
 	//private ExecutorService exec = Executors.newFixedThreadPool(1);
 	private ExecutorService exec = Executors.newCachedThreadPool();
 	private Boolean cancelTask;
+	public ArrayList<ImagePlus> ImpArraylistSegImg;
 
 
 	/**
@@ -119,14 +111,19 @@ public class PanelPreProcessing extends JPanel {
 		// Init GUI elements
 		btRunCancel = new JButton("Run");	
 
-		btLoad = new JButton("Load labelled 3D nuclei");
+		btLoad = new JButton("Load segmentation");
 		btShowNuclei = new JButton("Show nuclei");
+		btCalculateROIs = new JButton("Get ROIs");
 		prefilteringCheckB = new JCheckBox("Pre-filtering (3D median 4-4-2");
 		prefilteringCheckB.setSelected(false);
 		maxNucleusSizeLb = new JLabel("Maximal nucleus radius (pixels)");
 		minNucleusSizeLb = new JLabel("Minimal nucleus radius (pixels)");
-		localMaximaThresholdLb = new JLabel("Seed threshold");
+		localMaximaThresholdLb = new JLabel("Local maxima threshold");
 		zScaleLb = new JLabel("Z scale");
+		cbSegmentedImg = new JComboBox<String>();
+		cbSegmentedImg.addItem("<select image>");
+		cbSegmentedImg.setMinimumSize(new Dimension(100, 10));
+		cbSegmentedImg.setMaximumSize(new Dimension(300, 60));
 
 		
 		/*MODIFY the limits of JSPinners*/
@@ -141,7 +138,9 @@ public class PanelPreProcessing extends JPanel {
 		
 		
 		progressBar = new JProgressBar(0,100);	
+		progressBar.setMaximumSize(new Dimension(60, 8));
 		cancelTask = false;
+		cbSegmentedImg.setEnabled(false);
 			
 		// Add components
 		this.add(btShowNuclei, "align center,wrap");
@@ -155,12 +154,17 @@ public class PanelPreProcessing extends JPanel {
 		this.add(zScaleLb,"align left");
 		this.add(zScaleSpin, "wrap,align left");
 		this.add(btRunCancel,"align left,wrap");
-		this.add(progressBar,"wrap, align left");	
-		this.add(btLoad);
+		this.add(progressBar,"align left");
+		this.add(btLoad,"wrap");
+		this.add(cbSegmentedImg,"align left,wrap");
+		this.add(btCalculateROIs,"align left");
 
 		btRunCancel.addActionListener(listener);
 		btLoad.addActionListener(listener);
 		btShowNuclei.addActionListener(listener);
+		btCalculateROIs.addActionListener(listener);
+		cbSegmentedImg.addActionListener(listener);
+		btCalculateROIs.setEnabled(false);
 		
 	}
 
@@ -222,7 +226,8 @@ public class PanelPreProcessing extends JPanel {
 							int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
 							int maxThresh = Integer.valueOf(localMaximaThresholdSpin.getValue().toString()).intValue();
 							float zStep = Float.valueOf(zScaleSpin.getValue().toString()).floatValue();
-							
+							btLoad.setEnabled(false);
+
 							preprocessingTask = new Thread() {
 								
 								public void run(){
@@ -237,8 +242,8 @@ public class PanelPreProcessing extends JPanel {
 										cancelTask =false;
 										if(segmentedImp!=null) {
 											if(segmentedImp.getTitle().compareTo("dapi-seg")==0) {
-												segmentedImp.show();
-												RoiManager rm = getNucleiROIs(segmentedImp);
+												newSegmentedFileName(segmentedImp.duplicate());
+												cbSegmentedImg.setEnabled(true);
 											}
 										}else {
 											preprocessedImp = null;
@@ -250,15 +255,13 @@ public class PanelPreProcessing extends JPanel {
 										ex.printStackTrace();
 									}
 									
-									//executor.shutdown();
 								}
 							};
 							preprocessingTask.start();
 						}
 						else if(command.equals("Cancel")){
 							btRunCancel.setText("Run");
-//							if(null != preprocessingTask){
-								
+							
 							preprocessedImp=null;
 							segmentedImp=null;
 							btRunCancel.setEnabled(false);
@@ -274,38 +277,51 @@ public class PanelPreProcessing extends JPanel {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
-//								try {
-//									preprocessingTask.interrupt();
-//									//preprocessingTask.join();
-//									exec.shutdownNow();
-//									// Although not recommended and already deprecated,
-//									// use stop command
-//									preprocessingTask.stop();
-//									
-//									//IJ.log("Nuclei detection STOPPED");
-//									
-//								} catch (Exception e1) {
-//									// TODO Auto-generated catch block
-//								}
-//								exec = Executors.newCachedThreadPool();
-								
-								
 								btRunCancel.setEnabled(true);
-//							}else {
-//								IJ.log("Error: interrupting training failed becaused the thread is null!");
-//							}	
 						}
 					
 					}
 											
 					else if(e.getSource() == btLoad){
+						try {
+							// We just can't open multiple images
+							auxImp = IJ.openImage();
+							newSegmentedFileName(auxImp.duplicate());
+							cbSegmentedImg.setEnabled(true);
+						} catch (Exception ex) {
+							ex.printStackTrace();
+						}
 						//
+					}else if(e.getSource()==cbSegmentedImg) {
+						if (cbSegmentedImg.getSelectedItem() == "<select image>" | cbSegmentedImg.getSelectedIndex() == -1) {
+							btCalculateROIs.setEnabled(false);
+						} else {
+							segmentedLoadImg = ImpArraylistSegImg.get(cbSegmentedImg.getSelectedIndex()).duplicate();
+							btCalculateROIs.setEnabled(true);
+						}
 					}
 					else if(e.getSource() == btShowNuclei){
 						if (nucleiChannel != null) {
 							nucleiChannel.duplicate().show();
 						}
 					}
+					else if(e.getSource() == btCalculateROIs){
+						if (segmentedLoadImg!=null) {
+							btCalculateROIs.setEnabled(false);
+							segmentedLoadImg.show();
+							try {
+								RoiManager rm = getNucleiROIs(segmentedLoadImg.duplicate());
+							}catch(Exception ex) {
+								ex.printStackTrace();
+							}
+							btCalculateROIs.setEnabled(true);
+							
+						}else {
+							IJ.error("select a segmented and labelled image");
+						}
+						
+					}
+					
 				}			
 			});
 		}
@@ -440,4 +456,16 @@ public class PanelPreProcessing extends JPanel {
     }
         
 	
+	public void newSegmentedFileName(ImagePlus imp) {
+		if (imp.getNChannels() > 1) {
+			for (int numChannel = 0; numChannel < imp.getNChannels(); numChannel++) {
+				cbSegmentedImg.addItem(imp.getTitle()+" - C=" + numChannel);
+				ImpArraylistSegImg.add(MainWindow.extractChannelOfStack(numChannel + 1, imp.duplicate()));
+			}
+		} else {
+			cbSegmentedImg.addItem(imp.getTitle());
+			ImpArraylistSegImg.add(MainWindow.extractChannelOfStack(1, imp.duplicate()));
+		}
+	}
+
 }
