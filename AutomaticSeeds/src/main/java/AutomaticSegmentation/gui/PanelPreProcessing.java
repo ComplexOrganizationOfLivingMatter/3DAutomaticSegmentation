@@ -34,6 +34,7 @@ import inra.ijpb.geometry.Box3D;
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.region3d.BoundingBox3D;
 import inra.ijpb.measure.region3d.Centroid3D;
+import mcib_plugins.SeedSpots_Plus;
 
 
 /**
@@ -342,7 +343,6 @@ public class PanelPreProcessing extends JPanel {
 	public void nucleiSegmentation3D(int max_nuc_radius, int min_nuc_radius, float zDepth, int maxThresh,boolean prefilter) {
 		
     	while(!cancelTask.booleanValue()) {
-    		
 	    	String subdir = null;
 	        File fl = new File(dir+"SEG");
 	        if (!fl.exists()){

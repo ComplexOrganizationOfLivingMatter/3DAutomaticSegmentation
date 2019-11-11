@@ -185,6 +185,12 @@
 			<artifactId>core</artifactId>
 			<version>20170808</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>com.github.mcib3d</groupId>
+		    <artifactId>mcib3d-plugins</artifactId>
+		    <version>3.96</version>
+		</dependency>
 
 		<dependency>
 			<groupId>es.escudero</groupId>
