@@ -94,6 +94,8 @@ public class MainWindow extends JFrame {
 						tpPreLimeSeg.ImpArraylistSegImg.removeAll(tpPreLimeSeg.ImpArraylistSegImg);
 						ImpArraylist.add(null);
 						setEnablePanels(false, tpPreLimeSeg);
+						tpPreLimeSeg.btLoad.setEnabled(true);
+						tpPreLimeSeg.cbSegmentedImg.setEnabled(true);
 						setEnablePanels(false, tpLimeSeg);
 						setEnablePanels(false, tpPostLimeSeg);
 						
@@ -102,7 +104,11 @@ public class MainWindow extends JFrame {
 						if (cbNucleiChannel.getSelectedItem() == "<select image>" | cbNucleiChannel.getSelectedIndex() == -1) {
 							//nucleiChannel = null;
 							//tpPreLimeSeg.setNucleiChannel(null);
+							boolean isEnab = tpPreLimeSeg.btCalculateROIs.isEnabled();
 							setEnablePanels(false, tpPreLimeSeg);
+							tpPreLimeSeg.btLoad.setEnabled(true);
+							tpPreLimeSeg.cbSegmentedImg.setEnabled(true);
+							tpPreLimeSeg.btCalculateROIs.setEnabled(isEnab);
 						} else {
 							nucleiChannel = duplicateImp(ImpArraylist.get(cbNucleiChannel.getSelectedIndex()));
 							tpPreLimeSeg.setNucleiChannel(nucleiChannel.duplicate());
@@ -221,6 +227,8 @@ public class MainWindow extends JFrame {
 		tpPreLimeSeg = new PanelPreProcessing(new MigLayout("fill"));
 		tabbedPane.addTab("PreLimeSeg", tpPreLimeSeg);
 		this.setEnablePanels(false, tpPreLimeSeg);
+		tpPreLimeSeg.btLoad.setEnabled(true);
+		tpPreLimeSeg.cbSegmentedImg.setEnabled(true);
 
 		tpLimeSeg = new PanelLimeSeg(new MigLayout("fill"));
 		tabbedPane.addTab("LimeSeg", tpLimeSeg);
