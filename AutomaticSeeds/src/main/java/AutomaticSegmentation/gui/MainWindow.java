@@ -85,10 +85,13 @@ public class MainWindow extends JFrame {
 					}
 					else if(e.getSource() == btRemoveItems){
 						cbNucleiChannel.removeAllItems();
-						cbNucleiChannel.addItem("");
+						cbNucleiChannel.addItem("<select image>");
 						cbSegmentableChannel.removeAllItems();
-						cbSegmentableChannel.addItem("");
+						cbSegmentableChannel.addItem("<select image>");
+						tpPreLimeSeg.cbSegmentedImg.removeAllItems();
+						tpPreLimeSeg.cbSegmentedImg.addItem("<select image>");
 						ImpArraylist.removeAll(ImpArraylist);
+						tpPreLimeSeg.ImpArraylistSegImg.removeAll(tpPreLimeSeg.ImpArraylistSegImg);
 						ImpArraylist.add(null);
 						setEnablePanels(false, tpPreLimeSeg);
 						setEnablePanels(false, tpLimeSeg);
@@ -96,18 +99,18 @@ public class MainWindow extends JFrame {
 						
 					}
 					else if(e.getSource() == cbNucleiChannel){
-						if (cbNucleiChannel.getSelectedItem() == "" | cbNucleiChannel.getSelectedIndex() == -1) {
-							nucleiChannel = null;
-							tpPreLimeSeg.setNucleiChannel(null);
+						if (cbNucleiChannel.getSelectedItem() == "<select image>" | cbNucleiChannel.getSelectedIndex() == -1) {
+							//nucleiChannel = null;
+							//tpPreLimeSeg.setNucleiChannel(null);
 							setEnablePanels(false, tpPreLimeSeg);
 						} else {
 							nucleiChannel = duplicateImp(ImpArraylist.get(cbNucleiChannel.getSelectedIndex()));
-							tpPreLimeSeg.setNucleiChannel(nucleiChannel);
+							tpPreLimeSeg.setNucleiChannel(nucleiChannel.duplicate());
 							setEnablePanels(true, tpPreLimeSeg);
 						}
 					}
 					else if(e.getSource() == cbSegmentableChannel){
-						if (cbSegmentableChannel.getSelectedItem() == "" | cbSegmentableChannel.getSelectedIndex() == -1) {
+						if (cbSegmentableChannel.getSelectedItem() == "<select image>"| cbSegmentableChannel.getSelectedIndex() == -1) {
 							cellOutlineChannel = null;
 							tpPostLimeSeg.setCellOutlineChannel(null);
 							tpLimeSeg.setCellOutlineChannel(null);
@@ -196,7 +199,7 @@ public class MainWindow extends JFrame {
 		// Row 2: Nuclei channel
 		cbNucleiChannel = new JComboBox<String>();
 		cbNucleiChannel.setMinimumSize(new Dimension(100, 10));
-		cbNucleiChannel.addItem("");
+		cbNucleiChannel.addItem("<select image>");
 		
 
 		lbNucleiChannel = new JLabel("Nuclei channel");
@@ -208,7 +211,7 @@ public class MainWindow extends JFrame {
 		// Row 3: Cell outline channel
 		cbSegmentableChannel = new JComboBox<String>();
 		cbSegmentableChannel.setMinimumSize(new Dimension(100, 10));
-		cbSegmentableChannel.addItem("");	
+		cbSegmentableChannel.addItem("<select image>");	
 		lbSegmentableChannel = new JLabel("Cell outline channel");
 		lbSegmentableChannel.setLabelFor(cbSegmentableChannel);
 
@@ -276,7 +279,7 @@ public class MainWindow extends JFrame {
 	 * @param originalImage
 	 * @return
 	 */
-	public ImagePlus extractChannelOfStack(int numChannel, ImagePlus originalImage) {
+	public static ImagePlus extractChannelOfStack(int numChannel, ImagePlus originalImage) {
 		ImageStack newChannelStack = new ImageStack(originalImage.getWidth(), originalImage.getHeight());
 		int indexToAdd = 0;
 		for (int numZ = 0; numZ < originalImage.getStackSize() / originalImage.getNChannels(); numZ++) {
