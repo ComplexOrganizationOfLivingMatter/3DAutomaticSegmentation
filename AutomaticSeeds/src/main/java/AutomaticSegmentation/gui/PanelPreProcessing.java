@@ -87,7 +87,8 @@ public class PanelPreProcessing extends JPanel {
 	 * @param nucleiChannel the nucleiChannel to set
 	 */
 	public void setNucleiChannel(ImagePlus nucleiChannel) {
-		this.nucleiChannel = nucleiChannel;
+		this.nucleiChannel = nucleiChannel.duplicate();
+		this.nucleiChannel.setFileInfo(nucleiChannel.getOriginalFileInfo());
 		zScaleSpin.setValue((float) nucleiChannel.getOriginalFileInfo().pixelDepth/nucleiChannel.getOriginalFileInfo().pixelWidth);
 
 	}
@@ -250,7 +251,7 @@ public class PanelPreProcessing extends JPanel {
 									try {
 										nucleiSegmentation3D(maxN,minN,zStep,maxThresh,prefilteringCheckB.isSelected());
 										cancelTask =false;
-										if(segmentedImp!=null) {
+										if(segmentedImp!=null && progressBar.getValue()==100) {
 											if(segmentedImp.getTitle().compareTo("dapi-seg")==0) {
 												IJ.error("Nuclei segmentation completed. Please extract their ROIs!");
 												newSegmentedFileName(segmentedImp.duplicate());
@@ -259,8 +260,9 @@ public class PanelPreProcessing extends JPanel {
 										}else {
 											preprocessedImp = null;
 											segmentedImp =null;
+											
 										}
-										
+										progressBar.setValue(0);
 										btRunCancel.setEnabled(true);
 									}catch(Exception ex) {
 										ex.printStackTrace();
@@ -343,7 +345,7 @@ public class PanelPreProcessing extends JPanel {
 	
 	public void nucleiSegmentation3D(int max_nuc_radius, int min_nuc_radius, float zDepth, int maxThresh,boolean prefilter) {
 		
-    	while(!cancelTask.booleanValue()) {
+    	while(!cancelTask.booleanValue() && progressBar.getValue()!=100) {
 	    	String subdir = null;
 	        File fl = new File(dir+"SEG");
 	        if (!fl.exists()){
@@ -465,8 +467,8 @@ public class PanelPreProcessing extends JPanel {
 	        	IJ.log("Nuclei segmentation STOPPED");
 	        	break;
 	        }
-	        progressBar.setValue(100);
 	        IJ.log("Save the segmented nuclei image as dapi-seg.tif in "+subdir);
+	        progressBar.setValue(100);
     	}
         
     }

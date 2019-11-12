@@ -79,8 +79,8 @@ public class spots3DSegmentation {
         spot_method = 2;//"Block";
         output = 0;//"[Label Image]";
         watershed = true;
-        volumeMin = (int) Math.round((4/3)*Math.PI*min_nuc_radius);
-        volumeMax = (int) Math.round((4/3)*Math.PI*max_nuc_radius);
+        volumeMin = (int) Math.round((4/3)*Math.PI*min_nuc_radius*10);
+        volumeMax = (int) Math.round((4/3)*Math.PI*max_nuc_radius/2);
         
      // in case old values was stored
         if (spot_method >= spot_methods.length) {

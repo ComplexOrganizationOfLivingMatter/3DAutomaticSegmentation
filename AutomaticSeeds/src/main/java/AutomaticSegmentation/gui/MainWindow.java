@@ -111,7 +111,7 @@ public class MainWindow extends JFrame {
 							tpPreLimeSeg.btCalculateROIs.setEnabled(isEnab);
 						} else {
 							nucleiChannel = duplicateImp(ImpArraylist.get(cbNucleiChannel.getSelectedIndex()));
-							tpPreLimeSeg.setNucleiChannel(nucleiChannel.duplicate());
+							tpPreLimeSeg.setNucleiChannel(nucleiChannel);
 							setEnablePanels(true, tpPreLimeSeg);
 						}
 					}
