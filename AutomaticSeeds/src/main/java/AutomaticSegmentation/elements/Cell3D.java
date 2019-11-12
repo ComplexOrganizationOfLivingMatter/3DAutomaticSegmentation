@@ -33,6 +33,9 @@ public class Cell3D extends Cell {
 
 	/**
 	 * 
+	 * @param cell father cell
+	 * @param zScale difference between Zs
+	 * @param totalFrames max number of frames
 	 */
 	public Cell3D(Cell cell, float zScale, int totalFrames) {
 		super();
@@ -41,7 +44,7 @@ public class Cell3D extends Cell {
 		this.cellChannel = cell.cellChannel;
 		this.cellTs = cell.cellTs;
 		this.color = cell.color;
-		this.display_mode = 0;
+		this.display_mode = 1;
 		
 		// New info of this class
 		this.totalFrames = totalFrames;
@@ -53,9 +56,9 @@ public class Cell3D extends Cell {
 	}
 
 	/**
-	 * @param dotsList
-	 * @param id
-	 * @param zScale
+	 * @param totalFrames max number of frames
+	 * @param id identifier
+	 * @param zScale difference between Zs
 	 */
 	public Cell3D(int id, float zScale, int totalFrames) {
 		super();
@@ -91,6 +94,7 @@ public class Cell3D extends Cell {
 	/**
 	 * Get the dots at a specific frame for this Cell
 	 * 
+	 * @param dots all the dots of the cell
 	 * @param frame
 	 *            z of this Cell
 	 * @return the list of dots at this z frame, if it exists. returns null
@@ -127,8 +131,8 @@ public class Cell3D extends Cell {
 
 	/**
 	 * 
-	 * @param axis
-	 * @param dots
+	 * @param axis selected axis
+	 * @param dots points of the cell
 	 * @return
 	 */
 	public float[] getCoordinate(String axis, ArrayList<DotN> dots) {
@@ -152,8 +156,8 @@ public class Cell3D extends Cell {
 
 	/**
 	 * 
-	 * @param frame
-	 * @return
+	 * @param frame selected Z frame
+	 * @return cell points
 	 */
 	public Point[] getPoints(int frame) {
 		ArrayList<DotN> cellZDots = this.getCell3DAt(frame);
@@ -191,7 +195,7 @@ public class Cell3D extends Cell {
 
 	/**
 	 * 
-	 * @param dots
+	 * @param dots add new points
 	 */
 	public void addDotsList(ArrayList<DotN> dots) {
 		for (int nDot = 0; nDot < dots.size(); nDot++) {
@@ -201,9 +205,9 @@ public class Cell3D extends Cell {
 
 	/**
 	 * 
-	 * @param allDots
-	 * @param zScale
-	 * @return
+	 * @param allDots the dots
+	 * @param zScale difference between Zs
+	 * @return the new dots processed
 	 */
 	public ArrayList<DotN> processLimeSegOutput(ArrayList<DotN> allDots, float zScale) {
 		ArrayList<DotN> newDots = new ArrayList<DotN>();
@@ -248,17 +252,22 @@ public class Cell3D extends Cell {
 		return newDots;
 	}
 
+	/**
+	 * 
+	 * @param newDots to calculate the normals 
+	 */
 	public void updateDotsNormals(ArrayList<DotN> newDots) {
 		double[] cellCentroid = getCellCentroid();
 		
 		for (DotN dot : newDots) {
 			dot.Norm = new Vector3D(dot.pos.x - cellCentroid[0], dot.pos.y - cellCentroid[1], dot.pos.z - cellCentroid[2]);
+	        dot.Norm.normalize();
 		}
 	}
 
 	/**
 	 * 
-	 * @return
+	 * @return the centroid
 	 */
 	public double[] getCellCentroid() {
 		// TODO Auto-generated method stub
