@@ -22,6 +22,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
+import AutomaticSegmentation.preProcessing.spots3DSegmentation;
 import AutomaticSegmentation.utils.Utils;
 import filters.Bandpass3D;
 import ij.IJ;
@@ -450,8 +451,12 @@ public class PanelPreProcessing extends JPanel {
 	        
 	        //nuclei segmentation
 	        IJ.log("Segmenting nuclei");
-	        String seg_option = "seeds_threshold="+maxThresh+" local_background=0 radius_0=2 radius_1=4 radius_2=6 weigth=0.50 radius_max="+max_nuc_radius+" sd_value="+max_nuc_radius/10+" local_threshold=[Gaussian fit] seg_spot=Block watershed volume_min="+Math.round((4/3)*Math.PI*min_nuc_radius)+" volume_max="+Math.round((4/3)*Math.PI*max_nuc_radius)+" seeds=Automatic spots=BP_nuclei radius_for_seeds=2 output=[Label Image]";
-	        IJ.run(segmentedImp,"3D Spot Segmentation",seg_option);
+	        //String seg_option = "seeds_threshold="+maxThresh+" local_background=0 radius_0=2 radius_1=4 radius_2=6 weigth=0.50 radius_max="+max_nuc_radius+" sd_value="+max_nuc_radius/10+" local_threshold=[Gaussian fit] seg_spot=Block watershed volume_min="+Math.round((4/3)*Math.PI*min_nuc_radius)+" volume_max="+Math.round((4/3)*Math.PI*max_nuc_radius)+" seeds=Automatic spots=BP_nuclei radius_for_seeds=2 output=[Label Image]";
+	        //IJ.run(segmentedImp,"3D Spot Segmentation",seg_option);
+	        
+	        spots3DSegmentation sp3dSeg = new spots3DSegmentation();
+	        sp3dSeg.spotSegmentation(segmentedImp, maxThresh, max_nuc_radius, min_nuc_radius);
+	        segmentedImp = sp3dSeg.getImpOutput();
 	        
 	        segmentedImp.setTitle("dapi-seg");
 	        IJ.saveAs(segmentedImp,"Tiff", subdir+"dapi-seg.tif");

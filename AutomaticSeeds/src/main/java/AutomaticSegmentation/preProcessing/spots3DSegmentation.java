@@ -15,7 +15,7 @@ import mcib_plugins.tools.RoiManager3D_2;
 /**
  * Description of the Class
  *
- * adapter from @author thomas (2006) by @author pedgomgal1
+ * adapted from @author thomas (2006) by @author pedgomgal1
  * 
  */
 public class spots3DSegmentation {
@@ -168,6 +168,10 @@ public class spots3DSegmentation {
             RoiManager3D_2 roimanager = new RoiManager3D_2();
             roimanager.addObjects3D(Objects);
         }
+    }
+    
+    public ImagePlus getImpOutput() {
+    	return segPlus;
     }
     
 }
