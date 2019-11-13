@@ -48,12 +48,12 @@ public interface genericSegmentation {
 			// Retrieve filtered stack
 			ClearCLBuffer inputClij = clij.push(nucleiImp);
 			ClearCLBuffer temp = clij.create(inputClij);
-			Kernels.meanBox(clij, inputClij, temp, strelRadius3D, strelRadius3D, strelRadius3D);
+			Kernels.medianBox(clij, inputClij, temp, strelRadius3D, strelRadius3D, strelRadius3D);
 			nucleiImp = clij.pull(temp);
 			inputClij.close();
 			temp.close();
 		} else {
-			Filters3D.filter(nucleiImp.getStack(), Filters3D.MEAN, strelRadius3D, strelRadius3D, strelRadius3D);
+			Filters3D.filter(nucleiImp.getStack(), Filters3D.MEDIAN, strelRadius3D, strelRadius3D, strelRadius3D);
 		}
 		return nucleiImp;
 	}
@@ -67,44 +67,44 @@ public interface genericSegmentation {
 	 * @param autoThresholdMethod
 	 * @return
 	 */
-	public default ImagePlus automaticThreshold(ImagePlus initImp, String autoThresholdMethod) {
+	public default ImagePlus automaticThreshold(ImagePlus initImp) {
 
-		IJ.log("Applying " + autoThresholdMethod + " and automatic threshold");
-		System.out.println("Applying " + autoThresholdMethod + " and automatic threshold");
+		/************ Store automatic thresholds **************/
 		ArrayList<Integer> thresholds = new ArrayList<Integer>();
 		ImageProcessor processor;
 		for (int i = 1; i <= initImp.getStackSize(); i++) {
 			processor = initImp.getStack().getProcessor(i);
-			processor.setAutoThreshold(autoThresholdMethod);
-			// System.out.println(processor.getAutoThreshold() + " " +
-			// processor.getMinThreshold() + " " + processor.getMaxThreshold());
 			
-			// Getting max instead of threshold, we obtain similar results compared with Fiji's
-			thresholds.add((int) processor.getMaxThreshold()); 
+			if (processor.getAutoThreshold()>10) {
+				thresholds.add((int) processor.getAutoThreshold()); 
+			}	
+		}
+		if (thresholds.isEmpty()) {
+			IJ.error("extremely dark images");
+			return null;
+		}else {
+		
+			/************ Calculate median threshold **************/
+			Collections.sort(thresholds);
+			int medianThresh = 0;
+			if (thresholds.size() % 2 == 1) {
+				medianThresh = (int) (thresholds.get(thresholds.size() / 2) + thresholds.get(thresholds.size() / 2 - 1))
+						/ 2;
+			} else {
+				medianThresh = (int) thresholds.get(thresholds.size() / 2);
+			}
+			IJ.log(""+medianThresh);
+			/************ Apply the calculated threshold **************/
+			ImagePlus imp_segmented = new ImagePlus("", initImp.getStack().duplicate());
+			for (int i = 1; i <= imp_segmented.getStackSize(); i++) {
+				imp_segmented.setSlice(i);
+				processor = imp_segmented.getChannelProcessor();
+				processor.threshold(medianThresh);
+			}
+			return imp_segmented;
 		}
 
-		// Calculate median
-		Collections.sort(thresholds);
-
-		int medianThresh = 0;
-		if (thresholds.size() % 2 == 1) {
-			medianThresh = (int) (thresholds.get(thresholds.size() / 2) + thresholds.get(thresholds.size() / 2 - 1))
-					/ 2;
-		} else {
-			medianThresh = (int) thresholds.get(thresholds.size() / 2);
-		}
-		System.out.println("thresh: " + medianThresh);
-
-		/************ Apply the calculated threshold **************/
-		ImagePlus imp_segmented = new ImagePlus("", initImp.getStack().duplicate());
-		for (int i = 1; i <= imp_segmented.getStackSize(); i++) {
-			imp_segmented.setSlice(i);
-			processor = imp_segmented.getChannelProcessor();
-			processor.threshold(medianThresh);
-		}
-
-		//imp_segmented.show();
-		return imp_segmented;
+		
 	}	
 
 	/**
@@ -154,13 +154,11 @@ public interface genericSegmentation {
 		// progressBar.show(0.25);
 		// find regional minima on gradient image with dynamic value of
 		// 'tolerance' and 'conn'-connectivity
-		System.out.println("Extended minima");
 		IJ.log("Extended Minima");
 		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima(imgGradient, toleranceWatershed, CONNECTIVITY);
 		// progressBar.show(0.4);
 
 		// impose minima on gradient image
-		System.out.println("impose minima");
 		IJ.log("Impose Minima");
 		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima(imgGradient, regionalMinima, CONNECTIVITY);
 		// progressBar.show(0.5);
@@ -168,7 +166,6 @@ public interface genericSegmentation {
 		//imgToShow.show();
 
 		// label minima using connected components (32-bit output)
-		System.out.println("Labelling");
 		IJ.log("Labelling");
 		// convert image to 16 bits to enable more labels???
 		ImageStack labeledMinima;
