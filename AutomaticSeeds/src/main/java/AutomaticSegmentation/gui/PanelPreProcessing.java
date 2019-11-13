@@ -9,6 +9,8 @@ import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,11 +24,14 @@ import javax.swing.JProgressBar;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
+import AutomaticSegmentation.preProcessing.QuickSegmentation;
 import AutomaticSegmentation.preProcessing.spots3DSegmentation;
+import AutomaticSegmentation.preProcessing.nuclei3DSegmentation;
 import AutomaticSegmentation.utils.Utils;
 import filters.Bandpass3D;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.Prefs;
 import ij.gui.OvalRoi;
 import ij.gui.Roi;
@@ -49,7 +54,7 @@ public class PanelPreProcessing extends JPanel {
 	 */
 	String dir = null;
     int max_nuc_radius = 28,min_nuc_radius = 18, seed_threshold = 29000;
-    private JCheckBox prefilteringCheckB;
+    private JCheckBox prefilteringCheckB,quickSegmentationCheckB;
     public JComboBox<String> cbSegmentedImg;
 	private JLabel maxNucleusSizeLb,minNucleusSizeLb,localMaximaThresholdLb,zScaleLb;
 	private JSpinner maxNucleusSizeSpin,minNucleusSizeSpin,localMaximaThresholdSpin,zScaleSpin;
@@ -120,8 +125,10 @@ public class PanelPreProcessing extends JPanel {
 		btLoad = new JButton("Load segmentation");
 		btShowNuclei = new JButton("Show nuclei");
 		btCalculateROIs = new JButton("Calculate ROIs");
-		prefilteringCheckB = new JCheckBox("Pre-filtering (3D median 4-4-2");
+		prefilteringCheckB = new JCheckBox("Pre-filtering (3D median 4-4-2)");
 		prefilteringCheckB.setSelected(false);
+		quickSegmentationCheckB = new JCheckBox("Quick segmentation");
+		quickSegmentationCheckB.setSelected(true);
 		maxNucleusSizeLb = new JLabel("Maximal nucleus radius (pixels)");
 		minNucleusSizeLb = new JLabel("Minimal nucleus radius (pixels)");
 		localMaximaThresholdLb = new JLabel("Local maxima threshold");
@@ -150,7 +157,8 @@ public class PanelPreProcessing extends JPanel {
 			
 		// Add components
 		this.add(btShowNuclei, "align center");
-		this.add(prefilteringCheckB,"align left,wrap");
+		this.add(prefilteringCheckB,"align left");
+		this.add(quickSegmentationCheckB,"align left,wrap");
 		this.add(maxNucleusSizeSpin,"align center");
 		this.add(maxNucleusSizeLb, "wrap,align left");
 		this.add(minNucleusSizeSpin,"align center");
@@ -176,7 +184,6 @@ public class PanelPreProcessing extends JPanel {
 		
 		ImpArraylistSegImg = new ArrayList<ImagePlus>();
 		ImpArraylistSegImg.add(null);
-		
 	}
 
 	public RoiManager getNucleiROIs(ImagePlus imp_segmented) {
@@ -243,13 +250,21 @@ public class PanelPreProcessing extends JPanel {
 								
 								public void run(){
 									
-																	
 									btRunCancel.setText("Cancel");
 									dir = nucleiChannel.getOriginalFileInfo().directory;
-									preprocessedImp = null;
 									segmentedImp =null;
 									try {
-										nucleiSegmentation3D(maxN,minN,zStep,maxThresh,prefilteringCheckB.isSelected());
+										
+										Instant start = Instant.now();
+									   
+										nuclei3DSegmentation nuc3Dseg = new nuclei3DSegmentation(nucleiChannel,maxN,minN,maxThresh,zStep,dir,cancelTask,progressBar,prefilteringCheckB,quickSegmentationCheckB);
+										segmentedImp = nuc3Dseg.segmentationProtocol();
+										
+										Instant finish = Instant.now();
+										 
+									    long timeElapsed = Duration.between(start, finish).getSeconds(); 
+									    IJ.log("duration:"+timeElapsed);
+									    
 										cancelTask =false;
 										if(segmentedImp!=null && progressBar.getValue()==100) {
 											if(segmentedImp.getTitle().compareTo("dapi-seg")==0) {
@@ -258,7 +273,6 @@ public class PanelPreProcessing extends JPanel {
 												cbSegmentedImg.setEnabled(true);
 											}
 										}else {
-											preprocessedImp = null;
 											segmentedImp =null;
 											
 										}
@@ -275,7 +289,6 @@ public class PanelPreProcessing extends JPanel {
 						else if(command.equals("Cancel")){
 							btRunCancel.setText("Run");
 							
-							preprocessedImp=null;
 							segmentedImp=null;
 							btRunCancel.setEnabled(false);
 							IJ.log("Stopping...");
@@ -342,136 +355,6 @@ public class PanelPreProcessing extends JPanel {
 		}
 	};
 	
-	
-	public void nucleiSegmentation3D(int max_nuc_radius, int min_nuc_radius, float zDepth, int maxThresh,boolean prefilter) {
-		
-    	while(!cancelTask.booleanValue() && progressBar.getValue()!=100) {
-	    	String subdir = null;
-	        File fl = new File(dir+"SEG");
-	        if (!fl.exists()){
-	            if (fl.mkdir()) {
-	                subdir = dir + "SEG/";
-	            } else {
-	                subdir = dir;
-	            }
-	        }
-	        else{
-	            subdir = this.dir + "SEG/";
-	        }
-	        
-	        progressBar.setValue(5);
-	    	preprocessedImp = nucleiChannel.duplicate();
-	    	preprocessedImp.setTitle("Dapi_channel");
-	        
-	        if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
-	        	break;
-	        }
-	        
-	        if(prefilteringCheckB.isSelected()){
-	        	
-	            IJ.log("Pre-filtering start");
-	            IJ.run(this.preprocessedImp, "Median 3D...", "x=4 y=4 z=2");
-	            IJ.log("Pre-filtering completed");           
-	        }
-	        
-	        if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
-	        	break;
-	        }
-	        
-	        progressBar.setValue(20);
-	        
-	        IJ.saveAs(preprocessedImp,"Tiff", subdir+preprocessedImp.getTitle()+".tif");
-	        IJ.log("Save the nuclei image as Dapi_channel.tif in "+subdir);
-	        
-
-	        if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
-	        	break;
-	        }
-	        progressBar.setValue(25);
-
-	        //band pass filtering
-	        IJ.run(preprocessedImp, "32-bit", "");
-	        IJ.log("Computing Band Pass...");
-	
-	        
-	        if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
-	        	break;
-	        }
-	        progressBar.setValue(35);
-
-			// filter image with 3D-bandpass
-	 		Bandpass3D bp3d = new Bandpass3D();
-	        
-			bp3d.in_hprad = max_nuc_radius;
-	 		bp3d.in_lprad = min_nuc_radius;
-	 		bp3d.in_xz_ratio = zDepth;
-			bp3d.in_image = preprocessedImp.getStack();
-			if (!bp3d.checkInputParams().equals("")) {
-				IJ.showMessage(bp3d.checkInputParams());
-				return;
-			}
-			bp3d.filterit();
-			
-	        if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
-	        	break;
-	        }
-	        progressBar.setValue(60);
-			
-	        this.preprocessedImp = new ImagePlus("BP_nuclei", bp3d.out_result);
-	 			 		
-	        if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
-	        	break;
-	        }
-	        progressBar.setValue(63);
-	        
-	        IJ.saveAs(this.preprocessedImp,"Tiff", subdir+"BP_nuclei.tif");
-	        IJ.log("Save the band pass filtered image as BP_nuclei.tif in "+subdir);
-	        segmentedImp = preprocessedImp.duplicate();
-	        segmentedImp.setSlice(segmentedImp.getNSlices()/2);
-	        progressBar.setValue(64);
-	        IJ.run(this.segmentedImp, "Enhance Contrast...", "saturated=0"); 
-	        
-	        if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
-	        	break;
-	        }
-	        progressBar.setValue(65);
-	        
-	        IJ.run(segmentedImp, "16-bit", "");
-	        
-	        if (this.cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
-	        	break;
-	        }
-	        progressBar.setValue(67);
-	        
-	        //nuclei segmentation
-	        IJ.log("Segmenting nuclei");
-	        //String seg_option = "seeds_threshold="+maxThresh+" local_background=0 radius_0=2 radius_1=4 radius_2=6 weigth=0.50 radius_max="+max_nuc_radius+" sd_value="+max_nuc_radius/10+" local_threshold=[Gaussian fit] seg_spot=Block watershed volume_min="+Math.round((4/3)*Math.PI*min_nuc_radius)+" volume_max="+Math.round((4/3)*Math.PI*max_nuc_radius)+" seeds=Automatic spots=BP_nuclei radius_for_seeds=2 output=[Label Image]";
-	        //IJ.run(segmentedImp,"3D Spot Segmentation",seg_option);
-	        
-	        spots3DSegmentation sp3dSeg = new spots3DSegmentation();
-	        sp3dSeg.spotSegmentation(segmentedImp, maxThresh, max_nuc_radius, min_nuc_radius);
-	        segmentedImp = sp3dSeg.getImpOutput();
-	        
-	        segmentedImp.setTitle("dapi-seg");
-	        IJ.saveAs(segmentedImp,"Tiff", subdir+"dapi-seg.tif");
-	        
-	        if (cancelTask.booleanValue()) {
-	        	IJ.log("Nuclei segmentation STOPPED");
-	        	break;
-	        }
-	        IJ.log("Save the segmented nuclei image as dapi-seg.tif in "+subdir);
-	        progressBar.setValue(100);
-    	}
-        
-    }
         
 	
 	public void newSegmentedFileName(ImagePlus imp) {

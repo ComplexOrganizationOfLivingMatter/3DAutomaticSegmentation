@@ -2,6 +2,8 @@ package AutomaticSegmentation.preProcessing;
 
 import java.util.ArrayList;
 
+import javax.swing.JProgressBar;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -18,8 +20,9 @@ import mcib_plugins.tools.RoiManager3D_2;
  * adapted from @author thomas (2006) by @author pedgomgal1
  * 
  */
-public class spots3DSegmentation {
+public class spots3DSegmentation implements genericSegmentation {
 
+	JProgressBar progressBar;
 	ImagePlus seedPlus;
     ImageStack seedStack;
     ImageHandler seed3DImage;
@@ -63,7 +66,7 @@ public class spots3DSegmentation {
     private boolean bigLabel;
     private int diff = 0;
     
-    public void spotSegmentation(ImagePlus inputImp, int maxThresh, int max_nuc_radius, int min_nuc_radius) {
+    public void spotSegmentation(ImagePlus inputImp, int maxThresh, int max_nuc_radius, int min_nuc_radius,JProgressBar progressBar) {
         
         // initialize segmentation parameters
         seeds_threshold = maxThresh;
@@ -81,6 +84,7 @@ public class spots3DSegmentation {
         watershed = true;
         volumeMin = (int) Math.round((4/3)*Math.PI*min_nuc_radius*10);
         volumeMax = (int) Math.round((4/3)*Math.PI*max_nuc_radius/2);
+        this.progressBar = progressBar;
         
      // in case old values was stored
         if (spot_method >= spot_methods.length) {
@@ -113,6 +117,8 @@ public class spots3DSegmentation {
     private void Segmentation() {
         Segment3DSpots seg = new Segment3DSpots(this.spot3DImage, this.seed3DImage);
         seg.show = debug;
+        
+        progressBar.setValue(62);
         // set parameters
         seg.setSeedsThreshold(this.seeds_threshold);
         seg.setLocalThreshold(local_background);
@@ -121,6 +127,9 @@ public class spots3DSegmentation {
         seg.setVolumeMax(volumeMax);
         IJ.log("Spot Image: " + seg.getRawImage().getTitle() + "   Seed Image : " + seg.getSeeds().getTitle());
         IJ.log("Vol min: " + seg.getVolumeMin() + "   Vol max: " + seg.getVolumeMax());
+        
+        progressBar.setValue(63);
+        
         switch (local_method) {
             case 0:
                 seg.setMethodLocal(Segment3DSpots.LOCAL_CONSTANT);
@@ -152,7 +161,11 @@ public class spots3DSegmentation {
         }
         // big label (more than 2^16 objects)
         seg.bigLabel = bigLabel;
+        
+        progressBar.setValue(65);
+        
         seg.segmentAll();
+        progressBar.setValue(92);
         int size = seg.getObjects().size();
         IJ.log("Number of labelled objects: " + size);
         // output        
