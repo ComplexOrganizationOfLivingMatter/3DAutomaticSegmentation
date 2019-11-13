@@ -72,7 +72,7 @@ public class RoiAdjustment {
 					// without share points
 					PolygonRoi polygon = new PolygonRoi(r.not(sOverlappingCell).getContainedFloatPoints(), 6);
 
-					Roi[] overRoi = getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
+					Roi[] overRoi = getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
 					// get the border with ConcaveHull and threshold as 1 to
 					// have all the points
 					PolygonRoi poly = getConcaveHull(overRoi, 1);
@@ -111,7 +111,7 @@ public class RoiAdjustment {
 	 * @param xCell
 	 * @param yCell
 	 */
-	public static Roi[] getRois(int[] xCell, int[] yCell, Roi r) {
+	public static Roi[] getAsRoiPoints(int[] xCell, int[] yCell, Roi r) {
 		Roi[] overRoi = new Roi[xCell.length];
 		for (int nDot = 0; nDot < xCell.length; nDot++) {
 			PointRoi point = new PointRoi(xCell[nDot] + (int) r.getXBase(), yCell[nDot] + (int) r.getYBase());
@@ -426,7 +426,7 @@ public class RoiAdjustment {
 						// not return all the points not contained in lumen
 						PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(), 6);
 
-						Roi[] overRoi = getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
+						Roi[] overRoi = getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
 						// get the border of the new polygon
 						PolygonRoi poly = getConcaveHull(overRoi, 1);
 						// save the new polygon as dots
@@ -441,7 +441,7 @@ public class RoiAdjustment {
 					if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0) {
 						PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(), 6);
 
-						Roi[] overRoi2 = getRois(polygon2.getXCoordinates(), polygon2.getYCoordinates(), polygon2);
+						Roi[] overRoi2 = getAsRoiPoints(polygon2.getXCoordinates(), polygon2.getYCoordinates(), polygon2);
 
 						PolygonRoi poly2 = getConcaveHull(overRoi2, 1);
 
@@ -463,7 +463,7 @@ public class RoiAdjustment {
 					if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
 						PolygonRoi polygon = new PolygonRoi(r.not(lum1).getContainedFloatPoints(), 6);
 
-						Roi[] overRoi = getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
+						Roi[] overRoi = getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
 
 						PolygonRoi poly = getConcaveHull(overRoi, 1);
 

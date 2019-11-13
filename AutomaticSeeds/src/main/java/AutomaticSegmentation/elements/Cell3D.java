@@ -10,6 +10,7 @@ import AutomaticSegmentation.gui.PanelPostProcessing;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.DotN;
 import eu.kiaru.limeseg.struct.Vector3D;
+import graphics.scenery.Mesh;
 import eu.kiaru.limeseg.struct.CellT;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
@@ -219,13 +220,7 @@ public class Cell3D extends Cell {
 			xPoints = new ArrayList<Integer>();
 			yPoints = new ArrayList<Integer>();
 
-			for (int i = 0; i < allDots.size(); i++) {
-				int zpos = 1 + (int) ((float) (allDots.get(i).pos.z / zScale));
-				if (zpos == numFrame) {
-					xPoints.add((int) allDots.get(i).pos.x);
-					yPoints.add((int) allDots.get(i).pos.y);
-				}
-			}
+			getDotsAtFrame(allDots, zScale, xPoints, yPoints, numFrame);
 			
 			if (xPoints.size() > 0) {
 				int[] xPoints_array = xPoints.stream().mapToInt(i -> i).toArray();
@@ -235,14 +230,14 @@ public class Cell3D extends Cell {
 				// order the dots according the nearest dots
 				PolygonRoi prePolygon = RoiAdjustment.getOrderDots(PrePolygon);
 				// create a Roi with the polygon from orderDots
-				Roi[] allRoi = RoiAdjustment.getRois(prePolygon.getXCoordinates(), prePolygon.getYCoordinates(),
+				Roi[] allRoi = RoiAdjustment.getAsRoiPoints(prePolygon.getXCoordinates(), prePolygon.getYCoordinates(),
 						prePolygon);
 				// Calculate the boarder with concave hull
 				PolygonRoi poly = RoiAdjustment.getConcaveHull(allRoi, PanelPostProcessing.THRESHOLD);
 				// Full fill the border with dots
 				PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(1, false), 2);
 
-				Roi[] allRois = RoiAdjustment.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
+				Roi[] allRois = RoiAdjustment.getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
 				newDots.addAll(RoiAdjustment.RoisToDots(numFrame, allRois, zScale, this.cellTs.get(0)));
 			}
 		}
@@ -250,6 +245,24 @@ public class Cell3D extends Cell {
 		updateDotsNormals(newDots);
 
 		return newDots;
+	}
+
+	/**
+	 * @param allDots
+	 * @param zScale
+	 * @param xPoints
+	 * @param yPoints
+	 * @param numFrame
+	 */
+	private void getDotsAtFrame(ArrayList<DotN> allDots, float zScale, List<Integer> xPoints, List<Integer> yPoints,
+			int numFrame) {
+		for (int i = 0; i < allDots.size(); i++) {
+			int zpos = 1 + (int) ((float) (allDots.get(i).pos.z / zScale));
+			if (zpos == numFrame) {
+				xPoints.add((int) allDots.get(i).pos.x);
+				yPoints.add((int) allDots.get(i).pos.y);
+			}
+		}
 	}
 
 	/**
@@ -284,5 +297,23 @@ public class Cell3D extends Cell {
 		centroid[2] = centroid[2] / dotsList.size();
 		
 		return centroid;
+	}
+	
+	public Mesh buildMesh(){
+		Mesh cellMesh = new Mesh(this.id_Cell);
+		
+		ArrayList<DotN> dotsActualFrame;
+		ArrayList<DotN> dotsNextFrame;
+		for (int numFrame = 1; numFrame < totalFrames; numFrame++){
+			dotsActualFrame = getCell3DAt(this.dotsList, numFrame-1);
+			dotsNextFrame = getCell3DAt(this.dotsList, numFrame);
+			
+			
+		}
+		
+		// Construct mesh using Facets and Vertices (points)
+		
+		
+		return cellMesh;
 	}
 }
