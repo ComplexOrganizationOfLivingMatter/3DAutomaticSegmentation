@@ -54,7 +54,7 @@ public class PanelPreProcessing extends JPanel {
 	 */
 	String dir = null;
     int max_nuc_radius = 28,min_nuc_radius = 18, seed_threshold = 29000;
-    private JCheckBox prefilteringCheckB,quickSegmentationCheckB;
+    private JCheckBox prefilteringCheckB,quickSegmentationCheckB,gpuCheckBox;
     public JComboBox<String> cbSegmentedImg;
 	private JLabel maxNucleusSizeLb,minNucleusSizeLb,localMaximaThresholdLb,zScaleLb;
 	private JSpinner maxNucleusSizeSpin,minNucleusSizeSpin,localMaximaThresholdSpin,zScaleSpin;
@@ -129,6 +129,8 @@ public class PanelPreProcessing extends JPanel {
 		prefilteringCheckB.setSelected(false);
 		quickSegmentationCheckB = new JCheckBox("Quick segmentation");
 		quickSegmentationCheckB.setSelected(true);
+		gpuCheckBox = new JCheckBox("Use GPU");
+		gpuCheckBox.setSelected(false);
 		maxNucleusSizeLb = new JLabel("Maximal nucleus radius (pixels)");
 		minNucleusSizeLb = new JLabel("Minimal nucleus radius (pixels)");
 		localMaximaThresholdLb = new JLabel("Local maxima threshold");
@@ -160,7 +162,8 @@ public class PanelPreProcessing extends JPanel {
 		this.add(prefilteringCheckB,"align left");
 		this.add(quickSegmentationCheckB,"align left,wrap");
 		this.add(maxNucleusSizeSpin,"align center");
-		this.add(maxNucleusSizeLb, "wrap,align left");
+		this.add(maxNucleusSizeLb, "align left");
+		this.add(gpuCheckBox, "align left,wrap");
 		this.add(minNucleusSizeSpin,"align center");
 		this.add(minNucleusSizeLb, "wrap,align left");
 		this.add(localMaximaThresholdSpin,"align center");
@@ -257,7 +260,7 @@ public class PanelPreProcessing extends JPanel {
 										
 										Instant start = Instant.now();
 									   
-										nuclei3DSegmentation nuc3Dseg = new nuclei3DSegmentation(nucleiChannel,maxN,minN,maxThresh,zStep,dir,cancelTask,progressBar,prefilteringCheckB,quickSegmentationCheckB);
+										nuclei3DSegmentation nuc3Dseg = new nuclei3DSegmentation(nucleiChannel,maxN,minN,maxThresh,zStep,dir,cancelTask,progressBar,prefilteringCheckB,quickSegmentationCheckB, gpuCheckBox);
 										segmentedImp = nuc3Dseg.segmentationProtocol();
 										
 										Instant finish = Instant.now();

@@ -1,6 +1,8 @@
 package AutomaticSegmentation.preProcessing;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 import javax.swing.JProgressBar;
 
@@ -12,17 +14,21 @@ import ij.process.ImageProcessor;
 import inra.ijpb.binary.BinaryImages;
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.IntrinsicVolumes3D;
+import inra.ijpb.morphology.MinimaAndMaxima3D;
 import inra.ijpb.morphology.Morphology;
 import inra.ijpb.morphology.Reconstruction;
 import inra.ijpb.morphology.Strel;
+import inra.ijpb.morphology.Strel3D;
+import inra.ijpb.watershed.Watershed;
 
 /**
  * 
  * @author Pedro Gómez-Gálvez, Pedro Rodríguez-Hiruela and Pablo Vicente-Munuera
  *
  */
-public class QuickSegmentation implements genericSegmentation {
+public class QuickSegmentation{
 	
+	int CONNECTIVITY = 6;
 	private ImagePlus inputNucleiImp;
 	private ImagePlus outputImp;
 	private int strelRadius2D;
@@ -112,7 +118,7 @@ public class QuickSegmentation implements genericSegmentation {
 			Strel shape2D = Strel.Shape.DISK.fromRadius(this.strelRadius2D);
 			ImageStack imgFilled = imp_segmented.getStack().duplicate();
 			
-			imp_segmented.show();
+//			imp_segmented.show();
 			
 			for (int i = 1; i <= imgFilled.getSize(); i++) {
 				
@@ -140,8 +146,8 @@ public class QuickSegmentation implements genericSegmentation {
 			IJ.log("Small volume opening");
 			ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, pixelsToOpenVolume);
 			
-			ImagePlus im2Show2 = new ImagePlus("", imgFilterSmall);
-			im2Show2.show();
+//			ImagePlus im2Show2 = new ImagePlus("", imgFilterSmall);
+//			im2Show2.show();
 			
 			if (cancelTask.booleanValue()) {
 	        	IJ.log("nuclei segmentation STOPPED");
@@ -149,15 +155,15 @@ public class QuickSegmentation implements genericSegmentation {
 	        }
 			progressBar.setValue(55);
 			//Watershed process
-			IJ.log("Watershed");
+			IJ.log("Init Watershed protocol");
 			ImageStack resultStack = watershedProcess(BitD, dams, imgFilterSmall, strelRadius3D, toleranceWatershed);
 			if (cancelTask.booleanValue()) {
 	        	IJ.log("nuclei segmentation STOPPED");
 	        	break;
 	        }
 			
-			ImagePlus im2Show3 = new ImagePlus("", resultStack);
-			im2Show3.show();
+//			ImagePlus im2Show3 = new ImagePlus("", resultStack);
+//			im2Show3.show();
 			
 			progressBar.setValue(80);
 			/****** get array of volumes ******/
@@ -172,8 +178,8 @@ public class QuickSegmentation implements genericSegmentation {
 			
 			progressBar.setValue(83);
 			int[] labels = LabelImages.findAllLabels(resultStack);
-			ImagePlus im2Show4 = new ImagePlus("", resultStack);
-			im2Show4.show();
+//			ImagePlus im2Show4 = new ImagePlus("", resultStack);
+//			im2Show4.show();
 			
 			if (cancelTask.booleanValue()) {
 	        	IJ.log("nuclei segmentation STOPPED");
@@ -196,23 +202,102 @@ public class QuickSegmentation implements genericSegmentation {
 			IJ.log("Removing outliers");
 			ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
 			
-			ImagePlus im2Show5 = new ImagePlus("", imgFilterSize);
-			im2Show5.show();
+//			ImagePlus im2Show5 = new ImagePlus("", imgFilterSize);
+//			im2Show5.show();
 			
 			if (cancelTask.booleanValue()) {
 	        	IJ.log("nuclei segmentation STOPPED");
 	        	break;
 	        }
 			
-			ImagePlus imp_segmentedFinal = createColouredImageWithLabels(this.inputNucleiImp, imgFilterSize);
+			ImagePlus imp_segmentedFinal = nuclei3DSegmentation.createColouredImageWithLabels(inputNucleiImp, imgFilterSize);
 			
 			outputImp = imp_segmentedFinal;
 			progressBar.setValue(100);
 			
-			imp_segmentedFinal.show();
+//			imp_segmentedFinal.show();
 			
 			
 		}
 		return outputImp;
 	}
+	
+	public ImagePlus automaticThreshold(ImagePlus initImp) {
+
+		/************ Store automatic thresholds **************/
+		ArrayList<Integer> thresholds = new ArrayList<Integer>();
+		ImageProcessor processor;
+		for (int i = 1; i <= initImp.getStackSize(); i++) {
+			processor = initImp.getStack().getProcessor(i);
+			
+			if (processor.getAutoThreshold()>10) {
+				thresholds.add((int) processor.getAutoThreshold()); 
+			}	
+		}
+		if (thresholds.isEmpty()) {
+			IJ.error("extremely dark images");
+			return null;
+		}else {
+		
+			/************ Calculate median threshold **************/
+			Collections.sort(thresholds);
+			int medianThresh = 0;
+			if (thresholds.size() % 2 == 1) {
+				medianThresh = (int) (thresholds.get(thresholds.size() / 2) + thresholds.get(thresholds.size() / 2 - 1))
+						/ 2;
+			} else {
+				medianThresh = (int) thresholds.get(thresholds.size() / 2);
+			}
+			/************ Apply the calculated threshold **************/
+			ImagePlus imp_segmented = new ImagePlus("", initImp.getStack().duplicate());
+			for (int i = 1; i <= imp_segmented.getStackSize(); i++) {
+				imp_segmented.setSlice(i);
+				processor = imp_segmented.getChannelProcessor();
+				processor.threshold(medianThresh);
+			}
+			return imp_segmented;
+		}
+
+		
+	}
+	
+	public ImageStack watershedProcess(int BitD, boolean dams, ImageStack imgFilterSmall, int strelRadius3D, double toleranceWatershed) {
+
+		/*************Apply morphological gradient to input image*************/
+		IJ.log("	Gradient");
+		Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(strelRadius3D);
+		ImageStack imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
+
+		/*************Find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity*************/
+		IJ.log("	Extended Minima");
+		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima(imgGradient, toleranceWatershed, CONNECTIVITY);
+
+		/************************impose minima on gradient image**********************/
+		IJ.log("	Impose Minima");
+		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima(imgGradient, regionalMinima, CONNECTIVITY);
+
+		/************************label minima using connected components (32-bit output)**********************/
+		IJ.log("	Labelling");
+		ImageStack labeledMinima;
+		try {
+			labeledMinima = BinaryImages.componentsLabeling(regionalMinima, CONNECTIVITY, BitD);
+		} catch (Exception e) {
+			IJ.log("	Corverting to 16-bits");
+			ImagePlus regMinip = new ImagePlus("", regionalMinima);
+			ImageConverter converter = new ImageConverter(regMinip);
+			converter.convertToGray16();
+			labeledMinima = BinaryImages.componentsLabeling(regMinip.getImageStack(), CONNECTIVITY, regMinip.getBitDepth());
+			ImagePlus impMin = new ImagePlus("", imposedMinima);
+			ImageConverter converter2 = new ImageConverter(impMin);
+			converter2.convertToGray16();
+			imposedMinima = impMin.getImageStack();
+		}
+		
+		/*****Apply marker-based watershed using the labeled minima on the minima-imposed*****/
+		IJ.log("	Watershed");
+		ImageStack resultStack = Watershed.computeWatershed(imposedMinima, labeledMinima, CONNECTIVITY, dams);
+
+		return resultStack;
+	}
+	
 }

@@ -20,7 +20,7 @@ import mcib_plugins.tools.RoiManager3D_2;
  * adapted from @author thomas (2006) by @author pedgomgal1
  * 
  */
-public class spots3DSegmentation implements genericSegmentation {
+public class spots3DSegmentation {
 
 	JProgressBar progressBar;
 	ImagePlus seedPlus;

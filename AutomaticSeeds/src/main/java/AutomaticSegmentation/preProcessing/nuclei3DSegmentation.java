@@ -1,17 +1,26 @@
 package AutomaticSegmentation.preProcessing;
 
-import java.awt.peer.PanelPeer;
+import java.awt.Color;
+import java.awt.image.ColorModel;
 import java.io.File;
 
 import javax.swing.JCheckBox;
 import javax.swing.JProgressBar;
 
-import AutomaticSegmentation.gui.PanelPreProcessing;
 import filters.Bandpass3D;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.ImageStack;
+import ij.plugin.Filters3D;
+import ij.process.ImageConverter;
+import inra.ijpb.data.image.Images3D;
+import inra.ijpb.util.ColorMaps;
+import inra.ijpb.util.ColorMaps.CommonLabelMaps;
+import net.haesleinhuepf.clij.CLIJ;
+import net.haesleinhuepf.clij.clearcl.ClearCLBuffer;
+import net.haesleinhuepf.clij.kernels.Kernels;
 
-public class nuclei3DSegmentation implements genericSegmentation{
+public class nuclei3DSegmentation{
 
 	private int max_nuc_radius, min_nuc_radius, maxThresh;
 	private float zStep;
@@ -19,10 +28,10 @@ public class nuclei3DSegmentation implements genericSegmentation{
 	private Boolean cancelTask;
 	private JProgressBar progressBar;
 	private ImagePlus nucleiChannel,preprocessedImp,segmentedImp;
-	private JCheckBox prefilteringCheckB,quickSegmentationCheckB;
-	
+	private JCheckBox prefilteringCheckB,quickSegmentationCheckB,gpuCheckBox;
+		
 	public nuclei3DSegmentation(ImagePlus nucleiChannel,int max_nuc_radius, int min_nuc_radius, int maxThresh, float zStep,
-			String dir, Boolean cancelTask, JProgressBar progressBar,JCheckBox prefilteringCheckB, JCheckBox quickSegmentationCheckB) {
+			String dir, Boolean cancelTask, JProgressBar progressBar,JCheckBox prefilteringCheckB, JCheckBox quickSegmentationCheckB, JCheckBox gpuCheckBox) {
 		super();
 		this.max_nuc_radius = max_nuc_radius;
 		this.min_nuc_radius = min_nuc_radius;
@@ -34,6 +43,7 @@ public class nuclei3DSegmentation implements genericSegmentation{
 		this.nucleiChannel = nucleiChannel;
 		this.prefilteringCheckB = prefilteringCheckB;
 		this.quickSegmentationCheckB = quickSegmentationCheckB;
+		this.gpuCheckBox = gpuCheckBox;
 	}
 	
 	public ImagePlus segmentationProtocol() {
@@ -62,13 +72,12 @@ public class nuclei3DSegmentation implements genericSegmentation{
 	        	break;
 	        }
 	        
+	        
+	        /******************** Median filter **********************/
 	        if(prefilteringCheckB.isSelected()){
 	        	
 	            IJ.log("Pre-filtering start");
-	            
-	            //IF GPU ----> CLIJ median 3D
-	            
-	            IJ.run(this.preprocessedImp, "Median 3D...", "x=4 y=4 z=2");
+	            filterPreprocessing(preprocessedImp, 4, 4, 2);
 	            IJ.log("Pre-filtering completed");   
 	            
 	            if (cancelTask.booleanValue()) {
@@ -202,4 +211,51 @@ public class nuclei3DSegmentation implements genericSegmentation{
         return imp;
 	}
 	
+	
+	public ImagePlus filterPreprocessing(ImagePlus nucleiImp, int xRad,int yRad, int zRad) {
+		
+		ImagePlus nucleiImp2 = nucleiImp.duplicate(); 
+		if (gpuCheckBox.isSelected()) { // More info at https://clij.github.io/clij-docs/referenceJava
+			try {
+				// init CLIJ and GPU
+				CLIJ clij = CLIJ.getInstance();			
+				ClearCLBuffer inputClij = clij.push(nucleiImp);
+				ClearCLBuffer temp = clij.create(inputClij);
+				Kernels.medianBox(clij, inputClij, temp, xRad, yRad, zRad);
+				nucleiImp2 = clij.pull(temp);
+				inputClij.close();
+				temp.close();
+			}
+			catch(Exception ex){
+				ex.printStackTrace();
+				IJ.error("Try deselect 'use GPU' ");
+			}
+		} else {
+			Filters3D.filter(nucleiImp2.getStack(), Filters3D.MEDIAN, xRad, yRad, zRad);
+		}
+		return nucleiImp2;
+	}
+	
+	public static ImagePlus createColouredImageWithLabels(ImagePlus initImp, ImageStack imgFilterSize) {
+		/*** get colored labels and return image ***/
+		// create image with watershed result
+		ImagePlus imp_segmentedFinal = new ImagePlus("filtered size", imgFilterSize);
+		// assign right calibration
+		imp_segmentedFinal.setCalibration(initImp.getCalibration());
+		// optimize display range
+		Images3D.optimizeDisplayRange(imp_segmentedFinal);
+		// Convert the segmented image to 8-Bit
+		ImageConverter converterFinal = new ImageConverter(imp_segmentedFinal);
+		converterFinal.convertToGray8();
+		// Color image
+		byte[][] colorMap = CommonLabelMaps.fromLabel(CommonLabelMaps.GOLDEN_ANGLE.getLabel()).computeLut(255, false);
+		// Border, color
+		ColorModel cm = ColorMaps.createColorModel(colorMap, Color.BLACK);
+
+		imp_segmentedFinal.getProcessor().setColorModel(cm);
+		imp_segmentedFinal.getImageStack().setColorModel(cm);
+		imp_segmentedFinal.updateAndDraw();
+		return imp_segmentedFinal;
+	}
+
 }
