@@ -59,6 +59,7 @@ import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
+import graphics.scenery.Mesh;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.Overlay;
@@ -68,6 +69,9 @@ import ij.gui.Roi;
 import ij.gui.ShapeRoi;
 import ij.gui.TextRoi;
 import ij.process.ImageProcessor;
+import net.imagej.Dataset;
+import net.imagej.ops.Ops;
+import sc.iview.SciView;
 
 /**
  * @author Victor Hugo Arriaga, Antonio Tagua, Pablo Vicente-Munuera
@@ -151,7 +155,6 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						labelCells = RoiAdjustment.getLabelCells(all3dCells, cellOutlineChannel);
 						MainAutomatic3DSegmentation.callToolbarPolygon();
 						lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
-						removeCellOverlap();
 						removeCellLumenOverlap();
 						cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(), all3dCells,
 								cellOutlineChannel, false, lumenDots));
@@ -226,7 +229,12 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == btn3DDisplay) {
-			LimeSeg.constructMesh();
+			LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale*1.5);
+			for (Cell3D cell3d : all3dCells) {
+				LimeSeg.currentCell = cell3d;
+				cell3d.buildMesh();
+				LimeSeg.constructMesh();
+			}
 			LimeSeg.make3DViewVisible();
 			LimeSeg.putAllCellsTo3DDisplay();
 			double[] objectCentroid = this.getObjectCentroid();
@@ -515,7 +523,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							// lumen and save in polygon
 							PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(), 6);
 
-							Roi[] overRoi = RoiAdjustment.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(),
+							Roi[] overRoi = RoiAdjustment.getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(),
 									polygon);
 							// get the border of polygon without lumen parts
 							// with concavehull function
@@ -539,7 +547,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0) {
 							PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(), 6);
 
-							Roi[] overRoi2 = RoiAdjustment.getRois(polygon2.getXCoordinates(),
+							Roi[] overRoi2 = RoiAdjustment.getAsRoiPoints(polygon2.getXCoordinates(),
 									polygon2.getYCoordinates(), polygon2);
 
 							PolygonRoi poly2 = RoiAdjustment.getConcaveHull(overRoi2, 1);
@@ -563,7 +571,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
 							PolygonRoi polygon = new PolygonRoi(r.not(lum1).getContainedFloatPoints(), 6);
 
-							Roi[] overRoi = RoiAdjustment.getRois(polygon.getXCoordinates(), polygon.getYCoordinates(),
+							Roi[] overRoi = RoiAdjustment.getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(),
 									polygon);
 
 							PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
@@ -580,57 +588,6 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					}
 				}
 
-			}
-		}
-	}
-
-	/**
-	 * 
-	 */
-	public void removeCellOverlap() {
-		for (int nFrame = 1; nFrame < cellOutlineChannel.getStackSize() + 1; nFrame++) {
-			for (int nCell = 0; nCell < all3dCells.size(); nCell++) {
-				// Check if the cell is not empty
-				if (all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) {
-					// Get the cell points
-					float[] xCell = all3dCells.get(nCell).getCoordinate("x", all3dCells.get(nCell).getCell3DAt(nFrame));
-					float[] yCell = all3dCells.get(nCell).getCoordinate("y", all3dCells.get(nCell).getCell3DAt(nFrame));
-					// Points to polygon to shape
-					PolygonRoi currentCell = new PolygonRoi(xCell, yCell, 6);
-					ShapeRoi s = new ShapeRoi(currentCell);
-					ShapeRoi r = new ShapeRoi(currentCell);
-
-					for (int nC = 0; nC < all3dCells.size(); nC++) {
-						// if the cell is not empty in the frame do the
-						// calculation
-						if (all3dCells.get(nC).getCell3DAt(nFrame).size() > 0) {
-							// get the x,y points of the cell
-							float[] xC = all3dCells.get(nC).getCoordinate("x", all3dCells.get(nC).getCell3DAt(nFrame));
-							float[] yC = all3dCells.get(nC).getCoordinate("y", all3dCells.get(nC).getCell3DAt(nFrame));
-
-							PolygonRoi overlappingCell = new PolygonRoi(xC, yC, 6);
-							ShapeRoi sNewPolygon = new ShapeRoi(overlappingCell);
-							ShapeRoi sOverlappingCell = new ShapeRoi(overlappingCell);
-							ShapeRoi overlappingZone = new ShapeRoi(sNewPolygon.and(s));
-
-							if ((overlappingZone.getFloatWidth() != 0 | overlappingZone.getFloatHeight() != 0)
-									& all3dCells.get(nC).id_Cell != all3dCells.get(nCell).id_Cell) {
-								PolygonRoi polygon = new PolygonRoi(sOverlappingCell.not(r).getContainedFloatPoints(),
-										6);
-
-								Roi[] overRoi = RoiAdjustment.getRois(polygon.getXCoordinates(),
-										polygon.getYCoordinates(), polygon);
-								PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
-								ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
-										(float) LimeSeg.opt.getOptParam("ZScale"));
-								ArrayList<DotN> integratedDots = RoiAdjustment.integrateNewRegion(dotsNewRegion,
-										all3dCells.get(nC).dotsList, nFrame, (float) LimeSeg.opt.getOptParam("ZScale"));
-
-								all3dCells.get(nC).setDotsList(integratedDots);
-							}
-						}
-					}
-				}
 			}
 		}
 	}
@@ -729,8 +686,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							// correct border
 							PolygonRoi postpol = new PolygonRoi(poly2.getInterpolatedPolygon(2, false), 6);
 
-							Roi[] roiDots = RoiAdjustment.getRois(poly.getXCoordinates(), poly.getYCoordinates(), poly);
-							Roi[] roiDots2 = RoiAdjustment.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(),
+							Roi[] roiDots = RoiAdjustment.getAsRoiPoints(poly.getXCoordinates(), poly.getYCoordinates(), poly);
+							Roi[] roiDots2 = RoiAdjustment.getAsRoiPoints(postpol.getXCoordinates(), postpol.getYCoordinates(),
 									postpol);
 							// find the border with ConcavHull
 							PolygonRoi lum = RoiAdjustment.getConcaveHull(roiDots, THRESHOLD);
@@ -746,7 +703,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							// save
 							PolygonRoi poly = new PolygonRoi(xPoints, yPoints, 6);
 							PolygonRoi postpol = new PolygonRoi(poly.getInterpolatedPolygon(2, false), 6);
-							Roi[] roiDots = RoiAdjustment.getRois(postpol.getXCoordinates(), postpol.getYCoordinates(),
+							Roi[] roiDots = RoiAdjustment.getAsRoiPoints(postpol.getXCoordinates(), postpol.getYCoordinates(),
 									postpol);
 							PolygonRoi lum = RoiAdjustment.getConcaveHull(roiDots, THRESHOLD);
 							lumenDots[zIndex][0] = lum;
