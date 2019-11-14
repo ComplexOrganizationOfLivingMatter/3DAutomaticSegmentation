@@ -15,6 +15,7 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
+import eu.kiaru.limeseg.struct.Vector3D;
 import ij.ImagePlus;
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
@@ -512,6 +513,29 @@ public class RoiAdjustment {
 			}
 		}
 		return textRois;
-
+	}
+	
+	/***
+	 * Interpolating method from 
+	 * https://stackoverflow.com/questions/30182467/how-to-implement-linear-interpolation-method-in-java-array
+	 * @param start start of the interval
+	 * @param end end of the interval
+	 * @param count count of output interpolated numbers
+	 * @return array of interpolated number with specified count
+	 */
+	public static ArrayList<DotN> interpolate(Vector3D start, Vector3D end, int count) {
+	    if (count < 2) {
+	        throw new IllegalArgumentException("interpolate: illegal count!");
+	    }
+	    
+	    ArrayList<DotN> middleInterpolatedDots = new ArrayList<DotN>();
+	    
+	    Vector3D dirVector = Vector3D.VecteurDir(end, start);
+	    Vector3D interpolatedDot;
+	    for (int numPlane = 0; numPlane <= count; ++ numPlane) {
+	    	interpolatedDot = new Vector3D((numPlane / count) * dirVector.x, (numPlane / count) * dirVector.y, (numPlane / count) * dirVector.z);
+	    	middleInterpolatedDots.add(new DotN(Vector3D.sum(start, interpolatedDot), new Vector3D(0, 0, 0)));
+	    }
+	    return middleInterpolatedDots;
 	}
 }
