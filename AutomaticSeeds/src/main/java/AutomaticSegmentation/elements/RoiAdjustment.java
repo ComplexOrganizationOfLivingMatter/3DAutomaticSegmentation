@@ -43,9 +43,18 @@ public class RoiAdjustment {
 		// TODO: SIMPLIFY FUNCTION
 		
 		PolygonRoi newPolygonInterpolated = new PolygonRoi(newPolygon.getInterpolatedPolygon(2, false), 2);
+		// create the shape of the selection
+		ShapeRoi modifiedCell = new ShapeRoi(newPolygon);
 		int selectedCell = -1;
 		// star to read all the cells
 		for (int nCell = 0; nCell < allCells.size(); nCell++) {
+			if (allCells.get(nCell).id_Cell == id) {
+				// if the cell is the same only save the value in
+				// selectedCell to add later
+				selectedCell = nCell;
+				continue;
+			}
+			
 			// if the cell is not empty in the frame do the calculation
 			if (allCells.get(nCell).getCell3DAt(frame).size() > 0) {
 				// get the x,y points of the cell
@@ -54,17 +63,16 @@ public class RoiAdjustment {
 
 				// create the shape of the cell
 				ShapeRoi overlappingCell = new ShapeRoi(new PolygonRoi(xCell, yCell, 6));
-				// create the shape of the selection
-				ShapeRoi modifiedCell = new ShapeRoi(newPolygon);
 				// verify if the selection is contain in the current cell with
 				// and
-				ShapeRoi overlappingZone = new ShapeRoi(modifiedCell.and(overlappingCell));
+				ShapeRoi overlappingZone = new ShapeRoi(overlappingCell.and(modifiedCell));
 				// if the cell share the space width o height will be different
 				// to 0 also verify the cell is different of the cell to change
 				if ((overlappingZone.getFloatWidth() != 0 | overlappingZone.getFloatHeight() != 0)
 						& allCells.get(nCell).id_Cell != id) {
 					// if the cell share space, function not will return the new
 					// polygon of the cell without share points
+					overlappingCell = new ShapeRoi(new PolygonRoi(xCell, yCell, 6));
 					PolygonRoi polygonNoModifiedCell = new PolygonRoi(overlappingCell.not(modifiedCell).getContainedFloatPoints(), 6);
 
 					// get the border with ConcaveHull and threshold as 1 to
@@ -75,13 +83,10 @@ public class RoiAdjustment {
 					Roi[] allRois = RoiAdjustment.getAsRoiPoints(polygon);
 					allCells.get(nCell).getDotsPerSlice()[frame] = RoiAdjustment.RoisToDots(frame, allRois, zScale, allCells.get(nCell).cellTs.get(0));
 
-				} else if (allCells.get(nCell).id_Cell == id) {
-					// if the cell is the same only save the value in
-					// selectedCell to add later
-					selectedCell = nCell;
-				}
+				} 
 			}
 		}
+
 		// Replace the cell with the mistaken overlay by the new cell.
 		Roi[] allRois = RoiAdjustment.getAsRoiPoints(newPolygonInterpolated);
 		allCells.get(selectedCell).getDotsPerSlice()[frame] = RoiAdjustment.RoisToDots(frame, allRois, zScale, allCells.get(selectedCell).cellTs.get(0));
