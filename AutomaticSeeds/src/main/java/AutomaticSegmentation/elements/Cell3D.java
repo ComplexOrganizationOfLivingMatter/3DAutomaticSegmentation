@@ -198,10 +198,8 @@ public class Cell3D extends Cell {
 				PolygonRoi PrePolygon = new PolygonRoi(xPoints_array, yPoints_array, yPoints_array.length, 2);
 				// order the dots according the nearest dots
 				PolygonRoi prePolygon = RoiAdjustment.getOrderDots(PrePolygon);
-				// create a Roi with the polygon from orderDots
-				Roi[] allRoi = RoiAdjustment.getAsRoiPoints(prePolygon);
 				// Calculate the boarder with concave hull
-				PolygonRoi poly = RoiAdjustment.getConcaveHull(allRoi, PanelPostProcessing.THRESHOLD);
+				PolygonRoi poly = RoiAdjustment.getConcaveHull(prePolygon, PanelPostProcessing.THRESHOLD);
 				// Full fill the border with dots
 				PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(1, false), 2);
 				Roi[] allRois = RoiAdjustment.getAsRoiPoints(polygon);

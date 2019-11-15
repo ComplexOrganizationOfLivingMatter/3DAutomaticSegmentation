@@ -519,10 +519,9 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 								// lumen and save in polygon
 								PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(), 6);
 	
-								Roi[] overRoi = RoiAdjustment.getAsRoiPoints(polygon);
 								// get the border of polygon without lumen parts
 								// with concavehull function
-								PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
+								PolygonRoi poly = RoiAdjustment.getConcaveHull(polygon, 1);
 	
 								// Convert the PolygonRoi in Dots and integrate with the dots of the other frames.
 								// Later, replace the selected cell by the cell with the new region
@@ -536,9 +535,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0) {
 								PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(), 6);
 	
-								Roi[] overRoi2 = RoiAdjustment.getAsRoiPoints(polygon2);
-	
-								PolygonRoi poly2 = RoiAdjustment.getConcaveHull(overRoi2, 1);
+								PolygonRoi poly2 = RoiAdjustment.getConcaveHull(polygon2, 1);
 	
 								ArrayList<DotN> dotsNewRegion2 = RoiAdjustment.setNewRegion(nFrame, poly2,
 										(float) LimeSeg.opt.getOptParam("ZScale"));
@@ -556,9 +553,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
 								PolygonRoi polygon = new PolygonRoi(r.not(lum1).getContainedFloatPoints(), 6);
 	
-								Roi[] overRoi = RoiAdjustment.getAsRoiPoints(polygon);
-	
-								PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
+								PolygonRoi poly = RoiAdjustment.getConcaveHull(polygon, 1);
 	
 								ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
 										(float) LimeSeg.opt.getOptParam("ZScale"));
@@ -669,11 +664,9 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							// correct border
 							PolygonRoi postpol = new PolygonRoi(poly2.getInterpolatedPolygon(2, false), 6);
 
-							Roi[] roiDots = RoiAdjustment.getAsRoiPoints(poly);
-							Roi[] roiDots2 = RoiAdjustment.getAsRoiPoints(postpol);
 							// find the border with ConcavHull
-							PolygonRoi lum = RoiAdjustment.getConcaveHull(roiDots, THRESHOLD);
-							PolygonRoi lum2 = RoiAdjustment.getConcaveHull(roiDots2, THRESHOLD);
+							PolygonRoi lum = RoiAdjustment.getConcaveHull(poly, THRESHOLD);
+							PolygonRoi lum2 = RoiAdjustment.getConcaveHull(postpol, THRESHOLD);
 							lumenDots[zIndex][0] = lum; // save the border in
 														// matrix
 														// position 0
@@ -685,8 +678,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							// save
 							PolygonRoi poly = new PolygonRoi(xPoints, yPoints, 6);
 							PolygonRoi postpol = new PolygonRoi(poly.getInterpolatedPolygon(2, false), 6);
-							Roi[] roiDots = RoiAdjustment.getAsRoiPoints(postpol);
-							PolygonRoi lum = RoiAdjustment.getConcaveHull(roiDots, THRESHOLD);
+							PolygonRoi lum = RoiAdjustment.getConcaveHull(postpol, THRESHOLD);
 							lumenDots[zIndex][0] = lum;
 						}
 						// set the color of lumen in this case white
