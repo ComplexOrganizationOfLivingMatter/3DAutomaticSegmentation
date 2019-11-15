@@ -26,7 +26,7 @@ import inra.ijpb.watershed.Watershed;
  * @author Pedro Gómez-Gálvez, Pedro Rodríguez-Hiruela and Pablo Vicente-Munuera
  *
  */
-public class QuickSegmentation{
+public class quickSegmentation{
 	
 	int CONNECTIVITY = 6;
 	private ImagePlus inputNucleiImp;
@@ -41,7 +41,7 @@ public class QuickSegmentation{
 	 * 
 	 * @param impNuclei
 	 */
-	public QuickSegmentation(ImagePlus impNuclei,JProgressBar progressBar,Boolean cancelTask) {
+	public quickSegmentation(ImagePlus impNuclei,JProgressBar progressBar,Boolean cancelTask) {
 		this.strelRadius2D = 4;
 		this.strelRadius3D = 3;
 		// 10 is a good start point for 8-bit images, 2000 for 16-bits. Minor
@@ -61,7 +61,7 @@ public class QuickSegmentation{
 	 * @param tolerance
 	 * @param pixelsToOpenVolume
 	 */
-	public QuickSegmentation(ImagePlus impNuclei,int radius2D, int radius3D, int tolerance, int pixelsToOpenVolume,JProgressBar progressBar,Boolean cancelTask) {
+	public quickSegmentation(ImagePlus impNuclei,int radius2D, int radius3D, int tolerance, int pixelsToOpenVolume,JProgressBar progressBar,Boolean cancelTask) {
 		this.strelRadius2D = radius2D;
 		this.strelRadius3D = radius3D;
 		this.toleranceWatershed = tolerance;
@@ -102,7 +102,6 @@ public class QuickSegmentation{
 			IJ.log("Automatic thresholding");
 			
 			if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
 	        	break;
 	        }
 			
@@ -110,7 +109,6 @@ public class QuickSegmentation{
 			progressBar.setValue(30);
 			
 			if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
 	        	break;
 	        }
 			/***** loop for closing, binarize and filling holes in 2D *****/
@@ -137,7 +135,6 @@ public class QuickSegmentation{
 			im2Show.show();
 			
 			if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
 	        	break;
 	        }
 			
@@ -150,7 +147,6 @@ public class QuickSegmentation{
 //			im2Show2.show();
 			
 			if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
 	        	break;
 	        }
 			progressBar.setValue(55);
@@ -158,7 +154,6 @@ public class QuickSegmentation{
 			IJ.log("Init Watershed protocol");
 			ImageStack resultStack = watershedProcess(BitD, dams, imgFilterSmall, strelRadius3D, toleranceWatershed);
 			if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
 	        	break;
 	        }
 			
@@ -172,7 +167,6 @@ public class QuickSegmentation{
 			LabelImages.removeLargestLabel(resultStack);
 			
 			if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
 	        	break;
 	        }
 			
@@ -182,7 +176,6 @@ public class QuickSegmentation{
 //			im2Show4.show();
 			
 			if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
 	        	break;
 	        }
 			
@@ -196,7 +189,6 @@ public class QuickSegmentation{
 	
 			/******** volume opening ********/
 			if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
 	        	break;
 	        }
 			IJ.log("Removing outliers");
@@ -206,7 +198,6 @@ public class QuickSegmentation{
 //			im2Show5.show();
 			
 			if (cancelTask.booleanValue()) {
-	        	IJ.log("nuclei segmentation STOPPED");
 	        	break;
 	        }
 			
@@ -298,6 +289,10 @@ public class QuickSegmentation{
 		ImageStack resultStack = Watershed.computeWatershed(imposedMinima, labeledMinima, CONNECTIVITY, dams);
 
 		return resultStack;
+	}
+	
+	public void setCancelTask(Boolean cancelTask) {
+		this.cancelTask = cancelTask.booleanValue();
 	}
 	
 }

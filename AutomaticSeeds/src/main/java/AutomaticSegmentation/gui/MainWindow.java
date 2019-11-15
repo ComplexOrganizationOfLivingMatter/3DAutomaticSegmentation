@@ -51,7 +51,7 @@ public class MainWindow extends JFrame {
 	 * MainWindow attributes
 	 */
 	private JPanel mainPanel;
-	private JComboBox<String> cbNucleiChannel;
+	public JComboBox<String> cbNucleiChannel;
 	private JComboBox<String> cbSegmentableChannel;
 	private JLabel lbNucleiChannel;
 	private JLabel lbSegmentableChannel;
@@ -114,7 +114,8 @@ public class MainWindow extends JFrame {
 							tpPreLimeSeg.setNucleiChannel(nucleiChannel);
 							setEnablePanels(true, tpPreLimeSeg);
 						}
-					}
+					}					
+					
 					else if(e.getSource() == cbSegmentableChannel){
 						if (cbSegmentableChannel.getSelectedItem() == "<select image>"| cbSegmentableChannel.getSelectedIndex() == -1) {
 							cellOutlineChannel = null;
@@ -243,6 +244,8 @@ public class MainWindow extends JFrame {
 		btOpenOriginalImage.addActionListener(listener);
 		cbNucleiChannel.addActionListener(listener);
 		btRemoveItems.addActionListener(listener);
+		tpPreLimeSeg.btRunCancel.addActionListener(listener);
+		tpPreLimeSeg.btCalculateROIs.addActionListener(listener);
 	}
 
 	/**

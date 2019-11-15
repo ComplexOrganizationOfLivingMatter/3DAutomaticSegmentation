@@ -29,6 +29,7 @@ public class nuclei3DSegmentation{
 	private JProgressBar progressBar;
 	private ImagePlus nucleiChannel,preprocessedImp,segmentedImp;
 	private JCheckBox prefilteringCheckB,quickSegmentationCheckB,gpuCheckBox;
+	private quickSegmentation qseg;
 		
 	public nuclei3DSegmentation(ImagePlus nucleiChannel,int max_nuc_radius, int min_nuc_radius, int maxThresh, float zStep,
 			String dir, Boolean cancelTask, JProgressBar progressBar,JCheckBox prefilteringCheckB, JCheckBox quickSegmentationCheckB, JCheckBox gpuCheckBox) {
@@ -100,7 +101,7 @@ public class nuclei3DSegmentation{
 	        	preprocessedImp.setSlice(preprocessedImp.getNSlices()/2);
 		        IJ.run(preprocessedImp, "Enhance Contrast...", "saturated=0");
 		        progressBar.setValue(19);
-	        	QuickSegmentation qseg = new QuickSegmentation(preprocessedImp, progressBar,cancelTask);
+	        	qseg = new quickSegmentation(preprocessedImp, progressBar,cancelTask);
 	        	
 	        	if (cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");
@@ -171,19 +172,25 @@ public class nuclei3DSegmentation{
 		        
 		        spots3DSegmentation sp3dSeg = new spots3DSegmentation();
 		        sp3dSeg.spotSegmentation(segmentedImp, maxThresh, max_nuc_radius, min_nuc_radius,progressBar);
+		       
+		        if (cancelTask.booleanValue()) {
+		        	IJ.log("Nuclei segmentation STOPPED");
+		        	break;
+		        }
+		        
 		        segmentedImp = sp3dSeg.getImpOutput();
 		        progressBar.setValue(95);
 		        
 		        /******************** Label and colour the nuclei *********************/
 		        segmentedImp = createColouredImageWithLabels(nucleiChannel, segmentedImp.getStack());
-		        segmentedImp.setTitle("dapi-seg");
-		        IJ.saveAs(segmentedImp,"Tiff", subdir+"dapi-seg.tif");
 		        
 		        if (cancelTask.booleanValue()) {
 		        	IJ.log("Nuclei segmentation STOPPED");
 		        	break;
 		        }
 		        
+		        segmentedImp.setTitle("dapi-seg");
+		        IJ.saveAs(segmentedImp,"Tiff", subdir+"dapi-seg.tif");       
 		        IJ.log("Save the segmented nuclei image as dapi-seg.tif in "+subdir);
 		        progressBar.setValue(100);
 
@@ -256,6 +263,13 @@ public class nuclei3DSegmentation{
 		imp_segmentedFinal.getImageStack().setColorModel(cm);
 		imp_segmentedFinal.updateAndDraw();
 		return imp_segmentedFinal;
+	}
+	
+	public void setCancelTask(Boolean cancelTask) {
+		this.cancelTask = cancelTask.booleanValue();
+		if (quickSegmentationCheckB.isSelected()) {
+			qseg.setCancelTask(cancelTask);
+		}
 	}
 
 }

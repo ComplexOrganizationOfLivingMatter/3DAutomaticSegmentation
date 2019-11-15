@@ -24,7 +24,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
-import AutomaticSegmentation.preProcessing.QuickSegmentation;
+import AutomaticSegmentation.preProcessing.quickSegmentation;
 import AutomaticSegmentation.preProcessing.spots3DSegmentation;
 import AutomaticSegmentation.preProcessing.nuclei3DSegmentation;
 import AutomaticSegmentation.utils.Utils;
@@ -63,14 +63,15 @@ public class PanelPreProcessing extends JPanel {
 	public JButton btShowNuclei;
 	public JButton btCalculateROIs;
 	private static final long serialVersionUID = 1L;
-	private ImagePlus nucleiChannel,preprocessedImp,segmentedImp,segmentedLoadImg,auxImp;
+	private ImagePlus nucleiChannel,segmentedImp,segmentedLoadImg,auxImp;
 	private JProgressBar progressBar;
     private Thread preprocessingTask;
 	//private ExecutorService exec = Executors.newFixedThreadPool(1);
 	private ExecutorService exec = Executors.newCachedThreadPool();
 	private Boolean cancelTask;
+	nuclei3DSegmentation nuc3Dseg;
 	public ArrayList<ImagePlus> ImpArraylistSegImg;
-
+	
 
 	/**
 	 * @param layout
@@ -189,47 +190,7 @@ public class PanelPreProcessing extends JPanel {
 		ImpArraylistSegImg.add(null);
 	}
 
-	public RoiManager getNucleiROIs(ImagePlus imp_segmented) {
-		// 3D-OC options settings
-		Prefs.set("3D-OC-Options_centroid.boolean", true);
-
-		int[] labels = LabelImages.findAllLabels(imp_segmented.getImageStack());
-		// deprecatedGeometricMeasures3D - investigate about the new region3D
-
-		double[][] centroidList = Centroid3D.centroids(imp_segmented.getImageStack(), labels);
-		// double[][] centroidList = Centroid3D.centroids();
-		// 0 0 1 2
-		// | | | |
-		// centroid -> [id][x,y,z]
-
-		// Ellipsoid[] ellipsoid =
-		// EquivalentEllipsoid.equivalentEllipsoids(imp_segmented.getImageStack(),
-		// labels,
-		// imp_segmented.getCalibration());
-
-		Box3D[] bboxes = BoundingBox3D.boundingBoxes(imp_segmented.getImageStack(), labels,
-				imp_segmented.getCalibration());
-
-		// Creating the ROI manager
-		RoiManager rm = new RoiManager();
-		// Reset to 0 the RoiManager
-		rm.reset();
-
-		for (int i = 0; i < centroidList.length; i++) {
-			// Get the slice to create the ROI
-			int z = (int) Math.round(centroidList[i][2]);
-			// Get the area and radius of the index i nuclei
-			double[] radii = { bboxes[i].height(), bboxes[i].width() };
-			double[] calibrations = { imp_segmented.getCalibration().pixelHeight,
-					imp_segmented.getCalibration().pixelWidth };
-			double majorRadius = 1.2 * Utils.getMean(radii) / Utils.getMean(calibrations);
-			int r = (int) Math.round(majorRadius);
-			imp_segmented.setSlice(z);
-			Roi roi = new OvalRoi(centroidList[i][0] - r / 2, centroidList[i][1] - r / 2, r, r);
-			rm.addRoi(roi);
-		}
-		return rm;
-	}
+	
 	
 	private ActionListener listener = new ActionListener() {
 
@@ -247,8 +208,11 @@ public class PanelPreProcessing extends JPanel {
 							int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
 							int maxThresh = Integer.valueOf(localMaximaThresholdSpin.getValue().toString()).intValue();
 							float zStep = Float.valueOf(zScaleSpin.getValue().toString()).floatValue();
+							
 							btLoad.setEnabled(false);
-
+							cbSegmentedImg.setEnabled(false);
+							btCalculateROIs.setEnabled(false);
+							
 							preprocessingTask = new Thread() {
 								
 								public void run(){
@@ -260,7 +224,7 @@ public class PanelPreProcessing extends JPanel {
 										
 										Instant start = Instant.now();
 									   
-										nuclei3DSegmentation nuc3Dseg = new nuclei3DSegmentation(nucleiChannel,maxN,minN,maxThresh,zStep,dir,cancelTask,progressBar,prefilteringCheckB,quickSegmentationCheckB, gpuCheckBox);
+										nuc3Dseg = new nuclei3DSegmentation(nucleiChannel,maxN,minN,maxThresh,zStep,dir,cancelTask,progressBar,prefilteringCheckB,quickSegmentationCheckB, gpuCheckBox);
 										segmentedImp = nuc3Dseg.segmentationProtocol();
 										
 										Instant finish = Instant.now();
@@ -281,6 +245,10 @@ public class PanelPreProcessing extends JPanel {
 										}
 										progressBar.setValue(0);
 										btRunCancel.setEnabled(true);
+										btLoad.setEnabled(true);
+										btCalculateROIs.setEnabled(true);
+										cbSegmentedImg.setEnabled(true);
+										
 									}catch(Exception ex) {
 										ex.printStackTrace();
 									}
@@ -291,11 +259,17 @@ public class PanelPreProcessing extends JPanel {
 						}
 						else if(command.equals("Cancel")){
 							btRunCancel.setText("Run");
-							
 							segmentedImp=null;
+							
 							btRunCancel.setEnabled(false);
+							btLoad.setEnabled(false);
+							btCalculateROIs.setEnabled(false);
+							cbSegmentedImg.setEnabled(false);
+							
 							IJ.log("Stopping...");
 							cancelTask =true;
+							nuc3Dseg.setCancelTask(cancelTask);
+							
 							progressBar.setValue(0);
 							//IJ.run("Close All");
 							try {
@@ -306,7 +280,10 @@ public class PanelPreProcessing extends JPanel {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
-								btRunCancel.setEnabled(true);
+							btRunCancel.setEnabled(true);
+							btLoad.setEnabled(true);
+							btCalculateROIs.setEnabled(true);
+							cbSegmentedImg.setEnabled(true);
 						}
 					
 					}
@@ -372,4 +349,45 @@ public class PanelPreProcessing extends JPanel {
 		}
 	}
 
+	public RoiManager getNucleiROIs(ImagePlus imp_segmented) {
+		// 3D-OC options settings
+		Prefs.set("3D-OC-Options_centroid.boolean", true);
+
+		int[] labels = LabelImages.findAllLabels(imp_segmented.getImageStack());
+		// deprecatedGeometricMeasures3D - investigate about the new region3D
+
+		double[][] centroidList = Centroid3D.centroids(imp_segmented.getImageStack(), labels);
+		// double[][] centroidList = Centroid3D.centroids();
+		// 0 0 1 2
+		// | | | |
+		// centroid -> [id][x,y,z]
+
+		// Ellipsoid[] ellipsoid =
+		// EquivalentEllipsoid.equivalentEllipsoids(imp_segmented.getImageStack(),
+		// labels,
+		// imp_segmented.getCalibration());
+
+		Box3D[] bboxes = BoundingBox3D.boundingBoxes(imp_segmented.getImageStack(), labels,
+				imp_segmented.getCalibration());
+
+		// Creating the ROI manager
+		RoiManager rm = new RoiManager();
+		// Reset to 0 the RoiManager
+		rm.reset();
+
+		for (int i = 0; i < centroidList.length; i++) {
+			// Get the slice to create the ROI
+			int z = (int) Math.round(centroidList[i][2]);
+			// Get the area and radius of the index i nuclei
+			double[] radii = { bboxes[i].height(), bboxes[i].width() };
+			double[] calibrations = { imp_segmented.getCalibration().pixelHeight,
+					imp_segmented.getCalibration().pixelWidth };
+			double majorRadius = 1.2 * Utils.getMean(radii) / Utils.getMean(calibrations);
+			int r = (int) Math.round(majorRadius);
+			imp_segmented.setSlice(z);
+			Roi roi = new OvalRoi(centroidList[i][0] - r / 2, centroidList[i][1] - r / 2, r, r);
+			rm.addRoi(roi);
+		}
+		return rm;
+	}
 }
