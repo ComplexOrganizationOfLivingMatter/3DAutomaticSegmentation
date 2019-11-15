@@ -253,41 +253,62 @@ public class quickSegmentation{
 	}
 	
 	public ImageStack watershedProcess(int BitD, boolean dams, ImageStack imgFilterSmall, int strelRadius3D, double toleranceWatershed) {
-
-		/*************Apply morphological gradient to input image*************/
-		IJ.log("	Gradient");
-		Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(strelRadius3D);
-		ImageStack imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
-
-		/*************Find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity*************/
-		IJ.log("	Extended Minima");
-		ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima(imgGradient, toleranceWatershed, CONNECTIVITY);
-
-		/************************impose minima on gradient image**********************/
-		IJ.log("	Impose Minima");
-		ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima(imgGradient, regionalMinima, CONNECTIVITY);
-
-		/************************label minima using connected components (32-bit output)**********************/
-		IJ.log("	Labelling");
-		ImageStack labeledMinima;
-		try {
-			labeledMinima = BinaryImages.componentsLabeling(regionalMinima, CONNECTIVITY, BitD);
-		} catch (Exception e) {
-			IJ.log("	Corverting to 16-bits");
-			ImagePlus regMinip = new ImagePlus("", regionalMinima);
-			ImageConverter converter = new ImageConverter(regMinip);
-			converter.convertToGray16();
-			labeledMinima = BinaryImages.componentsLabeling(regMinip.getImageStack(), CONNECTIVITY, regMinip.getBitDepth());
-			ImagePlus impMin = new ImagePlus("", imposedMinima);
-			ImageConverter converter2 = new ImageConverter(impMin);
-			converter2.convertToGray16();
-			imposedMinima = impMin.getImageStack();
+		ImageStack resultStack = null;
+		while(!cancelTask.booleanValue() && progressBar.getValue()!=80)  {
+			/*************Apply morphological gradient to input image*************/
+			if (cancelTask.booleanValue()) {
+	        	break;
+	        }
+			
+			IJ.log("	Gradient");
+			Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(strelRadius3D);
+			ImageStack imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
+	
+			/*************Find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity*************/
+			if (cancelTask.booleanValue()) {
+	        	break;
+	        }
+			
+			IJ.log("	Extended Minima");
+			ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima(imgGradient, toleranceWatershed, CONNECTIVITY);
+	
+			/************************impose minima on gradient image**********************/
+			if (cancelTask.booleanValue()) {
+	        	break;
+	        }
+			
+			IJ.log("	Impose Minima");
+			ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima(imgGradient, regionalMinima, CONNECTIVITY);
+	
+			/************************label minima using connected components (32-bit output)**********************/
+			if (cancelTask.booleanValue()) {
+	        	break;
+	        }
+			
+			IJ.log("	Labelling");
+			ImageStack labeledMinima;
+			try {
+				labeledMinima = BinaryImages.componentsLabeling(regionalMinima, CONNECTIVITY, BitD);
+			} catch (Exception e) {
+				IJ.log("	Corverting to 16-bits");
+				ImagePlus regMinip = new ImagePlus("", regionalMinima);
+				ImageConverter converter = new ImageConverter(regMinip);
+				converter.convertToGray16();
+				labeledMinima = BinaryImages.componentsLabeling(regMinip.getImageStack(), CONNECTIVITY, regMinip.getBitDepth());
+				ImagePlus impMin = new ImagePlus("", imposedMinima);
+				ImageConverter converter2 = new ImageConverter(impMin);
+				converter2.convertToGray16();
+				imposedMinima = impMin.getImageStack();
+			}
+			
+			/*****Apply marker-based watershed using the labeled minima on the minima-imposed*****/
+			if (cancelTask.booleanValue()) {
+	        	break;
+	        }
+			
+			IJ.log("	Watershed");
+			resultStack = Watershed.computeWatershed(imposedMinima, labeledMinima, CONNECTIVITY, dams);
 		}
-		
-		/*****Apply marker-based watershed using the labeled minima on the minima-imposed*****/
-		IJ.log("	Watershed");
-		ImageStack resultStack = Watershed.computeWatershed(imposedMinima, labeledMinima, CONNECTIVITY, dams);
-
 		return resultStack;
 	}
 	

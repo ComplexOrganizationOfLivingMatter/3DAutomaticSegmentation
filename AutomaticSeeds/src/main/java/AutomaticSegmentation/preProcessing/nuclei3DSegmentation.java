@@ -96,10 +96,18 @@ public class nuclei3DSegmentation{
 	        	break;
 	        }
 	       
-
+	        /********************** QUICK SEGMENTATION PROTOCOL **********************/
 	        if (quickSegmentationCheckB.isSelected()) {
+	        	
+	        	/****************** Enhance contrast ******************/
 	        	preprocessedImp.setSlice(preprocessedImp.getNSlices()/2);
 		        IJ.run(preprocessedImp, "Enhance Contrast...", "saturated=0");
+		        
+		        if (cancelTask.booleanValue()) {
+		        	IJ.log("nuclei segmentation STOPPED");
+		        	break;
+		        }
+		        
 		        progressBar.setValue(19);
 	        	qseg = new quickSegmentation(preprocessedImp, progressBar,cancelTask);
 	        	
@@ -122,7 +130,9 @@ public class nuclei3DSegmentation{
 		        progressBar.setValue(100);
 	        	
 	        	
-	        }else {        
+	        }
+	        /********************** SPOT 3D SEGMENTATION **********************/
+	        else {        
 		        /************** BandPass 3D filtering ***************/
 	        	IJ.run(preprocessedImp, "32-bit", "");
 		        IJ.log("Computing Band Pass...");

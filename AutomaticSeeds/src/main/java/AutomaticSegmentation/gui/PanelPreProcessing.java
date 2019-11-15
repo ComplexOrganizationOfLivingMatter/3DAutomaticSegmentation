@@ -203,6 +203,8 @@ public class PanelPreProcessing extends JPanel {
 				{
 					if(e.getSource() == btRunCancel){
 						final String command = e.getActionCommand();
+						
+						/**************** Run nuclei segmentation *****************/
 						if (command.equals("Run")) {	
 							int maxN = Integer.valueOf(maxNucleusSizeSpin.getValue().toString()).intValue();
 							int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
@@ -257,6 +259,7 @@ public class PanelPreProcessing extends JPanel {
 							};
 							preprocessingTask.start();
 						}
+						/**************** Cancel nuclei segmentation *****************/
 						else if(command.equals("Cancel")){
 							btRunCancel.setText("Run");
 							segmentedImp=null;
@@ -287,7 +290,8 @@ public class PanelPreProcessing extends JPanel {
 						}
 					
 					}
-											
+										
+					/******************* Load segmented nuclei ********************/
 					else if(e.getSource() == btLoad){
 						try {
 							// We just can't open multiple images
@@ -299,7 +303,8 @@ public class PanelPreProcessing extends JPanel {
 						} catch (Exception ex) {
 							ex.printStackTrace();
 						}
-						//
+					
+					/******************* Select segmented nuclei ********************/
 					}else if(e.getSource()==cbSegmentedImg) {
 						if (cbSegmentedImg.getSelectedItem() == "<select labelled image>" | cbSegmentedImg.getSelectedIndex() == -1) {
 							btCalculateROIs.setEnabled(false);
@@ -308,11 +313,15 @@ public class PanelPreProcessing extends JPanel {
 							btCalculateROIs.setEnabled(true);
 						}
 					}
+					
+					/******************* Show nuclei channel ********************/
 					else if(e.getSource() == btShowNuclei){
 						if (nucleiChannel != null) {
 							nucleiChannel.duplicate().show();
 						}
 					}
+					
+					/******************* Calculte ROIs from segmented nuclei ********************/
 					else if(e.getSource() == btCalculateROIs){
 						if (segmentedLoadImg!=null) {
 							btCalculateROIs.setEnabled(false);
@@ -361,11 +370,6 @@ public class PanelPreProcessing extends JPanel {
 		// 0 0 1 2
 		// | | | |
 		// centroid -> [id][x,y,z]
-
-		// Ellipsoid[] ellipsoid =
-		// EquivalentEllipsoid.equivalentEllipsoids(imp_segmented.getImageStack(),
-		// labels,
-		// imp_segmented.getCalibration());
 
 		Box3D[] bboxes = BoundingBox3D.boundingBoxes(imp_segmented.getImageStack(), labels,
 				imp_segmented.getCalibration());
