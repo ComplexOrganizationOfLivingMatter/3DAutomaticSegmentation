@@ -59,7 +59,6 @@ import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
-import graphics.scenery.Mesh;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.Overlay;
@@ -69,9 +68,6 @@ import ij.gui.Roi;
 import ij.gui.ShapeRoi;
 import ij.gui.TextRoi;
 import ij.process.ImageProcessor;
-import net.imagej.Dataset;
-import net.imagej.ops.Ops;
-import sc.iview.SciView;
 
 /**
  * @author Victor Hugo Arriaga, Antonio Tagua, Pablo Vicente-Munuera
@@ -94,7 +90,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 	public JButton btPostLimeSeg;
 	private JButton btnPostSave;
-	private JButton btnInsert;
+	private JButton btnModifyCell;
 	private JButton btnLumen;
 	private JButton btn3DDisplay;
 	private JLabel cellsLabel;
@@ -154,7 +150,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						loadPlyFiles();
 						labelCells = RoiAdjustment.getLabelCells(all3dCells, cellOutlineChannel);
 						MainAutomatic3DSegmentation.callToolbarPolygon();
-						lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
+						lumenDots = null;
 						removeCellLumenOverlap();
 						cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(), all3dCells,
 								cellOutlineChannel, false, lumenDots));
@@ -163,7 +159,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						checkLumen.addActionListener(this);
 						checkIdCells.addActionListener(this);
 						checkIdCells.setSelected(true);
-						btnInsert.addActionListener(this);
+						btnModifyCell.addActionListener(this);
 						btnPostSave.addActionListener(this);
 						btnLumen.addActionListener(this);
 						btn3DDisplay.addActionListener(this);
@@ -190,7 +186,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			updateOverlay();
 		}
 
-		if (e.getSource() == btnInsert) {
+		if (e.getSource() == btnModifyCell) {
 			addROI();
 			// Check if polyRoi is different to null, if is do the modify cell
 			if (polyRoi != null) {
@@ -306,8 +302,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		checkLumen = new JCheckBox("Show lumen");
 		checkLumen.addActionListener(this);
 
-		btnInsert = new JButton("Modify Cell");
-		btnInsert.setMinimumSize(new Dimension(150, 20));
+		btnModifyCell = new JButton("Modify Cell");
+		btnModifyCell.setMinimumSize(new Dimension(150, 20));
 		btnPostSave = new JButton("Save Results");
 		btnPostSave.setMinimumSize(new Dimension(150, 20));
 		btnLumen = new JButton("Load Lumen");
@@ -327,7 +323,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		this.add(btPostLimeSeg, "align center");
 		this.add(cbOverlay, "align center");
 		this.add(checkLumen, "wrap, align center");
-		this.add(btnInsert, "align center");
+		this.add(btnModifyCell, "align center");
 		this.add(btnPostSave, "align center");
 		this.add(btnLumen, "align center");
 
@@ -479,12 +475,11 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				}
 			}
 
-			if (lumen[lumen.length / 2] != null & checkLumen.isSelected()) {
+			if (lumen != null & checkLumen.isSelected()) {
 				ov.addElement(lumen[frame - 1][0]);
 				if (lumen[frame - 1][1] != null)
 					ov.addElement(lumen[frame - 1][1]);
 			}
-			// TODO: change this part of the code
 
 		}
 		return ov;
@@ -494,100 +489,90 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 * 
 	 */
 	public void removeCellLumenOverlap() {
-		for (int nFrame = 1; nFrame < cellOutlineChannel.getStackSize() + 1; nFrame++) {
-			for (int nCell = 0; nCell < all3dCells.size(); nCell++) {
-				// Check if the frame have lumen and the cell is not empty
-				if (lumenDots[nFrame - 1] != null & all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) {
-					// Get the cell points
-					float[] xCell = all3dCells.get(nCell).getCoordinate("x", all3dCells.get(nCell).getCell3DAt(nFrame));
-					float[] yCell = all3dCells.get(nCell).getCoordinate("y", all3dCells.get(nCell).getCell3DAt(nFrame));
-					// Points to polygon to shape
-					PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
-					ShapeRoi r = new ShapeRoi(overlappingCell);
-					ShapeRoi s = new ShapeRoi(overlappingCell);
-					ShapeRoi s2 = new ShapeRoi(overlappingCell);
-					// Check if lumen has two polygon
-					if (lumenDots[nFrame - 1][1] != null) {
-						// Transform the lumens to polygons and shapes
-						java.awt.Polygon l = lumenDots[nFrame - 1][0].getPolygon();
-						ShapeRoi lum = new ShapeRoi(l);
-						// Verify if the lumen cross with cell
-						s.and(lum);
-						java.awt.Polygon l2 = lumenDots[nFrame - 1][1].getPolygon();
-						ShapeRoi lum2 = new ShapeRoi(l2);
-						s2.and(lum2);
-						// If lumen cross with cell width or height must be
-						// different to 0, if is 0 go to other cell
-						if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
-							// use not function to get all the points out of the
-							// lumen and save in polygon
-							PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(), 6);
-
-							Roi[] overRoi = RoiAdjustment.getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(),
-									polygon);
-							// get the border of polygon without lumen parts
-							// with concavehull function
-							PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
-
-							// Convert the PolygonRoi in Dots and integrate with
-							// the dots of
-							// the other frames.
-							// Later, replace the selected cell by the cell with
-							// the new
-							// region
-							ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
-									(float) LimeSeg.opt.getOptParam("ZScale"));
-							ArrayList<DotN> integratedDots = RoiAdjustment.integrateNewRegion(dotsNewRegion,
-									all3dCells.get(nCell).dotsList, nFrame, (float) LimeSeg.opt.getOptParam("ZScale"));
-
-							all3dCells.get(nCell).setDotsList(integratedDots);
-
-						}
-						// do the same for the second polygon
-						if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0) {
-							PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(), 6);
-
-							Roi[] overRoi2 = RoiAdjustment.getAsRoiPoints(polygon2.getXCoordinates(),
-									polygon2.getYCoordinates(), polygon2);
-
-							PolygonRoi poly2 = RoiAdjustment.getConcaveHull(overRoi2, 1);
-
-							ArrayList<DotN> dotsNewRegion2 = RoiAdjustment.setNewRegion(nFrame, poly2,
-									(float) LimeSeg.opt.getOptParam("ZScale"));
-							ArrayList<DotN> integratedDots2 = RoiAdjustment.integrateNewRegion(dotsNewRegion2,
-									all3dCells.get(nCell).dotsList, nFrame, (float) LimeSeg.opt.getOptParam("ZScale"));
-
-							all3dCells.get(nCell).setDotsList(integratedDots2);
-						}
-
-					}
-					// if lumen only have one polygon do the same as before but
-					// only once
-					else if (lumenDots[nFrame - 1][0] != null) {
-						java.awt.Polygon l1 = lumenDots[nFrame - 1][0].getPolygon();
-						ShapeRoi lum1 = new ShapeRoi(l1);
-						s.and(lum1);
-
-						if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
-							PolygonRoi polygon = new PolygonRoi(r.not(lum1).getContainedFloatPoints(), 6);
-
-							Roi[] overRoi = RoiAdjustment.getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(),
-									polygon);
-
-							PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
-
-							ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
-									(float) LimeSeg.opt.getOptParam("ZScale"));
-
-							ArrayList<DotN> integratedDots = RoiAdjustment.integrateNewRegion(dotsNewRegion,
-									all3dCells.get(nCell).dotsList, nFrame, (float) LimeSeg.opt.getOptParam("ZScale"));
-
-							all3dCells.get(nCell).setDotsList(integratedDots);
-
+		if (lumenDots != null){
+			for (int nFrame = 1; nFrame < cellOutlineChannel.getStackSize() + 1; nFrame++) {
+				for (int nCell = 0; nCell < all3dCells.size(); nCell++) {
+					// Check if the frame have lumen and the cell is not empty
+					if (lumenDots[nFrame - 1] != null & all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) {
+						// Get the cell points
+						float[] xCell = all3dCells.get(nCell).getCoordinate("x", all3dCells.get(nCell).getCell3DAt(nFrame));
+						float[] yCell = all3dCells.get(nCell).getCoordinate("y", all3dCells.get(nCell).getCell3DAt(nFrame));
+						// Points to polygon to shape
+						PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
+						ShapeRoi r = new ShapeRoi(overlappingCell);
+						ShapeRoi s = new ShapeRoi(overlappingCell);
+						ShapeRoi s2 = new ShapeRoi(overlappingCell);
+						// Check if lumen has two polygon
+						if (lumenDots[nFrame - 1][1] != null) {
+							// Transform the lumens to polygons and shapes
+							java.awt.Polygon l = lumenDots[nFrame - 1][0].getPolygon();
+							ShapeRoi lum = new ShapeRoi(l);
+							// Verify if the lumen cross with cell
+							s.and(lum);
+							java.awt.Polygon l2 = lumenDots[nFrame - 1][1].getPolygon();
+							ShapeRoi lum2 = new ShapeRoi(l2);
+							s2.and(lum2);
+							// If lumen cross with cell width or height must be
+							// different to 0, if is 0 go to other cell
+							if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
+								// use not function to get all the points out of the
+								// lumen and save in polygon
+								PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(), 6);
+	
+								Roi[] overRoi = RoiAdjustment.getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(),
+										polygon);
+								// get the border of polygon without lumen parts
+								// with concavehull function
+								PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
+	
+								// Convert the PolygonRoi in Dots and integrate with the dots of the other frames.
+								// Later, replace the selected cell by the cell with the new region
+								ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
+										(float) LimeSeg.opt.getOptParam("ZScale"));
+	
+								all3dCells.get(nCell).getDotsPerSlice()[nFrame] = dotsNewRegion;
+	
+							}
+							// do the same for the second polygon
+							if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0) {
+								PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(), 6);
+	
+								Roi[] overRoi2 = RoiAdjustment.getAsRoiPoints(polygon2.getXCoordinates(),
+										polygon2.getYCoordinates(), polygon2);
+	
+								PolygonRoi poly2 = RoiAdjustment.getConcaveHull(overRoi2, 1);
+	
+								ArrayList<DotN> dotsNewRegion2 = RoiAdjustment.setNewRegion(nFrame, poly2,
+										(float) LimeSeg.opt.getOptParam("ZScale"));
+	
+								all3dCells.get(nCell).getDotsPerSlice()[nFrame] = dotsNewRegion2;
+							}
+	
+						} else if (lumenDots[nFrame - 1][0] != null) { 
+							// if lumen only have one polygon do the same as before but
+							// only once
+							java.awt.Polygon l1 = lumenDots[nFrame - 1][0].getPolygon();
+							ShapeRoi lum1 = new ShapeRoi(l1);
+							s.and(lum1);
+	
+							if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
+								PolygonRoi polygon = new PolygonRoi(r.not(lum1).getContainedFloatPoints(), 6);
+	
+								Roi[] overRoi = RoiAdjustment.getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(),
+										polygon);
+	
+								PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
+	
+								ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
+										(float) LimeSeg.opt.getOptParam("ZScale"));
+	
+								all3dCells.get(nCell).getDotsPerSlice()[nFrame] = dotsNewRegion;
+	
+							}
 						}
 					}
+	
 				}
-
 			}
 		}
 	}
@@ -596,6 +581,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 * 
 	 */
 	public void loadLumen() {
+		lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
 		try {
 			setFileChooserProperties("Select the segmented lumen folder");
 			if (fileChooser.showOpenDialog(this) == fileChooser.APPROVE_OPTION) {
@@ -803,7 +789,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					saveXmlFile(pathCell + "CellParams.xml", domCell);
 
 					CellT cellt = new CellT(c, 1);
-					cellt.dots = c.dotsList;
+					cellt.dots = c.getAllDots();
 					if (dirCell.exists()) {
 						IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
 					}

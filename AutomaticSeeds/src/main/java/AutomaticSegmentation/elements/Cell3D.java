@@ -27,18 +27,19 @@ public class Cell3D extends Cell {
 	/**
 	 * List of dots contained within this cell
 	 */
-	public ArrayList<DotN> dotsList;
+	public ArrayList<DotN>[] dotsPerSlice;
+	private ArrayList<DotN> allDots;
 	public int id;
 	public float zScale;
-	public int totalFrames;
+	public int totalSlices;
 
 	/**
 	 * 
 	 * @param cell father cell
 	 * @param zScale difference between Zs
-	 * @param totalFrames max number of frames
+	 * @param totalSlices max number of frames
 	 */
-	public Cell3D(Cell cell, float zScale, int totalFrames) {
+	public Cell3D(Cell cell, float zScale, int totalSlices) {
 		super();
 		//Copy father info
 		this.id_Cell = cell.id_Cell;
@@ -48,71 +49,36 @@ public class Cell3D extends Cell {
 		this.display_mode = 1;
 		
 		// New info of this class
-		this.totalFrames = totalFrames;
-		this.dotsList = new ArrayList<DotN>();
+		this.totalSlices = totalSlices;
+		this.dotsPerSlice = (ArrayList<DotN>[])new ArrayList[totalSlices];
 		this.zScale = zScale;
 		this.id = Integer.parseInt(cell.id_Cell);
-		this.dotsList = processLimeSegOutput(cell.cellTs.get(0).dots, zScale);
-		cell.cellTs.get(0).dots = this.dotsList;
+		processLimeSegOutput(cell.cellTs.get(0).dots, zScale);
 	}
 
 	/**
-	 * @param totalFrames max number of frames
+	 * @param totalSlices max number of frames
 	 * @param id identifier
 	 * @param zScale difference between Zs
 	 */
-	public Cell3D(int id, float zScale, int totalFrames) {
+	public Cell3D(int id, float zScale, int totalSlices) {
 		super();
-		this.totalFrames = totalFrames;
-		this.dotsList = new ArrayList<DotN>();
+		this.totalSlices = totalSlices;
 		this.id = id;
 		this.zScale = zScale;
 		this.cellTs = new ArrayList<CellT>();
 	}
 
 	/**
-	 * Get the dots at a specific frame for this Cell
+	 * Get the dots at a specific slice for this Cell
 	 * 
-	 * @param frame
+	 * @param slice
 	 *            z of this Cell
 	 * @return the list of dots at this z frame, if it exists. returns null
 	 *         otherwise
 	 */
-	public ArrayList<DotN> getCell3DAt(int frame) {
-		ArrayList<DotN> allDots = new ArrayList<DotN>();
-		if (dotsList != null) {
-			for (int i = 0; i < dotsList.size(); i++) {
-				int zpos = 1 + (int) ((float) (dotsList.get(i).pos.z / zScale));
-				if (zpos == frame) {
-					DotN dot = dotsList.get(i);
-					allDots.add(dot);
-				}
-			}
-		}
-		return allDots;
-	}
-
-	/**
-	 * Get the dots at a specific frame for this Cell
-	 * 
-	 * @param dots all the dots of the cell
-	 * @param frame
-	 *            z of this Cell
-	 * @return the list of dots at this z frame, if it exists. returns null
-	 *         otherwise
-	 */
-	public ArrayList<DotN> getCell3DAt(ArrayList<DotN> dots, int frame) {
-		ArrayList<DotN> allDots = new ArrayList<DotN>();
-		if (dots != null) {
-			for (int i = 0; i < dots.size(); i++) {
-				int zpos = 1 + (int) ((float) (dots.get(i).pos.z / zScale));
-				if (zpos == frame) {
-					DotN dot = dots.get(i);
-					allDots.add(dot);
-				}
-			}
-		}
-		return allDots;
+	public ArrayList<DotN> getCell3DAt(int slice) {
+		return this.dotsPerSlice[slice];
 	}
 
 	/**
@@ -157,11 +123,11 @@ public class Cell3D extends Cell {
 
 	/**
 	 * 
-	 * @param frame selected Z frame
+	 * @param slice selected Z frame
 	 * @return cell points
 	 */
-	public Point[] getPoints(int frame) {
-		ArrayList<DotN> cellZDots = this.getCell3DAt(frame);
+	public Point[] getPoints(int slice) {
+		ArrayList<DotN> cellZDots = this.getCell3DAt(slice);
 		Point[] cellPoints = new Point[cellZDots.size()];
 		for (int nDot = 0; nDot < cellZDots.size(); nDot++) {
 			cellPoints[nDot] = new Point((int) cellZDots.get(nDot).pos.x, (int) cellZDots.get(nDot).pos.y);
@@ -173,34 +139,35 @@ public class Cell3D extends Cell {
 	/**
 	 * @return the dotsList
 	 */
-	public ArrayList<DotN> getDotsList() {
-		return dotsList;
+	public ArrayList<DotN>[] getDotsPerSlice() {
+		return dotsPerSlice;
 	}
 
 	/**
 	 * @param dotsList
 	 *            the dotsList to set
 	 */
-	public void setDotsList(ArrayList<DotN> dotsList) {
-		this.dotsList = dotsList;
+	public void setDotsPerSlice(ArrayList<DotN>[] dotsList) {
+		this.dotsPerSlice = dotsList;
+		this.cellTs.get(0).dots = mergeAll(this.dotsPerSlice);
+	}
+
+	/**
+	 * @return the dotsListMerged
+	 */
+	public ArrayList<DotN> getAllDots() {
+		return allDots;
 	}
 
 	/**
 	 * 
 	 */
 	public void clearCell() {
-		if (this.dotsList != null) {
-			this.dotsList.clear();
-		}
-	}
-
-	/**
-	 * 
-	 * @param dots add new points
-	 */
-	public void addDotsList(ArrayList<DotN> dots) {
-		for (int nDot = 0; nDot < dots.size(); nDot++) {
-			this.dotsList.add(dots.get(nDot));
+		if (this.dotsPerSlice != null) {
+			this.allDots.clear();
+			for (ArrayList<DotN> arrayFrame : dotsPerSlice) {
+				arrayFrame.clear();
+			}
 		}
 	}
 
@@ -210,13 +177,15 @@ public class Cell3D extends Cell {
 	 * @param zScale difference between Zs
 	 * @return the new dots processed
 	 */
-	public ArrayList<DotN> processLimeSegOutput(ArrayList<DotN> allDots, float zScale) {
-		ArrayList<DotN> newDots = new ArrayList<DotN>();
+	public void processLimeSegOutput(ArrayList<DotN> allDots, float zScale) {
+		this.dotsPerSlice = (ArrayList<DotN>[])new ArrayList[this.totalSlices];
 		List<Integer> xPoints;
 		List<Integer> yPoints;
 		
-		for (int numFrame = 0; numFrame < this.totalFrames; numFrame++) {
-
+		for (int numFrame = 0; numFrame < this.totalSlices; numFrame++) {
+			
+			this.dotsPerSlice[numFrame] = new ArrayList<DotN>();
+			
 			xPoints = new ArrayList<Integer>();
 			yPoints = new ArrayList<Integer>();
 
@@ -238,13 +207,30 @@ public class Cell3D extends Cell {
 				PolygonRoi polygon = new PolygonRoi(poly.getInterpolatedPolygon(1, false), 2);
 
 				Roi[] allRois = RoiAdjustment.getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(), polygon);
-				newDots.addAll(RoiAdjustment.RoisToDots(numFrame, allRois, zScale, this.cellTs.get(0)));
+				this.dotsPerSlice[numFrame].addAll(RoiAdjustment.RoisToDots(numFrame, allRois, zScale, this.cellTs.get(0)));
+				//this.dotsPerSlice[numFrame] = RoiAdjustment.setNewRegion(numFrame, poly, zScale);
 			}
 		}
 		
-		updateDotsNormals(newDots);
+		this.cellTs.get(0).dots = mergeAll(this.dotsPerSlice);
+		this.allDots = this.cellTs.get(0).dots;
+		updateDotsNormals(this.cellTs.get(0).dots);
 
-		return newDots;
+	}
+
+	/**
+	 * 
+	 * @param dotsList2
+	 * @return
+	 */
+	public ArrayList<DotN> mergeAll(ArrayList<DotN>[] dotsListToUnify) {
+		ArrayList<DotN> mergedArray = new ArrayList<DotN>();
+		
+		for (ArrayList<DotN> arrayToMerge : dotsListToUnify) {
+			mergedArray.addAll(arrayToMerge);
+		}
+		
+		return mergedArray;
 	}
 
 	/**
@@ -256,11 +242,11 @@ public class Cell3D extends Cell {
 	 */
 	private void getDotsAtFrame(ArrayList<DotN> allDots, float zScale, List<Integer> xPoints, List<Integer> yPoints,
 			int numFrame) {
-		for (int i = 0; i < allDots.size(); i++) {
-			int zpos = 1 + (int) ((float) (allDots.get(i).pos.z / zScale));
+		for (int numPoint = 0; numPoint < allDots.size(); numPoint++) {
+			int zpos = 1 + (int) ((float) (allDots.get(numPoint).pos.z / zScale));
 			if (zpos == numFrame) {
-				xPoints.add((int) allDots.get(i).pos.x);
-				yPoints.add((int) allDots.get(i).pos.y);
+				xPoints.add((int) allDots.get(numPoint).pos.x);
+				yPoints.add((int) allDots.get(numPoint).pos.y);
 			}
 		}
 	}
@@ -286,15 +272,15 @@ public class Cell3D extends Cell {
 		// TODO Auto-generated method stub
 		double[] centroid = {0, 0, 0};
 		
-		for (DotN singleDot : dotsList) {
+		for (DotN singleDot : this.allDots) {
 			centroid[0] += singleDot.pos.x;
 			centroid[1] += singleDot.pos.y;
 			centroid[2] += singleDot.pos.z;
 		}
 
-		centroid[0] = centroid[0] / dotsList.size();
-		centroid[1] = centroid[1] / dotsList.size();
-		centroid[2] = centroid[2] / dotsList.size();
+		centroid[0] = centroid[0] / this.allDots.size();
+		centroid[1] = centroid[1] / this.allDots.size();
+		centroid[2] = centroid[2] / this.allDots.size();
 		
 		return centroid;
 	}
@@ -305,9 +291,9 @@ public class Cell3D extends Cell {
 		ArrayList<DotN> dotsActualFrame;
 		ArrayList<DotN> dotsNextFrame;
 		ArrayList<DotN> newIntermediateDots = new ArrayList<DotN>();
-		for (int numFrame = 1; numFrame < totalFrames; numFrame++){
-			dotsActualFrame = getCell3DAt(this.dotsList, numFrame-1);
-			dotsNextFrame = getCell3DAt(this.dotsList, numFrame);
+		for (int numFrame = 1; numFrame < totalSlices; numFrame++){
+			dotsActualFrame = this.dotsPerSlice[numFrame-1];
+			dotsNextFrame = this.dotsPerSlice[numFrame];
 			
 			for (DotN dotA : dotsActualFrame) {
 				for (DotN dotN : dotsNextFrame) {
@@ -316,7 +302,7 @@ public class Cell3D extends Cell {
 			}
 		}
 		
-		this.dotsList.addAll(newIntermediateDots);
+		this.allDots.addAll(newIntermediateDots);
 		
 		// Construct mesh using Facets and Vertices (points)
 		
