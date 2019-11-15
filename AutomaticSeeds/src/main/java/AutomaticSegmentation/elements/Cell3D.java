@@ -3,9 +3,11 @@ package AutomaticSegmentation.elements;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import AutomaticSegmentation.gui.PanelPostProcessing;
+import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.DotN;
 import eu.kiaru.limeseg.struct.Vector3D;
@@ -280,7 +282,7 @@ public class Cell3D extends Cell {
 	}
 	
 	public Mesh buildMesh(){
-		Mesh cellMesh = new Mesh(this.id_Cell);
+		//Mesh cellMesh = new Mesh(this.id_Cell);
 		
 		ArrayList<DotN> dotsActualFrame;
 		ArrayList<DotN> dotsNextFrame;
@@ -291,16 +293,37 @@ public class Cell3D extends Cell {
 			
 			for (DotN dotA : dotsActualFrame) {
 				for (DotN dotN : dotsNextFrame) {
-					newIntermediateDots.addAll(RoiAdjustment.interpolate(dotN.pos, dotA.pos, Math.round(zScale)));
+					newIntermediateDots.addAll(RoiAdjustment.interpolate(dotN.pos, dotA.pos, Math.round(zScale), dotA));
 				}
 			}
 		}
 		
-		this.allDots.addAll(newIntermediateDots);
+		newIntermediateDots.addAll(this.allDots);
 		
-		// Construct mesh using Facets and Vertices (points)
+		//Sample all the dots randomly
+		Collections.shuffle(newIntermediateDots);
 		
+		ArrayList<DotN> sampleDots = new ArrayList<DotN>();
+		for (int i = 0; i < Math.round(newIntermediateDots.size()/20000); i++) {
+			newIntermediateDots.get(i).pos.z = newIntermediateDots.get(i).pos.z*this.zScale;
+			sampleDots.add(newIntermediateDots.get(i));
+		}
+
+		// As in LimeSeg.constructMesh();
+		int ans = -1;
+		if (LimeSeg.currentCell!=null) {
+            //CellT ct=LimeSeg.currentCell.cellTs.get(0);
+			CellT ct = new CellT(LimeSeg.currentCell, LimeSeg.currentCell.cellTs.get(0).frame);
+			ct.dots = sampleDots;
+            if (ct!=null) {
+                ans=ct.constructMesh();
+                ct.modified=true;
+                LimeSeg.notifyCellRendererCellsModif=true;
+                LimeSeg.notifyCellExplorerCellsModif=true;
+            }            
+            LimeSeg.currentCell.modified=true;
+        }
 		
-		return cellMesh;
+		return null;
 	}
 }

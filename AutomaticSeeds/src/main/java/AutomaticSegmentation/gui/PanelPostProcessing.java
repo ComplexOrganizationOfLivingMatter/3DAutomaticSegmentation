@@ -215,17 +215,25 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == btn3DDisplay) {
-			LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale*3);
-			for (Cell3D cell3d : all3dCells) {
-				LimeSeg.currentCell = cell3d;
-				//cell3d.buildMesh();
-				LimeSeg.constructMesh();
-			}
-			LimeSeg.make3DViewVisible();
-			LimeSeg.putAllCellsTo3DDisplay();
-			double[] objectCentroid = this.getObjectCentroid();
-			LimeSeg.set3DViewCenter(((float) objectCentroid[0]/this.all3dCells.size()), ((float) objectCentroid[1]/this.all3dCells.size()), (float) (objectCentroid[2]/this.all3dCells.size() / this.all3dCells.get(0).zScale));
-			LimeSeg.update3DDisplay();
+			ExecutorService executor1 = Executors.newSingleThreadExecutor();
+			executor1.submit(() -> {
+				LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale * 1.5);
+				for (Cell3D cell3d : all3dCells) {
+					System.out.println(cell3d.id_Cell);
+					LimeSeg.currentCell = cell3d;
+					cell3d.buildMesh();
+					// LimeSeg.constructMesh();
+				}
+				LimeSeg.make3DViewVisible();
+				LimeSeg.putAllCellsTo3DDisplay();
+				double[] objectCentroid = this.getObjectCentroid();
+				LimeSeg.set3DViewCenter(((float) objectCentroid[0] / this.all3dCells.size()),
+						((float) objectCentroid[1] / this.all3dCells.size()),
+						(float) (objectCentroid[2] / this.all3dCells.size() / this.all3dCells.get(0).zScale));
+				LimeSeg.update3DDisplay();
+
+				executor1.shutdown();
+			});
 		}
 
 		if (e.getSource() == checkIdCells) {

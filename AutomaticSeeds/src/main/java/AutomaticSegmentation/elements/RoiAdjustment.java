@@ -510,7 +510,7 @@ public class RoiAdjustment {
 	 * @param count count of output interpolated numbers
 	 * @return array of interpolated number with specified count
 	 */
-	public static ArrayList<DotN> interpolate(Vector3D start, Vector3D end, int count) {
+	public static ArrayList<DotN> interpolate(Vector3D start, Vector3D end, int count, DotN dotsInfo) {
 	    if (count < 2) {
 	        throw new IllegalArgumentException("interpolate: illegal count!");
 	    }
@@ -521,7 +521,9 @@ public class RoiAdjustment {
 	    Vector3D interpolatedDot;
 	    for (int numPlane = 0; numPlane <= count; ++ numPlane) {
 	    	interpolatedDot = new Vector3D((numPlane / count) * dirVector.x, (numPlane / count) * dirVector.y, (numPlane / count) * dirVector.z);
-	    	middleInterpolatedDots.add(new DotN(Vector3D.sum(start, interpolatedDot), new Vector3D(0, 0, 0)));
+	    	DotN newDot = new DotN(Vector3D.sum(start, interpolatedDot), new Vector3D(0, 0, 0));
+	    	newDot.ct = dotsInfo.ct;
+	    	middleInterpolatedDots.add(newDot);
 	    }
 	    return middleInterpolatedDots;
 	}
