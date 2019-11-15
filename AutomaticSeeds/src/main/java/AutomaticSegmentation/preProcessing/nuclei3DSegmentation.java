@@ -86,7 +86,7 @@ public class nuclei3DSegmentation{
 		        	break;
 		        }
 	            
-	            progressBar.setValue(15);
+	            progressBar.setValue(12);
 		        IJ.saveAs(preprocessedImp,"Tiff", subdir+preprocessedImp.getTitle()+".tif");
 		        IJ.log("Save the nuclei image as dapi_channel.tif in "+subdir);
 	        }
@@ -108,8 +108,8 @@ public class nuclei3DSegmentation{
 		        	break;
 		        }
 		        
-		        progressBar.setValue(19);
-	        	qseg = new quickSegmentation(preprocessedImp, progressBar,cancelTask);
+		        progressBar.setValue(15);
+	        	qseg = new quickSegmentation(preprocessedImp,min_nuc_radius, progressBar,cancelTask);
 	        	
 	        	if (cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");
@@ -209,7 +209,11 @@ public class nuclei3DSegmentation{
 		return segmentedImp;
 		
 	}
-	
+	/**
+	 * 
+	 * @param imp
+	 * @return
+	 */
 	public ImagePlus runBandPass3D(ImagePlus imp) {
 		// filter image with 3D-bandpass
  		Bandpass3D bp3d = new Bandpass3D();
@@ -228,7 +232,14 @@ public class nuclei3DSegmentation{
         return imp;
 	}
 	
-	
+	/**
+	 * 
+	 * @param nucleiImp
+	 * @param xRad
+	 * @param yRad
+	 * @param zRad
+	 * @return
+	 */
 	public ImagePlus filterPreprocessing(ImagePlus nucleiImp, int xRad,int yRad, int zRad) {
 		
 		ImagePlus nucleiImp2 = nucleiImp.duplicate(); 
@@ -252,7 +263,12 @@ public class nuclei3DSegmentation{
 		}
 		return nucleiImp2;
 	}
-	
+	/**
+	 * 
+	 * @param initImp
+	 * @param imgFilterSize
+	 * @return
+	 */
 	public static ImagePlus createColouredImageWithLabels(ImagePlus initImp, ImageStack imgFilterSize) {
 		/*** get colored labels and return image ***/
 		// create image with watershed result
@@ -275,6 +291,10 @@ public class nuclei3DSegmentation{
 		return imp_segmentedFinal;
 	}
 	
+	/**
+	 * 
+	 * @param cancelTask
+	 */
 	public void setCancelTask(Boolean cancelTask) {
 		this.cancelTask = cancelTask.booleanValue();
 		if (quickSegmentationCheckB.isSelected()) {

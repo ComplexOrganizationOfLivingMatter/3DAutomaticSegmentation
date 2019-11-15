@@ -236,7 +236,7 @@ public class PanelPreProcessing extends JPanel {
 									    
 										cancelTask =false;
 										if(segmentedImp!=null && progressBar.getValue()==100) {
-											if(segmentedImp.getTitle().compareTo("dapi-seg")==0) {
+											if(segmentedImp.getTitle().compareTo("dapi-seg.tif")==0) {
 												IJ.error("Nuclei segmentation completed. Please extract their ROIs!");
 												newSegmentedFileName(segmentedImp.duplicate());
 												cbSegmentedImg.setEnabled(true);
@@ -246,6 +246,7 @@ public class PanelPreProcessing extends JPanel {
 											
 										}
 										progressBar.setValue(0);
+										btRunCancel.setText("Run");
 										btRunCancel.setEnabled(true);
 										btLoad.setEnabled(true);
 										btCalculateROIs.setEnabled(true);
@@ -325,14 +326,15 @@ public class PanelPreProcessing extends JPanel {
 					else if(e.getSource() == btCalculateROIs){
 						if (segmentedLoadImg!=null) {
 							btCalculateROIs.setEnabled(false);
-							segmentedLoadImg.show();
+							
 							try {
-								RoiManager rm = getNucleiROIs(segmentedLoadImg.duplicate());
+								RoiManager rm = getNucleiROIs(segmentedLoadImg);
 							}catch(Exception ex) {
 								ex.printStackTrace();
+								IJ.error("Close RoiManager please");
 							}
 							btCalculateROIs.setEnabled(true);
-							
+							segmentedLoadImg.show();
 						}else {
 							IJ.error("select a segmented and labelled image");
 						}
@@ -345,7 +347,10 @@ public class PanelPreProcessing extends JPanel {
 	};
 	
         
-	
+	/**
+	 * 
+	 * @param imp
+	 */
 	public void newSegmentedFileName(ImagePlus imp) {
 		if (imp.getNChannels() > 1) {
 			for (int numChannel = 0; numChannel < imp.getNChannels(); numChannel++) {
@@ -358,6 +363,11 @@ public class PanelPreProcessing extends JPanel {
 		}
 	}
 
+	/**
+	 * 
+	 * @param imp_segmented
+	 * @return
+	 */
 	public RoiManager getNucleiROIs(ImagePlus imp_segmented) {
 		// 3D-OC options settings
 		Prefs.set("3D-OC-Options_centroid.boolean", true);
@@ -388,8 +398,8 @@ public class PanelPreProcessing extends JPanel {
 					imp_segmented.getCalibration().pixelWidth };
 			double majorRadius = 1.2 * Utils.getMean(radii) / Utils.getMean(calibrations);
 			int r = (int) Math.round(majorRadius);
-			imp_segmented.setSlice(z);
 			Roi roi = new OvalRoi(centroidList[i][0] - r / 2, centroidList[i][1] - r / 2, r, r);
+			roi.setPosition(z);
 			rm.addRoi(roi);
 		}
 		return rm;
