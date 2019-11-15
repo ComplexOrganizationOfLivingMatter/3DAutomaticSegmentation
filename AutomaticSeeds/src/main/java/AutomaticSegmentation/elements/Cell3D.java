@@ -304,12 +304,19 @@ public class Cell3D extends Cell {
 		
 		ArrayList<DotN> dotsActualFrame;
 		ArrayList<DotN> dotsNextFrame;
+		ArrayList<DotN> newIntermediateDots = new ArrayList<DotN>();
 		for (int numFrame = 1; numFrame < totalFrames; numFrame++){
 			dotsActualFrame = getCell3DAt(this.dotsList, numFrame-1);
 			dotsNextFrame = getCell3DAt(this.dotsList, numFrame);
 			
-			
+			for (DotN dotA : dotsActualFrame) {
+				for (DotN dotN : dotsNextFrame) {
+					newIntermediateDots.addAll(RoiAdjustment.interpolate(dotN.pos, dotA.pos, Math.round(zScale)));
+				}
+			}
 		}
+		
+		this.dotsList.addAll(newIntermediateDots);
 		
 		// Construct mesh using Facets and Vertices (points)
 		
