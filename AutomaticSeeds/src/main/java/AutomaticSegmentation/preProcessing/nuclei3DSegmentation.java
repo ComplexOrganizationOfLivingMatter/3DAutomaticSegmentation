@@ -100,9 +100,9 @@ public class nuclei3DSegmentation{
 	        if (quickSegmentationCheckB.isSelected()) {
 	        	
 	        	/****************** Enhance contrast ******************/
-	        	preprocessedImp.setSlice(preprocessedImp.getNSlices()/2);
-		        IJ.run(preprocessedImp, "Enhance Contrast...", "saturated=0");
-		        
+	        	//preprocessedImp.setSlice(preprocessedImp.getNSlices()/2);
+		        //IJ.run(preprocessedImp, "Enhance Contrast...", "saturated=0");
+		        		        
 		        if (cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");
 		        	break;
@@ -137,6 +137,8 @@ public class nuclei3DSegmentation{
 	        	IJ.run(preprocessedImp, "32-bit", "");
 		        IJ.log("Computing Band Pass...");
 		        
+		        preprocessedImp.duplicate().show();
+		        
 		        if (cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");
 		        	break;
@@ -145,7 +147,9 @@ public class nuclei3DSegmentation{
 		        progressBar.setValue(35);
 		        preprocessedImp = runBandPass3D(preprocessedImp);
 		        progressBar.setValue(55);
-		 			 		
+		 		
+		        preprocessedImp.duplicate().show();
+		        
 		        if (cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");
 		        	break;
@@ -160,6 +164,8 @@ public class nuclei3DSegmentation{
 		        segmentedImp.setSlice(segmentedImp.getNSlices()/2);
 		        IJ.run(this.segmentedImp, "Enhance Contrast...", "saturated=0"); 
 		        
+		        segmentedImp.duplicate().show();
+
 		        if (cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");
 		        	break;
@@ -167,6 +173,8 @@ public class nuclei3DSegmentation{
 		        progressBar.setValue(60);
 		        
 		        IJ.run(segmentedImp, "16-bit", "");
+		        
+		        segmentedImp.duplicate().show();
 		        
 		        if (this.cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");

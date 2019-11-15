@@ -92,10 +92,10 @@ public class quickSegmentation{
 		outputImp =null;
 		while(!cancelTask.booleanValue() && progressBar.getValue()!=100)  {
 			// Convert the image to 8-Bit
-			if (this.inputNucleiImp.getBitDepth() != 8) {
-				ImageConverter converter = new ImageConverter(this.inputNucleiImp);
-				converter.convertToGray8();
-			}
+ 			if (this.inputNucleiImp.getBitDepth() != 8) {
+ 				ImageConverter converter = new ImageConverter(this.inputNucleiImp);
+ 				converter.convertToGray8();
+ 			}
 			//this.inputNucleiImp.duplicate().show();
 			int BitD = this.inputNucleiImp.getBitDepth();
 			boolean dams = false;
@@ -109,8 +109,16 @@ public class quickSegmentation{
 			if (cancelTask.booleanValue()) {
 	        	break;
 	        }
+			filteredImp.setSlice(filteredImp.getNSlices()/2);
+			IJ.run(filteredImp,"Make Binary", "method=Default background=Dark black");//"Make Binary", "method=Li background=black");
+			ImagePlus imp_segmented = filteredImp.duplicate();
 			
-			ImagePlus imp_segmented = automaticThreshold(filteredImp);
+			//ImagePlus imp_segmented = automaticThreshold(filteredImp);
+			//if (filteredImp==null) {
+			//	break;
+			//}
+			//imp_segmented.duplicate().show();
+			
 			progressBar.setValue(20);
 			
 			if (cancelTask.booleanValue()) {
@@ -224,38 +232,43 @@ public class quickSegmentation{
 	public ImagePlus automaticThreshold(ImagePlus initImp) {
 
 		/************ Store automatic thresholds **************/
-		ArrayList<Integer> thresholds = new ArrayList<Integer>();
-		ImageProcessor processor;
-		for (int i = 1; i <= initImp.getStackSize(); i++) {
-			processor = initImp.getStack().getProcessor(i);
-			
-			if (processor.getAutoThreshold()>10) {
-				thresholds.add((int) processor.getAutoThreshold()); 
-			}	
-		}
-		if (thresholds.isEmpty()) {
-			IJ.error("extremely dark images");
-			return null;
-		}else {
 		
-			/************ Calculate median threshold **************/
-			Collections.sort(thresholds);
-			int medianThresh = 0;
-			if (thresholds.size() % 2 == 1) {
-				medianThresh = (int) (thresholds.get(thresholds.size() / 2) + thresholds.get(thresholds.size() / 2 - 1))
-						/ 2;
-			} else {
-				medianThresh = (int) thresholds.get(thresholds.size() / 2);
-			}
-			/************ Apply the calculated threshold **************/
-			ImagePlus imp_segmented = new ImagePlus("", initImp.getStack().duplicate());
-			for (int i = 1; i <= imp_segmented.getStackSize(); i++) {
-				imp_segmented.setSlice(i);
-				processor = imp_segmented.getChannelProcessor();
-				processor.threshold(medianThresh);
-			}
-			return imp_segmented;
+		ImageProcessor processor;
+		int medianThresh = 0;
+		//ArrayList<Integer> thresholds = new ArrayList<Integer>();
+
+		processor = initImp.getStack().getProcessor(Math.round(initImp.getStackSize()/2));
+		medianThresh = processor.getAutoThreshold(); 
+//		int initSliceThresh = 4;
+//		int finalSliceThresh = initImp.getStackSize()-4;
+//		if (initImp.getStackSize()<10) {
+//			initSliceThresh = 1;
+//			finalSliceThresh = initImp.getStackSize();
+//		}
+//		for (int i = initSliceThresh; i <= finalSliceThresh; i++) {
+//			processor = initImp.getStack().getProcessor(i);
+//			IJ.log("Threshold: "+processor.getAutoThreshold());
+//			thresholds.add((int) processor.getAutoThreshold()); 
+//		}
+//		
+//		/************ Calculate median threshold **************/
+//		Collections.sort(thresholds);
+//		
+//		if (thresholds.size() % 2 == 1) {
+//			medianThresh = (int) (thresholds.get(thresholds.size() / 2) + thresholds.get(thresholds.size() / 2 - 1))
+//					/ 2;
+//		} else {
+//			medianThresh = (int) thresholds.get(thresholds.size() / 2);
+//		}
+		/************ Apply the calculated threshold **************/
+		ImagePlus imp_segmented = new ImagePlus("", initImp.getStack().duplicate());
+		for (int i = 1; i <= imp_segmented.getStackSize(); i++) {
+			imp_segmented.setSlice(i);
+			processor = imp_segmented.getChannelProcessor();
+			processor.threshold(medianThresh);
 		}
+		return imp_segmented;
+		
 
 		
 	}
