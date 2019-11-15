@@ -41,14 +41,19 @@ public class quickSegmentation{
 	 * 
 	 * @param impNuclei
 	 */
-	public quickSegmentation(ImagePlus impNuclei,JProgressBar progressBar,Boolean cancelTask) {
-		this.strelRadius2D = 4;
-		this.strelRadius3D = 3;
+	public quickSegmentation(ImagePlus impNuclei, int minNucleiRadius,JProgressBar progressBar,Boolean cancelTask) {
+		if (Math.round(minNucleiRadius/5)>2) {
+			this.strelRadius2D = (int) Math.round(minNucleiRadius/5);
+			this.strelRadius3D = (int) Math.round(minNucleiRadius/4);
+		}else {
+			this.strelRadius2D = 2;
+			this.strelRadius3D = 3;
+		}
 		// 10 is a good start point for 8-bit images, 2000 for 16-bits. Minor
 		// tolerance more divided objects with watershed
 		this.toleranceWatershed = 0;
 		this.inputNucleiImp = impNuclei;
-		this.pixelsToOpenVolume = 50;
+		this.pixelsToOpenVolume = (int) Math.round(minNucleiRadius*minNucleiRadius*Math.PI/3);
 		this.progressBar = progressBar;
 		this.cancelTask = cancelTask;
 	}
@@ -97,7 +102,7 @@ public class quickSegmentation{
 			IJ.log(BitD + "-bits conversion");
 		
 			ImagePlus filteredImp = inputNucleiImp.duplicate();
-			progressBar.setValue(21);
+			progressBar.setValue(17);
 			
 			IJ.log("Automatic thresholding");
 			
@@ -106,14 +111,16 @@ public class quickSegmentation{
 	        }
 			
 			ImagePlus imp_segmented = automaticThreshold(filteredImp);
-			progressBar.setValue(30);
+			progressBar.setValue(20);
 			
 			if (cancelTask.booleanValue()) {
 	        	break;
 	        }
 			/***** loop for closing, binarize and filling holes in 2D *****/
 			IJ.log("Binarizing, closing and filling holes");
-			Strel shape2D = Strel.Shape.DISK.fromRadius(this.strelRadius2D);
+			Strel shape2DOp = Strel.Shape.DISK.fromRadius(this.strelRadius2D);
+			Strel shape2DClo = Strel.Shape.DISK.fromRadius(this.strelRadius2D);
+
 			ImageStack imgFilled = imp_segmented.getStack().duplicate();
 			
 //			imp_segmented.show();
@@ -121,24 +128,26 @@ public class quickSegmentation{
 			for (int i = 1; i <= imgFilled.getSize(); i++) {
 				
 				ImageProcessor processor = imp_segmented.getStack().getProcessor(i);
-				processor = Morphology.closing(processor, shape2D);
+				processor = Morphology.opening(processor, shape2DOp);
+				processor = Morphology.closing(processor, shape2DClo);
+				processor = Morphology.opening(processor, shape2DOp);
 				processor = BinaryImages.binarize(processor);
 				processor = Reconstruction.fillHoles(processor);
 				imgFilled.setProcessor((ImageProcessor) processor.duplicate(), i);
 				
-				progressBar.setValue(30 + Math.round((i/filteredImp.getStackSize())*15));
+				progressBar.setValue(20 + Math.round((i/filteredImp.getStackSize())*10));
 				
 				
 			}
 			
 			ImagePlus im2Show = new ImagePlus("", imgFilled);
-			im2Show.show();
+//			im2Show.show();
 			
 			if (cancelTask.booleanValue()) {
 	        	break;
 	        }
 			
-			progressBar.setValue(46);
+			progressBar.setValue(31);
 			// Volume opening
 			IJ.log("Small volume opening");
 			ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, pixelsToOpenVolume);
@@ -149,7 +158,7 @@ public class quickSegmentation{
 			if (cancelTask.booleanValue()) {
 	        	break;
 	        }
-			progressBar.setValue(55);
+			progressBar.setValue(38);
 			//Watershed process
 			IJ.log("Init Watershed protocol");
 			ImageStack resultStack = watershedProcess(BitD, dams, imgFilterSmall, strelRadius3D, toleranceWatershed);
@@ -160,7 +169,6 @@ public class quickSegmentation{
 //			ImagePlus im2Show3 = new ImagePlus("", resultStack);
 //			im2Show3.show();
 			
-			progressBar.setValue(80);
 			/****** get array of volumes ******/
 			IJ.log("Getting labelled segmented nuclei");
 	
@@ -259,38 +267,40 @@ public class quickSegmentation{
 			if (cancelTask.booleanValue()) {
 	        	break;
 	        }
-			
-			IJ.log("	Gradient");
+			IJ.log("-Gradient");
 			Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(strelRadius3D);
 			ImageStack imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
-	
+			progressBar.setValue(50);
+
 			/*************Find regional minima on gradient image with dynamic value of 'tolerance' and 'conn'-connectivity*************/
 			if (cancelTask.booleanValue()) {
 	        	break;
 	        }
 			
-			IJ.log("	Extended Minima");
+			IJ.log("-Extended Minima");
 			ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima(imgGradient, toleranceWatershed, CONNECTIVITY);
-	
+			progressBar.setValue(60);
+
 			/************************impose minima on gradient image**********************/
 			if (cancelTask.booleanValue()) {
 	        	break;
 	        }
 			
-			IJ.log("	Impose Minima");
+			IJ.log("-Impose Minima");
 			ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima(imgGradient, regionalMinima, CONNECTIVITY);
-	
+			progressBar.setValue(68);
+
 			/************************label minima using connected components (32-bit output)**********************/
 			if (cancelTask.booleanValue()) {
 	        	break;
 	        }
 			
-			IJ.log("	Labelling");
+			IJ.log("-Labelling");
 			ImageStack labeledMinima;
 			try {
 				labeledMinima = BinaryImages.componentsLabeling(regionalMinima, CONNECTIVITY, BitD);
 			} catch (Exception e) {
-				IJ.log("	Corverting to 16-bits");
+				IJ.log("-Corverting to 16-bits");
 				ImagePlus regMinip = new ImagePlus("", regionalMinima);
 				ImageConverter converter = new ImageConverter(regMinip);
 				converter.convertToGray16();
@@ -300,7 +310,8 @@ public class quickSegmentation{
 				converter2.convertToGray16();
 				imposedMinima = impMin.getImageStack();
 			}
-			
+			progressBar.setValue(72);
+
 			/*****Apply marker-based watershed using the labeled minima on the minima-imposed*****/
 			if (cancelTask.booleanValue()) {
 	        	break;
@@ -308,6 +319,8 @@ public class quickSegmentation{
 			
 			IJ.log("	Watershed");
 			resultStack = Watershed.computeWatershed(imposedMinima, labeledMinima, CONNECTIVITY, dams);
+			progressBar.setValue(80);
+
 		}
 		return resultStack;
 	}

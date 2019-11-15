@@ -365,7 +365,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				File paramsCell = new File(f+File.separator+"CellParams.xml");
 				if (paramsCell.exists()) {
 					Cell newBasicCell = new Cell();
-					newBasicCell.id_Cell = path.substring(path.indexOf("_") + 1);
+					newBasicCell.id_Cell = path.substring(path.lastIndexOf("_") + 1);
 	
 					Document docCell = dBuilder.parse(paramsCell);
 					docCell.getDocumentElement().normalize();
@@ -893,8 +893,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1),
 						cellOutlineChannel.getCurrentSlice(), all3dCells, cellOutlineChannel, false, lumenDots);
 				cellOutlineChannel.setOverlay(newOverlay);
+			} else {
+				this.cellOutlineChannel.setHideOverlay(true);	
 			}
-			// this.cellOutlineChannel.updateAndRepaintWindow();
+			
 		}
 	}
 
