@@ -485,7 +485,7 @@ public class RoiAdjustment {
 					double pepe2 = centroid[1];
 					if (centroid[0] > 1 & centroid[1] > 1) {
 						TextRoi labelCell = new TextRoi(centroid[0], centroid[1], Integer.toString(nCell + 1));
-						labelCell.setColor(Color.WHITE);
+						labelCell.setStrokeColor(Color.WHITE);
 						labelCell.setLocation(centroid[0] - (labelCell.getFloatWidth() / 2),
 								centroid[1] - (labelCell.getFloatHeight() / 2));
 						textRois[nCell][nSlice] = labelCell;
