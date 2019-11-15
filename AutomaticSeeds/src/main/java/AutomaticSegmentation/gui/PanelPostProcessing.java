@@ -215,10 +215,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == btn3DDisplay) {
-			LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale*1.5);
+			LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale*3);
 			for (Cell3D cell3d : all3dCells) {
 				LimeSeg.currentCell = cell3d;
-				cell3d.buildMesh();
+				//cell3d.buildMesh();
 				LimeSeg.constructMesh();
 			}
 			LimeSeg.make3DViewVisible();
