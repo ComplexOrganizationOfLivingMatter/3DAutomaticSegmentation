@@ -135,9 +135,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	}
 
 	public void actionPerformed(ActionEvent e) {
-
 		if (e.getSource() == btPostLimeSeg) {
-
 			if (all3dCells.isEmpty()) {
 				btPostLimeSeg.setEnabled(false);
 				setFileChooserProperties("Select the output LimeSeg folder");
@@ -147,26 +145,21 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 					ExecutorService executor1 = Executors.newSingleThreadExecutor();
 					executor1.submit(() -> {
-						loadPlyFiles();
-						labelCells = RoiAdjustment.getLabelCells(all3dCells, cellOutlineChannel);
-						MainAutomatic3DSegmentation.callToolbarPolygon();
-						lumenDots = null;
-						removeCellLumenOverlap();
-						cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(), all3dCells,
-								cellOutlineChannel, false, lumenDots));
-						cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
-						cbOverlay.addActionListener(this);
-						checkLumen.addActionListener(this);
-						checkIdCells.addActionListener(this);
-						checkIdCells.setSelected(true);
-						btnModifyCell.addActionListener(this);
-						btnPostSave.addActionListener(this);
-						btnLumen.addActionListener(this);
-						btn3DDisplay.addActionListener(this);
-						cellSpinner.addChangeListener(this);
-						this.setEnablePanel(true);
-						checkLumen.setEnabled(false);
-						updateOverlay();
+						if (loadPlyFiles()) {
+							labelCells = RoiAdjustment.getLabelCells(all3dCells, cellOutlineChannel);
+							MainAutomatic3DSegmentation.callToolbarPolygon();
+							lumenDots = null;
+							removeCellLumenOverlap();
+							cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(), all3dCells,
+									cellOutlineChannel, false, lumenDots));
+							cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
+							this.setEnablePanel(true);
+							checkLumen.setEnabled(false);
+							updateOverlay();
+						} else {
+							btPostLimeSeg.setEnabled(true);
+							
+						}
 						executor1.shutdown();
 					});
 				} else {
@@ -198,12 +191,9 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				updateOverlay();
 				// After modify cell return poly to null, clean the roi
 				polyRoi = null;
-			}
-			// If polyRoi is null show a message to prevent errors
-			else {
+			} else { // If polyRoi is null show a message to prevent errors
 				JOptionPane.showMessageDialog(getParent(), "You must select a new Region.");
 			}
-
 		}
 
 		if (e.getSource() == btnPostSave) {
@@ -327,76 +317,91 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		this.add(btnPostSave, "align center");
 		this.add(btnLumen, "align center");
 
+		cbOverlay.addActionListener(this);
+		checkLumen.addActionListener(this);
+		checkIdCells.addActionListener(this);
+		checkIdCells.setSelected(true);
+		btnModifyCell.addActionListener(this);
+		btnPostSave.addActionListener(this);
+		btnLumen.addActionListener(this);
+		btn3DDisplay.addActionListener(this);
+		cellSpinner.addChangeListener(this);
 	}
 
 	/**
 	 * Very similar to "IOXmlPlyLimeSeg.loadState"
 	 */
-	public void loadPlyFiles() {
+	public boolean loadPlyFiles() {
 		File dir = new File(fileChooser.getSelectedFile().toString());
 		
 		File fXmlFile = new File(dir+File.separator+"LimeSegParams.xml");
-		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder dBuilder;
-		try {
-			dBuilder = dbFactory.newDocumentBuilder();			
-			Document doc = dBuilder.parse(fXmlFile);
-			//optional, but recommended
-			//read this - http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
-			doc.getDocumentElement().normalize();
-		
-			File[] files = dir.listFiles(new FilenameFilter() {
-				public boolean accept(File dir, String name) {
-					return name.startsWith("cell_");
-				}
-			});
-	
-			if (LimeSeg.allCells == null) {
-				LimeSeg lms = new LimeSeg();
-				lms.initialize();
-				LimeSeg.saveOptState();
-			}
-	
-			LimeSeg.opt.setOptParam("ZScale", (float) ((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
-					/ cellOutlineChannel.getOriginalFileInfo().pixelWidth));
-	
-			for (File f : files) {
-				String path = f.toString();
-				File paramsCell = new File(f+File.separator+"CellParams.xml");
-				if (paramsCell.exists()) {
-					Cell newBasicCell = new Cell();
-					newBasicCell.id_Cell = path.substring(path.lastIndexOf("_") + 1);
-	
-					Document docCell = dBuilder.parse(paramsCell);
-					docCell.getDocumentElement().normalize();
-					if (docCell.getDocumentElement().getNodeName().equals("CellParameters")) {
-						newBasicCell.color[0]=Float.valueOf(docCell.getElementsByTagName("R").item(0).getTextContent());
-						newBasicCell.color[1]=Float.valueOf(docCell.getElementsByTagName("G").item(0).getTextContent());
-						newBasicCell.color[2]=Float.valueOf(docCell.getElementsByTagName("B").item(0).getTextContent());
-						newBasicCell.color[3]=Float.valueOf(docCell.getElementsByTagName("A").item(0).getTextContent());
-						newBasicCell.cellChannel = Integer.valueOf(docCell.getElementsByTagName("channel").item(0).getTextContent());
-					}
-					IOXmlPlyLimeSeg.hydrateCellT(newBasicCell, path);
-					Cell3D newCell3D = new Cell3D(newBasicCell, (float) LimeSeg.opt.getOptParam("ZScale"),
-							cellOutlineChannel.getStackSize());
-					all3dCells.add(newCell3D);
-					LimeSeg.allCells.add(newCell3D);
-				}
-			}
-	
-			Collections.sort(all3dCells, new Comparator<Cell3D>() {
-				@Override
-				public int compare(Cell3D cel1, Cell3D cel2) {
-					return cel1.getID().compareTo(cel2.getID());
-				}
-			});
+		if (fXmlFile.exists()){
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder;
+			try {
+				dBuilder = dbFactory.newDocumentBuilder();			
+				Document doc = dBuilder.parse(fXmlFile);
+				//optional, but recommended
+				//read this - http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
+				doc.getDocumentElement().normalize();
 			
-			if (files.length == 0)
-				IJ.log("No ply found");
-			// Display dialog "No ply found"
-		}catch (Exception e) {
-			e.printStackTrace();
+				File[] files = dir.listFiles(new FilenameFilter() {
+					public boolean accept(File dir, String name) {
+						return name.startsWith("cell_");
+					}
+				});
+		
+				if (LimeSeg.allCells == null) {
+					LimeSeg lms = new LimeSeg();
+					lms.initialize();
+					LimeSeg.saveOptState();
+				}
+		
+				LimeSeg.opt.setOptParam("ZScale", (float) ((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
+						/ cellOutlineChannel.getOriginalFileInfo().pixelWidth));
+		
+				for (File f : files) {
+					String path = f.toString();
+					File paramsCell = new File(f+File.separator+"CellParams.xml");
+					if (paramsCell.exists()) {
+						Cell newBasicCell = new Cell();
+						newBasicCell.id_Cell = path.substring(path.lastIndexOf("_") + 1);
+		
+						Document docCell = dBuilder.parse(paramsCell);
+						docCell.getDocumentElement().normalize();
+						if (docCell.getDocumentElement().getNodeName().equals("CellParameters")) {
+							newBasicCell.color[0]=Float.valueOf(docCell.getElementsByTagName("R").item(0).getTextContent());
+							newBasicCell.color[1]=Float.valueOf(docCell.getElementsByTagName("G").item(0).getTextContent());
+							newBasicCell.color[2]=Float.valueOf(docCell.getElementsByTagName("B").item(0).getTextContent());
+							newBasicCell.color[3]=Float.valueOf(docCell.getElementsByTagName("A").item(0).getTextContent());
+							newBasicCell.cellChannel = Integer.valueOf(docCell.getElementsByTagName("channel").item(0).getTextContent());
+						}
+						IOXmlPlyLimeSeg.hydrateCellT(newBasicCell, path);
+						Cell3D newCell3D = new Cell3D(newBasicCell, (float) LimeSeg.opt.getOptParam("ZScale"),
+								cellOutlineChannel.getStackSize());
+						all3dCells.add(newCell3D);
+						LimeSeg.allCells.add(newCell3D);
+					}
+				}
+		
+				Collections.sort(all3dCells, new Comparator<Cell3D>() {
+					@Override
+					public int compare(Cell3D cel1, Cell3D cel2) {
+						return cel1.getID().compareTo(cel2.getID());
+					}
+				});
+				
+				if (files.length == 0)
+					IJ.log("No ply found");
+				// Display dialog "No ply found"
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+		} else {
+			IJ.log("No ply found");
+			return false;
 		}
+		return true;
 	}
 
 	/**
@@ -432,21 +437,24 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	public Overlay addOverlay(Integer id, Integer frame, ArrayList<Cell3D> cells, ImagePlus workingImP,
 			boolean allOverlays, PolygonRoi[][] lumen) {
 		Overlay ov = new Overlay();
+		Color colorNonSelectedCell = new Color(51, 204, 255);
+		Color colorSelectedCell = new Color(255, 153, 0);
+		// colorCurrentCell = new Color(255, 153, 0);
+		// colorSelectedCell = new Color(255, 102, 255);
 		if (workingImP != null) {
 			PointRoi roi;
 			if (allOverlays) {
-
 				for (int nCell = 0; nCell < cells.size(); nCell++) {
 					ArrayList<DotN> dots = cells.get(nCell).getCell3DAt(frame);
 					Iterator<DotN> i = dots.iterator();
 					while (i.hasNext()) {
 						DotN loadedDots = i.next();
 						roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);
-						Color colorCurrentCell = new Color(0, 0, 255);
-						roi.setStrokeColor(colorCurrentCell);
+						roi.setPointType(3);
 						if (nCell == id) {
-							colorCurrentCell = new Color(255, 0, 0);
-							roi.setStrokeColor(colorCurrentCell);
+							roi.setStrokeColor(colorSelectedCell);
+						} else {
+							roi.setStrokeColor(colorNonSelectedCell);
 						}
 						ov.addElement(roi);
 
@@ -454,7 +462,6 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							if (labelCells[nCell][frame] != null) {
 								ov.addElement(labelCells[nCell][frame]);
 							}
-
 						}
 					}
 				}
@@ -464,10 +471,11 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				while (i.hasNext()) {
 					DotN loadedDots = i.next();
 					roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);
-					Color colorCurrentCell = new Color(255, 0, 0);
-					roi.setStrokeColor(colorCurrentCell);
+					roi.setPointType(3);
+					roi.setStrokeColor(colorSelectedCell);
 					ov.addElement(roi);
 				}
+				
 				if (labelCells.length > 0 & checkIdCells.isSelected()) {
 					if (labelCells[id][frame] != null) {
 						ov.addElement(labelCells[id][frame]);

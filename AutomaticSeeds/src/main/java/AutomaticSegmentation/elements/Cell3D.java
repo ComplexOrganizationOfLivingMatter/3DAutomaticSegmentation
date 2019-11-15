@@ -3,7 +3,6 @@ package AutomaticSegmentation.elements;
 
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import AutomaticSegmentation.gui.PanelPostProcessing;
