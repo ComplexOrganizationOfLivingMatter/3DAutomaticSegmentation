@@ -59,7 +59,6 @@ import eu.kiaru.limeseg.io.IOXmlPlyLimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
 import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
-import graphics.scenery.Mesh;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.Overlay;
@@ -69,9 +68,6 @@ import ij.gui.Roi;
 import ij.gui.ShapeRoi;
 import ij.gui.TextRoi;
 import ij.process.ImageProcessor;
-import net.imagej.Dataset;
-import net.imagej.ops.Ops;
-import sc.iview.SciView;
 
 /**
  * @author Victor Hugo Arriaga, Antonio Tagua, Pablo Vicente-Munuera
@@ -94,7 +90,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 	public JButton btPostLimeSeg;
 	private JButton btnPostSave;
-	private JButton btnInsert;
+	private JButton btnModifyCell;
 	private JButton btnLumen;
 	private JButton btn3DDisplay;
 	private JLabel cellsLabel;
@@ -139,9 +135,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	}
 
 	public void actionPerformed(ActionEvent e) {
-
 		if (e.getSource() == btPostLimeSeg) {
-
 			if (all3dCells.isEmpty()) {
 				btPostLimeSeg.setEnabled(false);
 				setFileChooserProperties("Select the output LimeSeg folder");
@@ -151,26 +145,21 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 					ExecutorService executor1 = Executors.newSingleThreadExecutor();
 					executor1.submit(() -> {
-						loadPlyFiles();
-						labelCells = RoiAdjustment.getLabelCells(all3dCells, cellOutlineChannel);
-						MainAutomatic3DSegmentation.callToolbarPolygon();
-						lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
-						removeCellLumenOverlap();
-						cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(), all3dCells,
-								cellOutlineChannel, false, lumenDots));
-						cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
-						cbOverlay.addActionListener(this);
-						checkLumen.addActionListener(this);
-						checkIdCells.addActionListener(this);
-						checkIdCells.setSelected(true);
-						btnInsert.addActionListener(this);
-						btnPostSave.addActionListener(this);
-						btnLumen.addActionListener(this);
-						btn3DDisplay.addActionListener(this);
-						cellSpinner.addChangeListener(this);
-						this.setEnablePanel(true);
-						checkLumen.setEnabled(false);
-						updateOverlay();
+						if (loadPlyFiles()) {
+							labelCells = RoiAdjustment.getLabelCells(all3dCells, cellOutlineChannel);
+							MainAutomatic3DSegmentation.callToolbarPolygon();
+							lumenDots = null;
+							removeCellLumenOverlap();
+							cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(), all3dCells,
+									cellOutlineChannel, false, lumenDots));
+							cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
+							this.setEnablePanel(true);
+							checkLumen.setEnabled(false);
+							updateOverlay();
+						} else {
+							btPostLimeSeg.setEnabled(true);
+							
+						}
 						executor1.shutdown();
 					});
 				} else {
@@ -190,7 +179,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			updateOverlay();
 		}
 
-		if (e.getSource() == btnInsert) {
+		if (e.getSource() == btnModifyCell) {
 			addROI();
 			// Check if polyRoi is different to null, if is do the modify cell
 			if (polyRoi != null) {
@@ -202,12 +191,9 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				updateOverlay();
 				// After modify cell return poly to null, clean the roi
 				polyRoi = null;
-			}
-			// If polyRoi is null show a message to prevent errors
-			else {
+			} else { // If polyRoi is null show a message to prevent errors
 				JOptionPane.showMessageDialog(getParent(), "You must select a new Region.");
 			}
-
 		}
 
 		if (e.getSource() == btnPostSave) {
@@ -229,10 +215,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == btn3DDisplay) {
-			LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale*1.5);
+			LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale*3);
 			for (Cell3D cell3d : all3dCells) {
 				LimeSeg.currentCell = cell3d;
-				cell3d.buildMesh();
+				//cell3d.buildMesh();
 				LimeSeg.constructMesh();
 			}
 			LimeSeg.make3DViewVisible();
@@ -306,8 +292,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		checkLumen = new JCheckBox("Show lumen");
 		checkLumen.addActionListener(this);
 
-		btnInsert = new JButton("Modify Cell");
-		btnInsert.setMinimumSize(new Dimension(150, 20));
+		btnModifyCell = new JButton("Modify Cell");
+		btnModifyCell.setMinimumSize(new Dimension(150, 20));
 		btnPostSave = new JButton("Save Results");
 		btnPostSave.setMinimumSize(new Dimension(150, 20));
 		btnLumen = new JButton("Load Lumen");
@@ -327,80 +313,95 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		this.add(btPostLimeSeg, "align center");
 		this.add(cbOverlay, "align center");
 		this.add(checkLumen, "wrap, align center");
-		this.add(btnInsert, "align center");
+		this.add(btnModifyCell, "align center");
 		this.add(btnPostSave, "align center");
 		this.add(btnLumen, "align center");
 
+		cbOverlay.addActionListener(this);
+		checkLumen.addActionListener(this);
+		checkIdCells.addActionListener(this);
+		checkIdCells.setSelected(true);
+		btnModifyCell.addActionListener(this);
+		btnPostSave.addActionListener(this);
+		btnLumen.addActionListener(this);
+		btn3DDisplay.addActionListener(this);
+		cellSpinner.addChangeListener(this);
 	}
 
 	/**
 	 * Very similar to "IOXmlPlyLimeSeg.loadState"
 	 */
-	public void loadPlyFiles() {
+	public boolean loadPlyFiles() {
 		File dir = new File(fileChooser.getSelectedFile().toString());
 		
 		File fXmlFile = new File(dir+File.separator+"LimeSegParams.xml");
-		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder dBuilder;
-		try {
-			dBuilder = dbFactory.newDocumentBuilder();			
-			Document doc = dBuilder.parse(fXmlFile);
-			//optional, but recommended
-			//read this - http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
-			doc.getDocumentElement().normalize();
-		
-			File[] files = dir.listFiles(new FilenameFilter() {
-				public boolean accept(File dir, String name) {
-					return name.startsWith("cell_");
-				}
-			});
-	
-			if (LimeSeg.allCells == null) {
-				LimeSeg lms = new LimeSeg();
-				lms.initialize();
-				LimeSeg.saveOptState();
-			}
-	
-			LimeSeg.opt.setOptParam("ZScale", (float) ((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
-					/ cellOutlineChannel.getOriginalFileInfo().pixelWidth));
-	
-			for (File f : files) {
-				String path = f.toString();
-				File paramsCell = new File(f+File.separator+"CellParams.xml");
-				if (paramsCell.exists()) {
-					Cell newBasicCell = new Cell();
-					newBasicCell.id_Cell = path.substring(path.indexOf("_") + 1);
-	
-					Document docCell = dBuilder.parse(paramsCell);
-					docCell.getDocumentElement().normalize();
-					if (docCell.getDocumentElement().getNodeName().equals("CellParameters")) {
-						newBasicCell.color[0]=Float.valueOf(docCell.getElementsByTagName("R").item(0).getTextContent());
-						newBasicCell.color[1]=Float.valueOf(docCell.getElementsByTagName("G").item(0).getTextContent());
-						newBasicCell.color[2]=Float.valueOf(docCell.getElementsByTagName("B").item(0).getTextContent());
-						newBasicCell.color[3]=Float.valueOf(docCell.getElementsByTagName("A").item(0).getTextContent());
-						newBasicCell.cellChannel = Integer.valueOf(docCell.getElementsByTagName("channel").item(0).getTextContent());
-					}
-					IOXmlPlyLimeSeg.hydrateCellT(newBasicCell, path);
-					Cell3D newCell3D = new Cell3D(newBasicCell, (float) LimeSeg.opt.getOptParam("ZScale"),
-							cellOutlineChannel.getStackSize());
-					all3dCells.add(newCell3D);
-					LimeSeg.allCells.add(newCell3D);
-				}
-			}
-	
-			Collections.sort(all3dCells, new Comparator<Cell3D>() {
-				@Override
-				public int compare(Cell3D cel1, Cell3D cel2) {
-					return cel1.getID().compareTo(cel2.getID());
-				}
-			});
+		if (fXmlFile.exists()){
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder;
+			try {
+				dBuilder = dbFactory.newDocumentBuilder();			
+				Document doc = dBuilder.parse(fXmlFile);
+				//optional, but recommended
+				//read this - http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
+				doc.getDocumentElement().normalize();
 			
-			if (files.length == 0)
-				IJ.log("No ply found");
-			// Display dialog "No ply found"
-		}catch (Exception e) {
-			e.printStackTrace();
+				File[] files = dir.listFiles(new FilenameFilter() {
+					public boolean accept(File dir, String name) {
+						return name.startsWith("cell_");
+					}
+				});
+		
+				if (LimeSeg.allCells == null) {
+					LimeSeg lms = new LimeSeg();
+					lms.initialize();
+					LimeSeg.saveOptState();
+				}
+		
+				LimeSeg.opt.setOptParam("ZScale", (float) ((float) cellOutlineChannel.getOriginalFileInfo().pixelDepth
+						/ cellOutlineChannel.getOriginalFileInfo().pixelWidth));
+		
+				for (File f : files) {
+					String path = f.toString();
+					File paramsCell = new File(f+File.separator+"CellParams.xml");
+					if (paramsCell.exists()) {
+						Cell newBasicCell = new Cell();
+						newBasicCell.id_Cell = path.substring(path.lastIndexOf("_") + 1);
+		
+						Document docCell = dBuilder.parse(paramsCell);
+						docCell.getDocumentElement().normalize();
+						if (docCell.getDocumentElement().getNodeName().equals("CellParameters")) {
+							newBasicCell.color[0]=Float.valueOf(docCell.getElementsByTagName("R").item(0).getTextContent());
+							newBasicCell.color[1]=Float.valueOf(docCell.getElementsByTagName("G").item(0).getTextContent());
+							newBasicCell.color[2]=Float.valueOf(docCell.getElementsByTagName("B").item(0).getTextContent());
+							newBasicCell.color[3]=Float.valueOf(docCell.getElementsByTagName("A").item(0).getTextContent());
+							newBasicCell.cellChannel = Integer.valueOf(docCell.getElementsByTagName("channel").item(0).getTextContent());
+						}
+						IOXmlPlyLimeSeg.hydrateCellT(newBasicCell, path);
+						Cell3D newCell3D = new Cell3D(newBasicCell, (float) LimeSeg.opt.getOptParam("ZScale"),
+								cellOutlineChannel.getStackSize());
+						all3dCells.add(newCell3D);
+						LimeSeg.allCells.add(newCell3D);
+					}
+				}
+		
+				Collections.sort(all3dCells, new Comparator<Cell3D>() {
+					@Override
+					public int compare(Cell3D cel1, Cell3D cel2) {
+						return cel1.getID().compareTo(cel2.getID());
+					}
+				});
+				
+				if (files.length == 0)
+					IJ.log("No ply found");
+				// Display dialog "No ply found"
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+		} else {
+			IJ.log("No ply found");
+			return false;
 		}
+		return true;
 	}
 
 	/**
@@ -436,21 +437,24 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	public Overlay addOverlay(Integer id, Integer frame, ArrayList<Cell3D> cells, ImagePlus workingImP,
 			boolean allOverlays, PolygonRoi[][] lumen) {
 		Overlay ov = new Overlay();
+		Color colorNonSelectedCell = new Color(51, 204, 255);
+		Color colorSelectedCell = new Color(255, 153, 0);
+		// colorCurrentCell = new Color(255, 153, 0);
+		// colorSelectedCell = new Color(255, 102, 255);
 		if (workingImP != null) {
 			PointRoi roi;
 			if (allOverlays) {
-
 				for (int nCell = 0; nCell < cells.size(); nCell++) {
 					ArrayList<DotN> dots = cells.get(nCell).getCell3DAt(frame);
 					Iterator<DotN> i = dots.iterator();
 					while (i.hasNext()) {
 						DotN loadedDots = i.next();
 						roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);
-						Color colorCurrentCell = new Color(0, 0, 255);
-						roi.setStrokeColor(colorCurrentCell);
+						roi.setPointType(3);
 						if (nCell == id) {
-							colorCurrentCell = new Color(255, 0, 0);
-							roi.setStrokeColor(colorCurrentCell);
+							roi.setStrokeColor(colorSelectedCell);
+						} else {
+							roi.setStrokeColor(colorNonSelectedCell);
 						}
 						ov.addElement(roi);
 
@@ -458,7 +462,6 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							if (labelCells[nCell][frame] != null) {
 								ov.addElement(labelCells[nCell][frame]);
 							}
-
 						}
 					}
 				}
@@ -468,10 +471,11 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				while (i.hasNext()) {
 					DotN loadedDots = i.next();
 					roi = new PointRoi(loadedDots.pos.x, loadedDots.pos.y);
-					Color colorCurrentCell = new Color(255, 0, 0);
-					roi.setStrokeColor(colorCurrentCell);
+					roi.setPointType(3);
+					roi.setStrokeColor(colorSelectedCell);
 					ov.addElement(roi);
 				}
+				
 				if (labelCells.length > 0 & checkIdCells.isSelected()) {
 					if (labelCells[id][frame] != null) {
 						ov.addElement(labelCells[id][frame]);
@@ -479,12 +483,11 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				}
 			}
 
-			if (lumen[lumen.length / 2] != null & checkLumen.isSelected()) {
+			if (lumen != null & checkLumen.isSelected()) {
 				ov.addElement(lumen[frame - 1][0]);
 				if (lumen[frame - 1][1] != null)
 					ov.addElement(lumen[frame - 1][1]);
 			}
-			// TODO: change this part of the code
 
 		}
 		return ov;
@@ -494,100 +497,82 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 * 
 	 */
 	public void removeCellLumenOverlap() {
-		for (int nFrame = 1; nFrame < cellOutlineChannel.getStackSize() + 1; nFrame++) {
-			for (int nCell = 0; nCell < all3dCells.size(); nCell++) {
-				// Check if the frame have lumen and the cell is not empty
-				if (lumenDots[nFrame - 1] != null & all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) {
-					// Get the cell points
-					float[] xCell = all3dCells.get(nCell).getCoordinate("x", all3dCells.get(nCell).getCell3DAt(nFrame));
-					float[] yCell = all3dCells.get(nCell).getCoordinate("y", all3dCells.get(nCell).getCell3DAt(nFrame));
-					// Points to polygon to shape
-					PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
-					ShapeRoi r = new ShapeRoi(overlappingCell);
-					ShapeRoi s = new ShapeRoi(overlappingCell);
-					ShapeRoi s2 = new ShapeRoi(overlappingCell);
-					// Check if lumen has two polygon
-					if (lumenDots[nFrame - 1][1] != null) {
-						// Transform the lumens to polygons and shapes
-						java.awt.Polygon l = lumenDots[nFrame - 1][0].getPolygon();
-						ShapeRoi lum = new ShapeRoi(l);
-						// Verify if the lumen cross with cell
-						s.and(lum);
-						java.awt.Polygon l2 = lumenDots[nFrame - 1][1].getPolygon();
-						ShapeRoi lum2 = new ShapeRoi(l2);
-						s2.and(lum2);
-						// If lumen cross with cell width or height must be
-						// different to 0, if is 0 go to other cell
-						if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
-							// use not function to get all the points out of the
-							// lumen and save in polygon
-							PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(), 6);
-
-							Roi[] overRoi = RoiAdjustment.getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(),
-									polygon);
-							// get the border of polygon without lumen parts
-							// with concavehull function
-							PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
-
-							// Convert the PolygonRoi in Dots and integrate with
-							// the dots of
-							// the other frames.
-							// Later, replace the selected cell by the cell with
-							// the new
-							// region
-							ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
-									(float) LimeSeg.opt.getOptParam("ZScale"));
-							ArrayList<DotN> integratedDots = RoiAdjustment.integrateNewRegion(dotsNewRegion,
-									all3dCells.get(nCell).dotsList, nFrame, (float) LimeSeg.opt.getOptParam("ZScale"));
-
-							all3dCells.get(nCell).setDotsList(integratedDots);
-
-						}
-						// do the same for the second polygon
-						if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0) {
-							PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(), 6);
-
-							Roi[] overRoi2 = RoiAdjustment.getAsRoiPoints(polygon2.getXCoordinates(),
-									polygon2.getYCoordinates(), polygon2);
-
-							PolygonRoi poly2 = RoiAdjustment.getConcaveHull(overRoi2, 1);
-
-							ArrayList<DotN> dotsNewRegion2 = RoiAdjustment.setNewRegion(nFrame, poly2,
-									(float) LimeSeg.opt.getOptParam("ZScale"));
-							ArrayList<DotN> integratedDots2 = RoiAdjustment.integrateNewRegion(dotsNewRegion2,
-									all3dCells.get(nCell).dotsList, nFrame, (float) LimeSeg.opt.getOptParam("ZScale"));
-
-							all3dCells.get(nCell).setDotsList(integratedDots2);
-						}
-
-					}
-					// if lumen only have one polygon do the same as before but
-					// only once
-					else if (lumenDots[nFrame - 1][0] != null) {
-						java.awt.Polygon l1 = lumenDots[nFrame - 1][0].getPolygon();
-						ShapeRoi lum1 = new ShapeRoi(l1);
-						s.and(lum1);
-
-						if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
-							PolygonRoi polygon = new PolygonRoi(r.not(lum1).getContainedFloatPoints(), 6);
-
-							Roi[] overRoi = RoiAdjustment.getAsRoiPoints(polygon.getXCoordinates(), polygon.getYCoordinates(),
-									polygon);
-
-							PolygonRoi poly = RoiAdjustment.getConcaveHull(overRoi, 1);
-
-							ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
-									(float) LimeSeg.opt.getOptParam("ZScale"));
-
-							ArrayList<DotN> integratedDots = RoiAdjustment.integrateNewRegion(dotsNewRegion,
-									all3dCells.get(nCell).dotsList, nFrame, (float) LimeSeg.opt.getOptParam("ZScale"));
-
-							all3dCells.get(nCell).setDotsList(integratedDots);
-
+		if (lumenDots != null){
+			for (int nFrame = 1; nFrame < cellOutlineChannel.getStackSize() + 1; nFrame++) {
+				for (int nCell = 0; nCell < all3dCells.size(); nCell++) {
+					// Check if the frame have lumen and the cell is not empty
+					if (lumenDots[nFrame - 1] != null & all3dCells.get(nCell).getCell3DAt(nFrame).size() > 0) {
+						// Get the cell points
+						float[] xCell = all3dCells.get(nCell).getCoordinate("x", all3dCells.get(nCell).getCell3DAt(nFrame));
+						float[] yCell = all3dCells.get(nCell).getCoordinate("y", all3dCells.get(nCell).getCell3DAt(nFrame));
+						// Points to polygon to shape
+						PolygonRoi overlappingCell = new PolygonRoi(xCell, yCell, 6);
+						ShapeRoi r = new ShapeRoi(overlappingCell);
+						ShapeRoi s = new ShapeRoi(overlappingCell);
+						ShapeRoi s2 = new ShapeRoi(overlappingCell);
+						// Check if lumen has two polygon
+						if (lumenDots[nFrame - 1][1] != null) {
+							// Transform the lumens to polygons and shapes
+							java.awt.Polygon l = lumenDots[nFrame - 1][0].getPolygon();
+							ShapeRoi lum = new ShapeRoi(l);
+							// Verify if the lumen cross with cell
+							s.and(lum);
+							java.awt.Polygon l2 = lumenDots[nFrame - 1][1].getPolygon();
+							ShapeRoi lum2 = new ShapeRoi(l2);
+							s2.and(lum2);
+							// If lumen cross with cell width or height must be
+							// different to 0, if is 0 go to other cell
+							if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
+								// use not function to get all the points out of the
+								// lumen and save in polygon
+								PolygonRoi polygon = new PolygonRoi(r.not(lum).getContainedFloatPoints(), 6);
+	
+								// get the border of polygon without lumen parts
+								// with concavehull function
+								PolygonRoi poly = RoiAdjustment.getConcaveHull(polygon, 1);
+	
+								// Convert the PolygonRoi in Dots and integrate with the dots of the other frames.
+								// Later, replace the selected cell by the cell with the new region
+								ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
+										(float) LimeSeg.opt.getOptParam("ZScale"));
+	
+								all3dCells.get(nCell).getDotsPerSlice()[nFrame] = dotsNewRegion;
+	
+							}
+							// do the same for the second polygon
+							if (s2.getFloatWidth() != 0 | s2.getFloatHeight() != 0) {
+								PolygonRoi polygon2 = new PolygonRoi(r.not(lum2).getContainedFloatPoints(), 6);
+	
+								PolygonRoi poly2 = RoiAdjustment.getConcaveHull(polygon2, 1);
+	
+								ArrayList<DotN> dotsNewRegion2 = RoiAdjustment.setNewRegion(nFrame, poly2,
+										(float) LimeSeg.opt.getOptParam("ZScale"));
+	
+								all3dCells.get(nCell).getDotsPerSlice()[nFrame] = dotsNewRegion2;
+							}
+	
+						} else if (lumenDots[nFrame - 1][0] != null) { 
+							// if lumen only have one polygon do the same as before but
+							// only once
+							java.awt.Polygon l1 = lumenDots[nFrame - 1][0].getPolygon();
+							ShapeRoi lum1 = new ShapeRoi(l1);
+							s.and(lum1);
+	
+							if (s.getFloatWidth() != 0 | s.getFloatHeight() != 0) {
+								PolygonRoi polygon = new PolygonRoi(r.not(lum1).getContainedFloatPoints(), 6);
+	
+								PolygonRoi poly = RoiAdjustment.getConcaveHull(polygon, 1);
+	
+								ArrayList<DotN> dotsNewRegion = RoiAdjustment.setNewRegion(nFrame, poly,
+										(float) LimeSeg.opt.getOptParam("ZScale"));
+	
+								all3dCells.get(nCell).getDotsPerSlice()[nFrame] = dotsNewRegion;
+	
+							}
 						}
 					}
+	
 				}
-
 			}
 		}
 	}
@@ -596,6 +581,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 * 
 	 */
 	public void loadLumen() {
+		lumenDots = new PolygonRoi[cellOutlineChannel.getStackSize() + 1][2];
 		try {
 			setFileChooserProperties("Select the segmented lumen folder");
 			if (fileChooser.showOpenDialog(this) == fileChooser.APPROVE_OPTION) {
@@ -686,12 +672,9 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							// correct border
 							PolygonRoi postpol = new PolygonRoi(poly2.getInterpolatedPolygon(2, false), 6);
 
-							Roi[] roiDots = RoiAdjustment.getAsRoiPoints(poly.getXCoordinates(), poly.getYCoordinates(), poly);
-							Roi[] roiDots2 = RoiAdjustment.getAsRoiPoints(postpol.getXCoordinates(), postpol.getYCoordinates(),
-									postpol);
 							// find the border with ConcavHull
-							PolygonRoi lum = RoiAdjustment.getConcaveHull(roiDots, THRESHOLD);
-							PolygonRoi lum2 = RoiAdjustment.getConcaveHull(roiDots2, THRESHOLD);
+							PolygonRoi lum = RoiAdjustment.getConcaveHull(poly, THRESHOLD);
+							PolygonRoi lum2 = RoiAdjustment.getConcaveHull(postpol, THRESHOLD);
 							lumenDots[zIndex][0] = lum; // save the border in
 														// matrix
 														// position 0
@@ -703,9 +686,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							// save
 							PolygonRoi poly = new PolygonRoi(xPoints, yPoints, 6);
 							PolygonRoi postpol = new PolygonRoi(poly.getInterpolatedPolygon(2, false), 6);
-							Roi[] roiDots = RoiAdjustment.getAsRoiPoints(postpol.getXCoordinates(), postpol.getYCoordinates(),
-									postpol);
-							PolygonRoi lum = RoiAdjustment.getConcaveHull(roiDots, THRESHOLD);
+							PolygonRoi lum = RoiAdjustment.getConcaveHull(postpol, THRESHOLD);
 							lumenDots[zIndex][0] = lum;
 						}
 						// set the color of lumen in this case white
@@ -803,7 +784,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					saveXmlFile(pathCell + "CellParams.xml", domCell);
 
 					CellT cellt = new CellT(c, 1);
-					cellt.dots = c.dotsList;
+					cellt.dots = c.getAllDots();
 					if (dirCell.exists()) {
 						IOXmlPlyLimeSeg.saveCellTAsPly(cellt, pathCell + "T_" + 1 + ".ply");
 					}
@@ -907,8 +888,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				Overlay newOverlay = addOverlay(((Integer) cellSpinner.getValue() - 1),
 						cellOutlineChannel.getCurrentSlice(), all3dCells, cellOutlineChannel, false, lumenDots);
 				cellOutlineChannel.setOverlay(newOverlay);
+			} else {
+				this.cellOutlineChannel.setHideOverlay(true);	
 			}
-			// this.cellOutlineChannel.updateAndRepaintWindow();
+			
 		}
 	}
 
