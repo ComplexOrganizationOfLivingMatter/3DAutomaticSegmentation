@@ -66,77 +66,77 @@ public class PanelLimeSeg extends JPanel implements ActionListener {
 		fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 	}
-	
 
 	public void actionPerformed(ActionEvent e) {
 
-			if (e.getSource() == btnSavePly) {
+		if (e.getSource() == btnSavePly) {
 
-				ArrayList<Cell> cell = LimeSeg.allCells;
-				if (cell.size() > 0) {
-				
-					fileChooser.setCurrentDirectory(new File(cellOutlineChannel.getOriginalFileInfo().directory));
-					fileChooser.setDialogTitle("Select save folder");
-					
-					if (fileChooser.showOpenDialog(this) == fileChooser.APPROVE_OPTION) {
-						// String path =
-						// cellOutlineChannel.getOriginalFileInfo().directory +
-						// "OutputLimeSeg";
-						File dir = new File(fileChooser.getSelectedFile().toString() + "/OutputLimeSeg");
-						if (!dir.isDirectory()) {
-							System.out.println("New folder created");
-							dir.mkdir();
-						}
+			ArrayList<Cell> cell = LimeSeg.allCells;
+			if (cell.size() > 0) {
 
-						if (dir.listFiles().length != 0) {
-							// Show dialog to confirm
-							int dialogResult = JOptionPane.showConfirmDialog(btnSavePly.getParent(),
-									"Saving will remove the content of the select folder, confirm?", "Warning",
-									JOptionPane.YES_NO_OPTION);
-							if (dialogResult == JOptionPane.YES_OPTION) {
-								purgeDirectory(dir, 1);
-								LimeSeg.saveStateToXmlPly(dir.toString());
-								JOptionPane.showMessageDialog(btnSavePly.getParent(), "Saved!");
-							}
-							
-						} else {
+				fileChooser.setCurrentDirectory(new File(cellOutlineChannel.getOriginalFileInfo().directory));
+				fileChooser.setDialogTitle("Select save folder");
+
+				if (fileChooser.showOpenDialog(this) == fileChooser.APPROVE_OPTION) {
+					// String path =
+					// cellOutlineChannel.getOriginalFileInfo().directory +
+					// "OutputLimeSeg";
+					File dir = new File(fileChooser.getSelectedFile().toString() + "/OutputLimeSeg");
+					if (!dir.isDirectory()) {
+						System.out.println("New folder created");
+						dir.mkdir();
+					}
+
+					if (dir.listFiles().length != 0) {
+						// Show dialog to confirm
+						int dialogResult = JOptionPane.showConfirmDialog(btnSavePly.getParent(),
+								"Saving will remove the content of the select folder, confirm?", "Warning",
+								JOptionPane.YES_NO_OPTION);
+						if (dialogResult == JOptionPane.YES_OPTION) {
+							purgeDirectory(dir, 1);
 							LimeSeg.saveStateToXmlPly(dir.toString());
 							JOptionPane.showMessageDialog(btnSavePly.getParent(), "Saved!");
 						}
-						
+
 					} else {
-						IJ.log("Any folder selected");
+						LimeSeg.saveStateToXmlPly(dir.toString());
+						JOptionPane.showMessageDialog(btnSavePly.getParent(), "Saved!");
 					}
 
 				} else {
-					IJ.log("Any cell segmented");
+					IJ.error("Any folder selected");
 				}
-			}
 
-			if (e.getSource() == btStopOptimisation) {
-				LimeSeg.stopOptimisation();
-				cf.setClearOptimizer(true);
+			} else {
+				IJ.error("Any cell segmented");
 			}
+		}
 
-			if (e.getSource() == btRoiManager) {
-				RoiManager.getRoiManager();
+		if (e.getSource() == btStopOptimisation) {
+			LimeSeg.stopOptimisation();
+			cf.setClearOptimizer(true);
+		}
+
+		if (e.getSource() == btRoiManager) {
+			RoiManager.getRoiManager();
+		}
+
+		if (e.getSource() == btShowOutlines) {
+			if (cellOutlineChannel != null && cellOutlineChannel.getStackSize() != 1) {
+				// cellOutlineChannel.show();
+				cellOutlineChannel.close();
+				cellOutlineChannel.duplicate().show();
+			} else {
+				IJ.error("Reselect the cell outline channel");
 			}
+		}
 
-			if (e.getSource() == btShowOutlines) {
-				if (cellOutlineChannel != null && cellOutlineChannel.getStackSize() != 1) {
-					//cellOutlineChannel.show();
-					cellOutlineChannel.close();
-					cellOutlineChannel.duplicate().show();
-				} else {
-					IJ.log("Reselect the cell outline channel");
-				}
-			}
-
-			if (e.getSource() == btLimeSeg) {
-				ExecutorService executor1 = Executors.newSingleThreadExecutor();
-				executor1.submit(() -> {
-					btLimeSeg.setEnabled(false);
-					ClearAll clear = new ClearAll();
+		if (e.getSource() == btLimeSeg) {
+			ExecutorService executor1 = Executors.newSingleThreadExecutor();
+			executor1.submit(() -> {
+				btLimeSeg.setEnabled(false);
+				ClearAll clear = new ClearAll();
+				if (cellOutlineChannel.getStackSize() > 1) {
 					cf.setImp(cellOutlineChannel);
 					cf.setZ_scale(Double.valueOf(js_zScale.getValue().toString()).floatValue());
 					cf.setD_0(Double.valueOf(js_D0.getValue().toString()).floatValue());
@@ -151,14 +151,16 @@ public class PanelLimeSeg extends JPanel implements ActionListener {
 						clear.run();
 						cf.run();
 					} else {
-						IJ.log("Error. Any Roi set selected");
+						IJ.error("Error. Any Roi set selected");
 
 					}
-
-					btLimeSeg.setEnabled(true);
-					executor1.shutdown();
-				});
-			}
+				} else {
+					IJ.error("Reselect the cell outline chanel");
+				}
+				btLimeSeg.setEnabled(true);
+				executor1.shutdown();
+			});
+		}
 	}
 
 	/**

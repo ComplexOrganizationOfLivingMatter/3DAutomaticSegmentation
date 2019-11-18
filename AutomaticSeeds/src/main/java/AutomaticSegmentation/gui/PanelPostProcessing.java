@@ -163,7 +163,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						executor1.shutdown();
 					});
 				} else {
-					IJ.log("Not output LimeSeg folder selected");
+					IJ.error("Not output LimeSeg folder selected");
 					btPostLimeSeg.setEnabled(true);
 				}
 
@@ -256,7 +256,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 */
 	public void setCellOutlineChannel(ImagePlus cellOutlineChannel) {
 		this.cellOutlineChannel = cellOutlineChannel;
-		labelCells = new TextRoi[cellOutlineChannel.getStackSize()][all3dCells.size()];
+		if (cellOutlineChannel != null) {
+			labelCells = new TextRoi[cellOutlineChannel.getStackSize()][all3dCells.size()];
+		}
+		
 	}
 
 	/**
@@ -400,13 +403,13 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				});
 				
 				if (files.length == 0)
-					IJ.log("No ply found");
+					IJ.error("No ply found");
 				// Display dialog "No ply found"
 			}catch (Exception e) {
 				e.printStackTrace();
 			}
 		} else {
-			IJ.log("No ply found");
+			IJ.error("No ply found");
 			return false;
 		}
 		return true;
@@ -711,13 +714,13 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				checkLumen.setEnabled(true);
 				checkLumen.setSelected(true);
 			} else {
-				IJ.log("Any lumen file selected");
+				IJ.error("Any lumen file selected");
 			}
 
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-			IJ.log("Not valid lumen");
+			IJ.error("Not valid lumen");
 		}
 	}
 
@@ -801,7 +804,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				System.out.println("Save State: Error trying to instantiate DocumentBuilder " + pce);
 			}
 		} else {
-			IJ.log("Any folder selected");
+			IJ.error("Any folder selected");
 		}
 	}
 
