@@ -217,15 +217,17 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		if (e.getSource() == btn3DDisplay) {
 			ExecutorService executor1 = Executors.newSingleThreadExecutor();
 			executor1.submit(() -> {
-				LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale * 1.5);
+				LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale * 3);
+				LimeSeg.make3DViewVisible();
+				LimeSeg.clear3DDisplay();
 				for (Cell3D cell3d : all3dCells) {
 					System.out.println(cell3d.id_Cell);
 					LimeSeg.currentCell = cell3d;
 					cell3d.buildMesh();
 					// LimeSeg.constructMesh();
+					LimeSeg.putCellTo3DDisplay(cell3d);
+					break;
 				}
-				LimeSeg.make3DViewVisible();
-				LimeSeg.putAllCellsTo3DDisplay();
 				double[] objectCentroid = this.getObjectCentroid();
 				LimeSeg.set3DViewCenter(((float) objectCentroid[0] / this.all3dCells.size()),
 						((float) objectCentroid[1] / this.all3dCells.size()),

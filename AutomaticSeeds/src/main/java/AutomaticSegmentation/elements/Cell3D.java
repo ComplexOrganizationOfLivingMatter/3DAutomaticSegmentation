@@ -9,10 +9,10 @@ import java.util.List;
 import AutomaticSegmentation.gui.PanelPostProcessing;
 import eu.kiaru.limeseg.LimeSeg;
 import eu.kiaru.limeseg.struct.Cell;
+import eu.kiaru.limeseg.struct.CellT;
 import eu.kiaru.limeseg.struct.DotN;
 import eu.kiaru.limeseg.struct.Vector3D;
 import graphics.scenery.Mesh;
-import eu.kiaru.limeseg.struct.CellT;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 
@@ -103,7 +103,7 @@ public class Cell3D extends Cell {
 	 * @param dots points of the cell
 	 * @return
 	 */
-	public float[] getCoordinate(String axis, ArrayList<DotN> dots) {
+	public static float[] getCoordinate(String axis, ArrayList<DotN> dots) {
 		float[] coordinates = new float[dots.size()];
 		for (int i = 0; i < dots.size(); i++) {
 			if (axis == "x") {
@@ -287,15 +287,27 @@ public class Cell3D extends Cell {
 		ArrayList<DotN> dotsActualFrame;
 		ArrayList<DotN> dotsNextFrame;
 		ArrayList<DotN> newIntermediateDots = new ArrayList<DotN>();
+		
+		int firstFrame = -1;
+		int lastFrame = -1;
 		for (int numFrame = 1; numFrame < totalSlices; numFrame++){
 			dotsActualFrame = this.dotsPerSlice[numFrame-1];
-			dotsNextFrame = this.dotsPerSlice[numFrame];
+//			dotsNextFrame = this.dotsPerSlice[numFrame];
 			
-			for (DotN dotA : dotsActualFrame) {
-				for (DotN dotN : dotsNextFrame) {
-					newIntermediateDots.addAll(RoiAdjustment.interpolate(dotN.pos, dotA.pos, Math.round(zScale), dotA));
-				}
+			if (dotsActualFrame.isEmpty() == false) {
+				lastFrame = numFrame-1;
 			}
+			
+			if (dotsActualFrame.isEmpty() && lastFrame == -1) {
+				firstFrame = numFrame;
+			}
+			
+			// NOT WORKING
+//			for (DotN dotA : dotsActualFrame) {
+//				for (DotN dotN : dotsNextFrame) {
+//					newIntermediateDots.addAll(RoiAdjustment.interpolate(dotN.pos, dotA.pos, Math.round(zScale), dotA));
+//				}
+//			}
 		}
 		
 		newIntermediateDots.addAll(this.allDots);
@@ -304,22 +316,26 @@ public class Cell3D extends Cell {
 		Collections.shuffle(newIntermediateDots);
 		
 		ArrayList<DotN> sampleDots = new ArrayList<DotN>();
-		for (int i = 0; i < Math.round(newIntermediateDots.size()/20000); i++) {
-			newIntermediateDots.get(i).pos.z = newIntermediateDots.get(i).pos.z*this.zScale;
+		for (int i = 0; i < Math.round(newIntermediateDots.size()/5000); i++) {
 			sampleDots.add(newIntermediateDots.get(i));
 		}
+		
+		//Add last frames and first frames
+		sampleDots.addAll(RoiAdjustment.getContainedPoints(this.dotsPerSlice[firstFrame]));
+		sampleDots.addAll(RoiAdjustment.getContainedPoints(this.dotsPerSlice[lastFrame]));
 
 		// As in LimeSeg.constructMesh();
 		int ans = -1;
 		if (LimeSeg.currentCell!=null) {
-            //CellT ct=LimeSeg.currentCell.cellTs.get(0);
-			CellT ct = new CellT(LimeSeg.currentCell, LimeSeg.currentCell.cellTs.get(0).frame);
-			ct.dots = sampleDots;
+			CellT ct = new CellT(this, LimeSeg.currentCell.cellTs.get(0).frame);
             if (ct!=null) {
+    			ct.dots = this.allDots;
+    			ct.updateCenter();
                 ans=ct.constructMesh();
                 ct.modified=true;
                 LimeSeg.notifyCellRendererCellsModif=true;
                 LimeSeg.notifyCellExplorerCellsModif=true;
+                this.cellTs.set(0, ct);
             }            
             LimeSeg.currentCell.modified=true;
         }

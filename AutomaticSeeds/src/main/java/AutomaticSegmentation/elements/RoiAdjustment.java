@@ -2,6 +2,7 @@
 package AutomaticSegmentation.elements;
 
 import java.awt.Color;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -505,6 +506,8 @@ public class RoiAdjustment {
 	/***
 	 * Interpolating method from 
 	 * https://stackoverflow.com/questions/30182467/how-to-implement-linear-interpolation-method-in-java-array
+	 * 
+	 * IS IT REALLY WORKING?
 	 * @param start start of the interval
 	 * @param end end of the interval
 	 * @param count count of output interpolated numbers
@@ -527,4 +530,22 @@ public class RoiAdjustment {
 	    }
 	    return middleInterpolatedDots;
 	}
+
+	public static ArrayList<DotN> getContainedPoints(ArrayList<DotN> dotsList) {
+		float[] xCell = Cell3D.getCoordinate("x", dotsList);
+		float[] yCell = Cell3D.getCoordinate("y", dotsList);
+		
+		PolygonRoi polygon = new PolygonRoi(xCell, yCell, 6);
+		Point[] firstPoints = polygon.getContainedPoints();
+		
+		ArrayList<DotN> containedPoints = new ArrayList<DotN>();
+		DotN newDot;
+		for (Point point : firstPoints) {
+			newDot = new DotN(new Vector3D((double) point.x, (double) point.y, (double) dotsList.get(0).pos.z), new Vector3D(0, 0, 0));
+			containedPoints.add(newDot);
+		}
+		return containedPoints;
+	}
+	
+	
 }
