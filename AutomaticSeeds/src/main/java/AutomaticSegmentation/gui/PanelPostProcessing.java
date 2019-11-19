@@ -888,7 +888,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 */
 
 	public void updateOverlay() {
-
+		if (cellOutlineChannel != null ) {
 		if (cellOutlineChannel.getOverlay() != null) {
 			cellOutlineChannel.getOverlay().clear();
 			if (cbOverlay.getSelectedItem() == "All overlays") {
@@ -902,7 +902,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			} else {
 				this.cellOutlineChannel.setHideOverlay(true);	
 			}
-			
+		}
 		}
 	}
 
