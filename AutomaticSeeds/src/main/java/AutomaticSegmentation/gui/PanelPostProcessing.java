@@ -163,7 +163,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 						executor1.shutdown();
 					});
 				} else {
-					IJ.log("Not output LimeSeg folder selected");
+					IJ.error("Not output LimeSeg folder selected");
 					btPostLimeSeg.setEnabled(true);
 				}
 
@@ -215,17 +215,25 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == btn3DDisplay) {
-			LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale*3);
-			for (Cell3D cell3d : all3dCells) {
-				LimeSeg.currentCell = cell3d;
-				//cell3d.buildMesh();
-				LimeSeg.constructMesh();
-			}
-			LimeSeg.make3DViewVisible();
-			LimeSeg.putAllCellsTo3DDisplay();
-			double[] objectCentroid = this.getObjectCentroid();
-			LimeSeg.set3DViewCenter(((float) objectCentroid[0]/this.all3dCells.size()), ((float) objectCentroid[1]/this.all3dCells.size()), (float) (objectCentroid[2]/this.all3dCells.size() / this.all3dCells.get(0).zScale));
-			LimeSeg.update3DDisplay();
+			ExecutorService executor1 = Executors.newSingleThreadExecutor();
+			executor1.submit(() -> {
+				LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale * 1.5);
+				for (Cell3D cell3d : all3dCells) {
+					System.out.println(cell3d.id_Cell);
+					LimeSeg.currentCell = cell3d;
+					cell3d.buildMesh();
+					// LimeSeg.constructMesh();
+				}
+				LimeSeg.make3DViewVisible();
+				LimeSeg.putAllCellsTo3DDisplay();
+				double[] objectCentroid = this.getObjectCentroid();
+				LimeSeg.set3DViewCenter(((float) objectCentroid[0] / this.all3dCells.size()),
+						((float) objectCentroid[1] / this.all3dCells.size()),
+						(float) (objectCentroid[2] / this.all3dCells.size() / this.all3dCells.get(0).zScale));
+				LimeSeg.update3DDisplay();
+
+				executor1.shutdown();
+			});
 		}
 
 		if (e.getSource() == checkIdCells) {
@@ -248,7 +256,10 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 */
 	public void setCellOutlineChannel(ImagePlus cellOutlineChannel) {
 		this.cellOutlineChannel = cellOutlineChannel;
-		labelCells = new TextRoi[cellOutlineChannel.getStackSize()][all3dCells.size()];
+		if (cellOutlineChannel != null) {
+			labelCells = new TextRoi[cellOutlineChannel.getStackSize()][all3dCells.size()];
+		}
+		
 	}
 
 	/**
@@ -392,13 +403,13 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				});
 				
 				if (files.length == 0)
-					IJ.log("No ply found");
+					IJ.error("No ply found");
 				// Display dialog "No ply found"
 			}catch (Exception e) {
 				e.printStackTrace();
 			}
 		} else {
-			IJ.log("No ply found");
+			IJ.error("No ply found");
 			return false;
 		}
 		return true;
@@ -703,13 +714,13 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				checkLumen.setEnabled(true);
 				checkLumen.setSelected(true);
 			} else {
-				IJ.log("Any lumen file selected");
+				IJ.error("Any lumen file selected");
 			}
 
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-			IJ.log("Not valid lumen");
+			IJ.error("Not valid lumen");
 		}
 	}
 
@@ -793,7 +804,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				System.out.println("Save State: Error trying to instantiate DocumentBuilder " + pce);
 			}
 		} else {
-			IJ.log("Any folder selected");
+			IJ.error("Any folder selected");
 		}
 	}
 
@@ -877,7 +888,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	 */
 
 	public void updateOverlay() {
-
+		if (cellOutlineChannel != null ) {
 		if (cellOutlineChannel.getOverlay() != null) {
 			cellOutlineChannel.getOverlay().clear();
 			if (cbOverlay.getSelectedItem() == "All overlays") {
@@ -891,7 +902,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 			} else {
 				this.cellOutlineChannel.setHideOverlay(true);	
 			}
-			
+		}
 		}
 	}
 
