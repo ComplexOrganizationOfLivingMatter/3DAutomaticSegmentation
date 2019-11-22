@@ -34,6 +34,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
@@ -98,6 +99,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	private JCheckBox checkLumen;
 	private JSpinner cellSpinner;
 	private JCheckBox checkIdCells;
+	private JProgressBar progressBar;
 	
 	private ExecutorService exec;
 
@@ -119,7 +121,6 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		exec = Executors.newSingleThreadExecutor();
-		
 		initPostLimeSegPanel();
 	}
 
@@ -204,13 +205,15 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == btnLumen) {
-			exec.submit(() -> {
+			//exec.submit(() -> {
 				// read the lumen
+				progressBar.setValue(0);
 				loadLumen();
 				// remove the overlaps cells
 				removeCellLumenOverlap();
+				progressBar.setValue(100);
 				updateOverlay();
-			});
+			//});
 		}
 
 		if (e.getSource() == btn3DDisplay) {
@@ -312,6 +315,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		btPostLimeSeg.addActionListener(this);
 
 		checkIdCells = new JCheckBox("Label cells");
+		progressBar = new JProgressBar();
+		progressBar.setMaximumSize(new Dimension(150, 20));
 
 		// Add components
 		this.add(btn3DDisplay, "align center");
@@ -324,6 +329,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		this.add(btnModifyCell, "align center");
 		this.add(btnPostSave, "align center");
 		this.add(btnLumen, "align center");
+		this.add(progressBar, "align center");
 
 		cbOverlay.addActionListener(this);
 		checkLumen.addActionListener(this);
@@ -600,6 +606,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					}
 				});
 				int zIndex = 0;
+				int progressBarIncrease = 99/filesLumen.length;
 				// read the Lumen Directory
 				for (File f : filesLumen) {
 					FileInputStream lumen = new FileInputStream(f);
@@ -707,6 +714,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 					}
 
 					zIndex++;
+					progressBar.setValue(progressBar.getValue()+progressBarIncrease);
 				}
 				checkLumen.setEnabled(true);
 				checkLumen.setSelected(true);
