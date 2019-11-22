@@ -55,6 +55,7 @@ public class PanelLimeSeg extends JPanel implements ActionListener {
 	private SphereSegAdapted cf;
 	private ImagePlus cellOutlineChannel;
 	private JFileChooser fileChooser;
+	private ExecutorService exec;
 
 	/**
 	 * @param layout
@@ -65,6 +66,7 @@ public class PanelLimeSeg extends JPanel implements ActionListener {
 		initLimeSegPanel();
 		fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		exec = Executors.newSingleThreadExecutor();
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -132,8 +134,7 @@ public class PanelLimeSeg extends JPanel implements ActionListener {
 		}
 
 		if (e.getSource() == btLimeSeg) {
-			ExecutorService executor1 = Executors.newSingleThreadExecutor();
-			executor1.submit(() -> {
+			exec.submit(() -> {
 				btLimeSeg.setEnabled(false);
 				ClearAll clear = new ClearAll();
 				if (cellOutlineChannel.getStackSize() > 1) {
@@ -158,7 +159,6 @@ public class PanelLimeSeg extends JPanel implements ActionListener {
 					IJ.error("Reselect the cell outline chanel");
 				}
 				btLimeSeg.setEnabled(true);
-				executor1.shutdown();
 			});
 		}
 	}

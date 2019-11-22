@@ -98,6 +98,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 	private JCheckBox checkLumen;
 	private JSpinner cellSpinner;
 	private JCheckBox checkIdCells;
+	
+	private ExecutorService exec;
 
 	/**
 	 * 
@@ -116,7 +118,8 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		all3dCells = new ArrayList<Cell3D>();
 		fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-
+		exec = Executors.newSingleThreadExecutor();
+		
 		initPostLimeSegPanel();
 	}
 
@@ -143,8 +146,7 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 
 					this.cellOutlineChannel.show();
 
-					ExecutorService executor1 = Executors.newSingleThreadExecutor();
-					executor1.submit(() -> {
+					exec.submit(() -> {
 						if (loadPlyFiles()) {
 							labelCells = RoiAdjustment.getLabelCells(all3dCells, cellOutlineChannel);
 							MainAutomatic3DSegmentation.callToolbarPolygon();
@@ -153,14 +155,13 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 							cellOutlineChannel.setOverlay(addOverlay(0, cellOutlineChannel.getCurrentSlice(), all3dCells,
 									cellOutlineChannel, false, lumenDots));
 							cellSpinner.setModel(new SpinnerNumberModel(1, 1, all3dCells.size(), 1));
-							this.setEnablePanel(true);
+							setEnablePanel(true);
 							checkLumen.setEnabled(false);
 							updateOverlay();
 						} else {
 							btPostLimeSeg.setEnabled(true);
 							
 						}
-						executor1.shutdown();
 					});
 				} else {
 					IJ.error("Not output LimeSeg folder selected");
@@ -203,21 +204,18 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 		}
 
 		if (e.getSource() == btnLumen) {
-			ExecutorService executor1 = Executors.newSingleThreadExecutor();
-			executor1.submit(() -> {
+			exec.submit(() -> {
 				// read the lumen
 				loadLumen();
 				// remove the overlaps cells
 				removeCellLumenOverlap();
 				updateOverlay();
-				executor1.shutdown();
 			});
 		}
 
 		if (e.getSource() == btn3DDisplay) {
-			ExecutorService executor1 = Executors.newSingleThreadExecutor();
-			executor1.submit(() -> {
-				LimeSeg.setOptimizerParameter("d_0", this.all3dCells.get(0).zScale * 1.5);
+			exec.submit(() -> {
+				LimeSeg.setOptimizerParameter("d_0", all3dCells.get(0).zScale * 1.5);
 				for (Cell3D cell3d : all3dCells) {
 					System.out.println(cell3d.id_Cell);
 					LimeSeg.currentCell = cell3d;
@@ -226,13 +224,12 @@ public class PanelPostProcessing extends JPanel implements ActionListener, Chang
 				}
 				LimeSeg.make3DViewVisible();
 				LimeSeg.putAllCellsTo3DDisplay();
-				double[] objectCentroid = this.getObjectCentroid();
-				LimeSeg.set3DViewCenter(((float) objectCentroid[0] / this.all3dCells.size()),
-						((float) objectCentroid[1] / this.all3dCells.size()),
-						(float) (objectCentroid[2] / this.all3dCells.size() / this.all3dCells.get(0).zScale));
+				double[] objectCentroid = getObjectCentroid();
+				LimeSeg.set3DViewCenter(((float) objectCentroid[0] / all3dCells.size()),
+						((float) objectCentroid[1] / all3dCells.size()),
+						(float) (objectCentroid[2] / all3dCells.size() / all3dCells.get(0).zScale));
 				LimeSeg.update3DDisplay();
 
-				executor1.shutdown();
 			});
 		}
 
