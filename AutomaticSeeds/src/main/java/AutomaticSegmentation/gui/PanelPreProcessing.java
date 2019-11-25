@@ -3,12 +3,10 @@
  */
 package AutomaticSegmentation.gui;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -24,14 +22,10 @@ import javax.swing.JProgressBar;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
-import AutomaticSegmentation.preProcessing.quickSegmentation;
-import AutomaticSegmentation.preProcessing.spots3DSegmentation;
 import AutomaticSegmentation.preProcessing.nuclei3DSegmentation;
 import AutomaticSegmentation.utils.Utils;
-import filters.Bandpass3D;
 import ij.IJ;
 import ij.ImagePlus;
-import ij.ImageStack;
 import ij.Prefs;
 import ij.gui.OvalRoi;
 import ij.gui.Roi;
@@ -40,7 +34,6 @@ import inra.ijpb.geometry.Box3D;
 import inra.ijpb.label.LabelImages;
 import inra.ijpb.measure.region3d.BoundingBox3D;
 import inra.ijpb.measure.region3d.Centroid3D;
-import mcib_plugins.SeedSpots_Plus;
 
 
 /**
@@ -66,12 +59,11 @@ public class PanelPreProcessing extends JPanel {
 	private ImagePlus nucleiChannel,segmentedImp,segmentedLoadImg,auxImp;
 	private JProgressBar progressBar;
     private Thread preprocessingTask;
-	//private ExecutorService exec = Executors.newFixedThreadPool(1);
 	private ExecutorService exec = Executors.newCachedThreadPool();
 	private Boolean cancelTask;
 	nuclei3DSegmentation nuc3Dseg;
 	public ArrayList<ImagePlus> ImpArraylistSegImg;
-	
+	private RoiManager rm;
 
 	/**
 	 * @param layout
@@ -188,6 +180,8 @@ public class PanelPreProcessing extends JPanel {
 		
 		ImpArraylistSegImg = new ArrayList<ImagePlus>();
 		ImpArraylistSegImg.add(null);
+		
+		rm = null;
 	}
 
 	
@@ -328,7 +322,7 @@ public class PanelPreProcessing extends JPanel {
 							btCalculateROIs.setEnabled(false);
 							
 							try {
-								RoiManager rm = getNucleiROIs(segmentedLoadImg);
+								getNucleiROIs(segmentedLoadImg);
 							}catch(Exception ex) {
 								ex.printStackTrace();
 								IJ.error("Close RoiManager please");
@@ -368,7 +362,7 @@ public class PanelPreProcessing extends JPanel {
 	 * @param imp_segmented
 	 * @return
 	 */
-	public RoiManager getNucleiROIs(ImagePlus imp_segmented) {
+	public void getNucleiROIs(ImagePlus imp_segmented) {
 		// 3D-OC options settings
 		Prefs.set("3D-OC-Options_centroid.boolean", true);
 
@@ -385,9 +379,11 @@ public class PanelPreProcessing extends JPanel {
 				imp_segmented.getCalibration());
 
 		// Creating the ROI manager
-		RoiManager rm = new RoiManager();
-		// Reset to 0 the RoiManager
-		rm.reset();
+		if (rm == null) {
+			rm = new RoiManager();
+			// Reset to 0 the RoiManager
+			rm.reset();
+		}
 
 		for (int i = 0; i < centroidList.length; i++) {
 			// Get the slice to create the ROI
@@ -402,6 +398,6 @@ public class PanelPreProcessing extends JPanel {
 			roi.setPosition(z);
 			rm.addRoi(roi);
 		}
-		return rm;
+	
 	}
 }

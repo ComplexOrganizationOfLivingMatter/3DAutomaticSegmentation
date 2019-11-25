@@ -136,25 +136,19 @@ public class nuclei3DSegmentation{
 		        /************** BandPass 3D filtering ***************/
 	        	IJ.run(preprocessedImp, "32-bit", "");
 		        IJ.log("Computing Band Pass...");
-		        
-		        preprocessedImp.duplicate().show();
-		        
+		        	        
 		        if (cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");
 		        	break;
 		        }
-		        
 		        progressBar.setValue(35);
 		        preprocessedImp = runBandPass3D(preprocessedImp);
 		        progressBar.setValue(55);
-		 		
-		        preprocessedImp.duplicate().show();
 		        
 		        if (cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");
 		        	break;
 		        }
-
 		        IJ.saveAs(this.preprocessedImp,"Tiff", subdir+"BP_nuclei.tif");
 		        IJ.log("Save the band pass filtered image as BP_nuclei.tif in "+subdir);
 		        
@@ -163,8 +157,6 @@ public class nuclei3DSegmentation{
 		        segmentedImp = preprocessedImp.duplicate();
 		        segmentedImp.setSlice(segmentedImp.getNSlices()/2);
 		        IJ.run(this.segmentedImp, "Enhance Contrast...", "saturated=0"); 
-		        
-		        segmentedImp.duplicate().show();
 
 		        if (cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");
@@ -173,8 +165,6 @@ public class nuclei3DSegmentation{
 		        progressBar.setValue(60);
 		        
 		        IJ.run(segmentedImp, "16-bit", "");
-		        
-		        segmentedImp.duplicate().show();
 		        
 		        if (this.cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");

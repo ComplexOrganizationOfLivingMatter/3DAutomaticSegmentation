@@ -56,7 +56,7 @@ public class spots3DSegmentation {
     private boolean watershed = true;
     private int radiusSeeds = 2;
     // volumes (pix)
-    int volumeMin = 1;
+    int volumeMin = 100;
     int volumeMax = 1000000;
     String[] local_methods = {"Constant", "Diff", "Local Mean", "Gaussian fit"};
     String[] spot_methods = {"Classical", "Maximum", "Block"};
@@ -76,17 +76,17 @@ public class spots3DSegmentation {
         rad1 = 4;
         rad2 = 6;
         we = 0.5;
-        radmax = max_nuc_radius;
+        radmax = max_nuc_radius*4;
         sdpc = max_nuc_radius/10;
         local_method = 3;//"[Gaussian fit]";
         spot_method = 2;//"Block";
         output = 0;//"[Label Image]";
         watershed = true;
-        volumeMin = (int) Math.round((4/3)*Math.PI*min_nuc_radius*10);
-        volumeMax = (int) Math.round((4/3)*Math.PI*max_nuc_radius/2);
+        volumeMin = (int) Math.round((4/3)*Math.PI*min_nuc_radius*min_nuc_radius*min_nuc_radius);
+        volumeMax = (int) Math.round((4/3)*Math.PI*max_nuc_radius*max_nuc_radius*max_nuc_radius*100);
         this.progressBar = progressBar;
         
-     // in case old values was stored
+        // in case old values was stored
         if (spot_method >= spot_methods.length) {
             spot_method = 0;
         }
@@ -117,7 +117,7 @@ public class spots3DSegmentation {
     private void Segmentation() {
         Segment3DSpots seg = new Segment3DSpots(this.spot3DImage, this.seed3DImage);
         seg.show = debug;
-        
+               
         progressBar.setValue(62);
         // set parameters
         seg.setSeedsThreshold(this.seeds_threshold);
@@ -148,6 +148,7 @@ public class spots3DSegmentation {
                 seg.setGaussMaxr(radmax);
                 break;
         }
+        
         switch (spot_method) {
             case 0:
                 seg.setMethodSeg(Segment3DSpots.SEG_CLASSICAL);
@@ -159,18 +160,19 @@ public class spots3DSegmentation {
                 seg.setMethodSeg(Segment3DSpots.SEG_BLOCK);
                 break;
         }
+        
         // big label (more than 2^16 objects)
         seg.bigLabel = bigLabel;
         
         progressBar.setValue(65);
         
         seg.segmentAll();
+        
         progressBar.setValue(92);
         int size = seg.getObjects().size();
         IJ.log("Number of labelled objects: " + size);
         // output        
         if ((output == 0) || (output == 2)) {
-            //segPlus = new ImagePlus("seg", seg.getLabelImage().getImageStack());
             segPlus = new ImagePlus("seg", seg.getLabelImage().getImageStack());
             if (spotCalib != null) {
                 segPlus.setCalibration(spotCalib);
