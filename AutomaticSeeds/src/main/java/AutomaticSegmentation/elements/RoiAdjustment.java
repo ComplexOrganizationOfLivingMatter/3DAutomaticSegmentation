@@ -535,16 +535,17 @@ public class RoiAdjustment {
 		float[] xCell = Cell3D.getCoordinate("x", dotsList);
 		float[] yCell = Cell3D.getCoordinate("y", dotsList);
 		
-		PolygonRoi polygon = new PolygonRoi(xCell, yCell, 6);
-		Point[] firstPoints = polygon.getContainedPoints();
+		PolygonRoi polygon = new PolygonRoi(xCell, yCell, Roi.POLYGON);
+		Point[] containedPoints = polygon.getContainedPoints();
 		
-		ArrayList<DotN> containedPoints = new ArrayList<DotN>();
+		ArrayList<DotN> containedDots = new ArrayList<DotN>();
 		DotN newDot;
-		for (Point point : firstPoints) {
+		for (Point point : containedPoints) {
 			newDot = new DotN(new Vector3D((double) point.x, (double) point.y, (double) dotsList.get(0).pos.z), new Vector3D(0, 0, 0));
-			containedPoints.add(newDot);
+			newDot.ct = dotsList.get(0).ct;
+			containedDots.add(newDot);
 		}
-		return containedPoints;
+		return containedDots;
 	}
 	
 	

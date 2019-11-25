@@ -36,31 +36,37 @@ public class Cell3D extends Cell {
 
 	/**
 	 * 
-	 * @param cell father cell
-	 * @param zScale difference between Zs
-	 * @param totalSlices max number of frames
+	 * @param cell
+	 *            father cell
+	 * @param zScale
+	 *            difference between Zs
+	 * @param totalSlices
+	 *            max number of frames
 	 */
 	public Cell3D(Cell cell, float zScale, int totalSlices) {
 		super();
-		//Copy father info
+		// Copy father info
 		this.id_Cell = cell.id_Cell;
 		this.cellChannel = cell.cellChannel;
 		this.cellTs = cell.cellTs;
 		this.color = cell.color;
 		this.display_mode = 1;
-		
+
 		// New info of this class
 		this.totalSlices = totalSlices;
-		this.dotsPerSlice = (ArrayList<DotN>[])new ArrayList[totalSlices];
+		this.dotsPerSlice = (ArrayList<DotN>[]) new ArrayList[totalSlices];
 		this.zScale = zScale;
 		this.id = Integer.parseInt(cell.id_Cell);
 		processLimeSegOutput(cell.cellTs.get(0).dots, zScale);
 	}
 
 	/**
-	 * @param totalSlices max number of frames
-	 * @param id identifier
-	 * @param zScale difference between Zs
+	 * @param totalSlices
+	 *            max number of frames
+	 * @param id
+	 *            identifier
+	 * @param zScale
+	 *            difference between Zs
 	 */
 	public Cell3D(int id, float zScale, int totalSlices) {
 		super();
@@ -99,8 +105,10 @@ public class Cell3D extends Cell {
 
 	/**
 	 * 
-	 * @param axis selected axis
-	 * @param dots points of the cell
+	 * @param axis
+	 *            selected axis
+	 * @param dots
+	 *            points of the cell
 	 * @return
 	 */
 	public static float[] getCoordinate(String axis, ArrayList<DotN> dots) {
@@ -124,7 +132,8 @@ public class Cell3D extends Cell {
 
 	/**
 	 * 
-	 * @param slice selected Z frame
+	 * @param slice
+	 *            selected Z frame
 	 * @return cell points
 	 */
 	public Point[] getPoints(int slice) {
@@ -174,24 +183,26 @@ public class Cell3D extends Cell {
 
 	/**
 	 * 
-	 * @param allDots the dots
-	 * @param zScale difference between Zs
+	 * @param allDots
+	 *            the dots
+	 * @param zScale
+	 *            difference between Zs
 	 * @return the new dots processed
 	 */
 	public void processLimeSegOutput(ArrayList<DotN> allDots, float zScale) {
-		this.dotsPerSlice = (ArrayList<DotN>[])new ArrayList[this.totalSlices];
+		this.dotsPerSlice = (ArrayList<DotN>[]) new ArrayList[this.totalSlices];
 		List<Integer> xPoints;
 		List<Integer> yPoints;
-		
+
 		for (int numFrame = 0; numFrame < this.totalSlices; numFrame++) {
-			
+
 			this.dotsPerSlice[numFrame] = new ArrayList<DotN>();
-			
+
 			xPoints = new ArrayList<Integer>();
 			yPoints = new ArrayList<Integer>();
 
 			getDotsAtFrame(allDots, zScale, xPoints, yPoints, numFrame);
-			
+
 			if (xPoints.size() > 0) {
 				int[] xPoints_array = xPoints.stream().mapToInt(i -> i).toArray();
 				int[] yPoints_array = yPoints.stream().mapToInt(i -> i).toArray();
@@ -207,7 +218,7 @@ public class Cell3D extends Cell {
 				this.dotsPerSlice[numFrame] = RoiAdjustment.RoisToDots(numFrame, allRois, zScale, this.cellTs.get(0));
 			}
 		}
-		
+
 		this.cellTs.get(0).dots = mergeAll(this.dotsPerSlice);
 		this.allDots = this.cellTs.get(0).dots;
 		updateDotsNormals(this.cellTs.get(0).dots);
@@ -221,11 +232,11 @@ public class Cell3D extends Cell {
 	 */
 	public ArrayList<DotN> mergeAll(ArrayList<DotN>[] dotsListToUnify) {
 		ArrayList<DotN> mergedArray = new ArrayList<DotN>();
-		
+
 		for (ArrayList<DotN> arrayToMerge : dotsListToUnify) {
 			mergedArray.addAll(arrayToMerge);
 		}
-		
+
 		return mergedArray;
 	}
 
@@ -249,14 +260,16 @@ public class Cell3D extends Cell {
 
 	/**
 	 * 
-	 * @param newDots to calculate the normals 
+	 * @param newDots
+	 *            to calculate the normals
 	 */
 	public void updateDotsNormals(ArrayList<DotN> newDots) {
 		double[] cellCentroid = getCellCentroid();
-		
+
 		for (DotN dot : newDots) {
-			dot.Norm = new Vector3D(dot.pos.x - cellCentroid[0], dot.pos.y - cellCentroid[1], dot.pos.z - cellCentroid[2]);
-	        dot.Norm.normalize();
+			dot.Norm = new Vector3D(dot.pos.x - cellCentroid[0], dot.pos.y - cellCentroid[1],
+					dot.pos.z - cellCentroid[2]);
+			dot.Norm.normalize();
 		}
 	}
 
@@ -266,8 +279,8 @@ public class Cell3D extends Cell {
 	 */
 	public double[] getCellCentroid() {
 		// TODO Auto-generated method stub
-		double[] centroid = {0, 0, 0};
-		
+		double[] centroid = { 0, 0, 0 };
+
 		for (DotN singleDot : this.allDots) {
 			centroid[0] += singleDot.pos.x;
 			centroid[1] += singleDot.pos.y;
@@ -277,69 +290,82 @@ public class Cell3D extends Cell {
 		centroid[0] = centroid[0] / this.allDots.size();
 		centroid[1] = centroid[1] / this.allDots.size();
 		centroid[2] = centroid[2] / this.allDots.size();
-		
+
 		return centroid;
 	}
-	
-	public Mesh buildMesh(){
-		//Mesh cellMesh = new Mesh(this.id_Cell);
-		
+
+	public Mesh buildMesh() {
+		// Mesh cellMesh = new Mesh(this.id_Cell);
+
 		ArrayList<DotN> dotsActualFrame;
-		ArrayList<DotN> dotsNextFrame;
-		ArrayList<DotN> newIntermediateDots = new ArrayList<DotN>();
-		
+
 		int firstFrame = -1;
 		int lastFrame = -1;
-		for (int numFrame = 1; numFrame < totalSlices; numFrame++){
-			dotsActualFrame = this.dotsPerSlice[numFrame-1];
-//			dotsNextFrame = this.dotsPerSlice[numFrame];
-			
+		for (int numFrame = 0; numFrame < totalSlices; numFrame++) {
+			dotsActualFrame = this.dotsPerSlice[numFrame];
+			// dotsNextFrame = this.dotsPerSlice[numFrame];
+
 			if (dotsActualFrame.isEmpty() == false) {
-				lastFrame = numFrame-1;
+				lastFrame = numFrame;
 			}
-			
-			if (dotsActualFrame.isEmpty() && lastFrame == -1) {
+
+			if (dotsActualFrame.isEmpty() == false && firstFrame == -1) {
 				firstFrame = numFrame;
 			}
-			
+
 			// NOT WORKING
-//			for (DotN dotA : dotsActualFrame) {
-//				for (DotN dotN : dotsNextFrame) {
-//					newIntermediateDots.addAll(RoiAdjustment.interpolate(dotN.pos, dotA.pos, Math.round(zScale), dotA));
-//				}
-//			}
+			// for (DotN dotA : dotsActualFrame) {
+			// for (DotN dotN : dotsNextFrame) {
+			// newIntermediateDots.addAll(RoiAdjustment.interpolate(dotN.pos,
+			// dotA.pos, Math.round(zScale), dotA));
+			// }
+			// }
 		}
 		
-		newIntermediateDots.addAll(this.allDots);
+
+		ArrayList<DotN> newIntermediateDots = new ArrayList<DotN>();
+		Collections.shuffle(this.allDots);
 		
-		//Sample all the dots randomly
-		Collections.shuffle(newIntermediateDots);
-		
-		ArrayList<DotN> sampleDots = new ArrayList<DotN>();
-		for (int i = 0; i < Math.round(newIntermediateDots.size()/5000); i++) {
-			sampleDots.add(newIntermediateDots.get(i));
+		int percentageOfShowing = 10;
+
+		for (int i = 0; i < Math.floor(this.allDots.size() / percentageOfShowing); i++) {
+			newIntermediateDots.add(this.allDots.get(i));
+		}
+
+		// Add last frames and first frames
+		ArrayList<DotN> lastDots = new ArrayList<DotN>();
+		lastDots.addAll(RoiAdjustment.getContainedPoints(this.dotsPerSlice[lastFrame]));
+		Collections.shuffle(lastDots);
+
+		for (int i = 0; i < Math.floor(lastDots.size() / percentageOfShowing); i++) {
+			newIntermediateDots.add(lastDots.get(i));
 		}
 		
-		//Add last frames and first frames
-		sampleDots.addAll(RoiAdjustment.getContainedPoints(this.dotsPerSlice[firstFrame]));
-		sampleDots.addAll(RoiAdjustment.getContainedPoints(this.dotsPerSlice[lastFrame]));
+		ArrayList<DotN> firstDots = new ArrayList<DotN>();
+		firstDots.addAll(RoiAdjustment.getContainedPoints(this.dotsPerSlice[firstFrame]));
+		Collections.shuffle(firstDots);
+
+		for (int i = 0; i < Math.floor(firstDots.size() / percentageOfShowing); i++) {
+			newIntermediateDots.add(firstDots.get(i));
+		}
 
 		// As in LimeSeg.constructMesh();
 		int ans = -1;
-		if (LimeSeg.currentCell!=null) {
+		if (LimeSeg.currentCell != null) {
 			CellT ct = new CellT(this, LimeSeg.currentCell.cellTs.get(0).frame);
-            if (ct!=null) {
-    			ct.dots = this.allDots;
-    			ct.updateCenter();
-                ans=ct.constructMesh();
-                ct.modified=true;
-                LimeSeg.notifyCellRendererCellsModif=true;
-                LimeSeg.notifyCellExplorerCellsModif=true;
-                this.cellTs.set(0, ct);
-            }            
-            LimeSeg.currentCell.modified=true;
-        }
-		
+			if (ct != null) {
+				ct.dots = newIntermediateDots;
+				ct.updateCenter();
+				updateDotsNormals(ct.dots);
+				ans = ct.constructMesh();
+				ct.modified = true;
+				LimeSeg.notifyCellRendererCellsModif = true;
+				LimeSeg.notifyCellExplorerCellsModif = true;
+				this.cellTs.set(0, ct);
+			}
+			LimeSeg.currentCell.modified = true;
+		}
+
 		return null;
 	}
 }
