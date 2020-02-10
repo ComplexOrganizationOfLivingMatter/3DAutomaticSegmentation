@@ -240,6 +240,7 @@ public class PanelPreProcessing extends JPanel {
 											IJ.error("Nuclei segmentation completed. Please extract their ROIs!");
 											newSegmentedFileName(segmentedImp.duplicate());
 											cbSegmentedImg.setEnabled(true);
+											segmentedImp.show();
 										}
 										
 										progressBar.setValue(0);

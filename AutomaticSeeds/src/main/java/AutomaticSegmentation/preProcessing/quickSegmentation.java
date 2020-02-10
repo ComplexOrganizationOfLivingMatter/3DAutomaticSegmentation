@@ -88,6 +88,7 @@ public class quickSegmentation{
 	 */
 	public ImagePlus segmentationProtocol() {
 		outputImp =null;
+		
 		while(!cancelTask.booleanValue() && progressBar.getValue()!=100)  {
 			// Convert the image to 8-Bit
  			if (this.inputNucleiImp.getBitDepth() != 8) {
