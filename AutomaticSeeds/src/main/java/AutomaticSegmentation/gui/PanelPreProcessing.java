@@ -405,10 +405,10 @@ public class PanelPreProcessing extends JPanel {
 					imp_segmented.getCalibration().pixelWidth };
 			
 			double growingROIFactor = 1.2; //Default for outer ROIs
-			if (cbROIShapes.getSelectedIndex() == 1) { // Inner roi
-				growingROIFactor = 0.8;
+			if (cbROIShapes.getSelectedIndex() == 1) // Inner roi
+				growingROIFactor = 0.5;
 			
-			double majorRadius = growingROIFactor * Utils.getMin(radii) / Utils.getMin(calibrations);
+			double majorRadius = growingROIFactor * Utils.getMin(radii) / Utils.getMean(calibrations);
 			int r = (int) Math.round(majorRadius);
 			Roi roi = new OvalRoi(centroidList[i][0] - r / 2, centroidList[i][1] - r / 2, r, r);
 			roi.setPosition(z);

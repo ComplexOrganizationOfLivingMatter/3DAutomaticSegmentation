@@ -68,7 +68,7 @@ final public class Utils {
 	}
 
 	public static double getMin(double[] data) {
-		double min = -1;
+		double min = Double.POSITIVE_INFINITY;
 		for (double a : data) {
 			if (min > a)
 				min = a;
