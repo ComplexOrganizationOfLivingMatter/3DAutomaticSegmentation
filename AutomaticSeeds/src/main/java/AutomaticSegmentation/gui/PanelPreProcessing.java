@@ -64,6 +64,7 @@ public class PanelPreProcessing extends JPanel {
 	nuclei3DSegmentation nuc3Dseg;
 	public ArrayList<ImagePlus> ImpArraylistSegImg;
 	private RoiManager rm;
+	private JComboBox<String> cbROIShapes;
 
 	/**
 	 * @param layout
@@ -132,6 +133,10 @@ public class PanelPreProcessing extends JPanel {
 		cbSegmentedImg.addItem("<select labelled image>");
 		cbSegmentedImg.setMinimumSize(new Dimension(100, 10));
 		cbSegmentedImg.setMaximumSize(new Dimension(300, 60));
+		
+		cbROIShapes = new JComboBox<String>();
+		cbROIShapes.addItem("Outer ROI");
+		cbROIShapes.addItem("Inner ROI");
 
 		
 		/*MODIFY the limits of JSPinners*/
@@ -170,6 +175,7 @@ public class PanelPreProcessing extends JPanel {
 		this.add(cbSegmentedImg,"align left,wrap");
 		this.add(new JLabel(""));
 		this.add(btCalculateROIs,"align left");
+		this.add(cbROIShapes,"align left");
 
 		btRunCancel.addActionListener(listener);
 		btLoad.addActionListener(listener);
@@ -229,16 +235,13 @@ public class PanelPreProcessing extends JPanel {
 									    IJ.log("duration:"+timeElapsed);
 									    
 										cancelTask =false;
+										// If there was not cancelled the process:
 										if(segmentedImp!=null && progressBar.getValue()==100) {
-											if(segmentedImp.getTitle().compareTo("dapi-seg.tif")==0) {
-												IJ.error("Nuclei segmentation completed. Please extract their ROIs!");
-												newSegmentedFileName(segmentedImp.duplicate());
-												cbSegmentedImg.setEnabled(true);
-											}
-										}else {
-											segmentedImp =null;
-											
+											IJ.error("Nuclei segmentation completed. Please extract their ROIs!");
+											newSegmentedFileName(segmentedImp.duplicate());
+											cbSegmentedImg.setEnabled(true);
 										}
+										
 										progressBar.setValue(0);
 										btRunCancel.setText("Run");
 										btRunCancel.setEnabled(true);
@@ -303,9 +306,11 @@ public class PanelPreProcessing extends JPanel {
 					}else if(e.getSource()==cbSegmentedImg) {
 						if (cbSegmentedImg.getSelectedItem() == "<select labelled image>" | cbSegmentedImg.getSelectedIndex() == -1) {
 							btCalculateROIs.setEnabled(false);
+							cbROIShapes.setEnabled(false);
 						} else {
 							segmentedLoadImg = ImpArraylistSegImg.get(cbSegmentedImg.getSelectedIndex()).duplicate();
 							btCalculateROIs.setEnabled(true);
+							cbROIShapes.setEnabled(true);
 						}
 					}
 					
@@ -320,14 +325,16 @@ public class PanelPreProcessing extends JPanel {
 					else if(e.getSource() == btCalculateROIs){
 						if (segmentedLoadImg!=null) {
 							btCalculateROIs.setEnabled(false);
+							cbROIShapes.setEnabled(false);
 							
 							try {
-								getNucleiROIs(segmentedLoadImg);
+								getNucleiROIs(segmentedLoadImg, progressBar, cbROIShapes);
 							}catch(Exception ex) {
 								ex.printStackTrace();
 								IJ.error("Close RoiManager please");
 							}
 							btCalculateROIs.setEnabled(true);
+							cbROIShapes.setEnabled(true);
 							segmentedLoadImg.show();
 						}else {
 							IJ.error("select a segmented and labelled image");
@@ -360,11 +367,15 @@ public class PanelPreProcessing extends JPanel {
 	/**
 	 * 
 	 * @param imp_segmented
+	 * @param progressBar2 
+	 * @param cbROIShapes 
 	 * @return
 	 */
-	public void getNucleiROIs(ImagePlus imp_segmented) {
+	public void getNucleiROIs(ImagePlus imp_segmented, JProgressBar progressBar2, JComboBox<String> cbROIShapes) {
 		// 3D-OC options settings
 		Prefs.set("3D-OC-Options_centroid.boolean", true);
+		
+		progressBar2.setValue(0);
 
 		int[] labels = LabelImages.findAllLabels(imp_segmented.getImageStack());
 		// deprecatedGeometricMeasures3D - investigate about the new region3D
@@ -384,7 +395,7 @@ public class PanelPreProcessing extends JPanel {
 			// Reset to 0 the RoiManager
 			rm.reset();
 		}
-
+		progressBar2.setValue(20);
 		for (int i = 0; i < centroidList.length; i++) {
 			// Get the slice to create the ROI
 			int z = (int) Math.round(centroidList[i][2]);
@@ -392,12 +403,19 @@ public class PanelPreProcessing extends JPanel {
 			double[] radii = { bboxes[i].height(), bboxes[i].width() };
 			double[] calibrations = { imp_segmented.getCalibration().pixelHeight,
 					imp_segmented.getCalibration().pixelWidth };
-			double majorRadius = 1.2 * Utils.getMean(radii) / Utils.getMean(calibrations);
+			
+			double growingROIFactor = 1.2; //Default for outer ROIs
+			if (cbROIShapes.getSelectedIndex() == 1) { // Inner roi
+				growingROIFactor = 0.8;
+			
+			double majorRadius = growingROIFactor * Utils.getMin(radii) / Utils.getMin(calibrations);
 			int r = (int) Math.round(majorRadius);
 			Roi roi = new OvalRoi(centroidList[i][0] - r / 2, centroidList[i][1] - r / 2, r, r);
 			roi.setPosition(z);
 			rm.addRoi(roi);
+			progressBar2.setValue(20 + (i/centroidList.length*80));
 		}
 	
+		progressBar2.setValue(100);
 	}
 }

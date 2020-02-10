@@ -67,4 +67,13 @@ final public class Utils {
 		return sum / data.length;
 	}
 
+	public static double getMin(double[] data) {
+		double min = -1;
+		for (double a : data) {
+			if (min > a)
+				min = a;
+		}
+		return min;
+	}
+
 }
