@@ -45,8 +45,8 @@ public class quickSegmentation{
 	 */
 	public quickSegmentation(ImagePlus impNuclei, int minNucleiRadius,JProgressBar progressBar,Boolean cancelTask) {
 		if (Math.round(minNucleiRadius/5)>2) {
-			this.strelRadius2D = (int) Math.round(minNucleiRadius/5);
-			this.strelRadius3D = (int) Math.round(minNucleiRadius/4);
+			this.strelRadius2D = (int) Math.round(minNucleiRadius/5); // /5??
+			this.strelRadius3D = (int) Math.round(minNucleiRadius/4); // /4??
 		}else {
 			this.strelRadius2D = 2;
 			this.strelRadius3D = 3;
@@ -92,7 +92,6 @@ public class quickSegmentation{
 	 */
 	public ImagePlus segmentationProtocol() {
 		outputImp =null;
-		while(!cancelTask.booleanValue() && progressBar.getValue()!=100)  {
 			// Convert the image to 8-Bit
  			if (this.inputNucleiImp.getBitDepth() != 8) {
  				ImageConverter converter = new ImageConverter(this.inputNucleiImp);
@@ -106,25 +105,20 @@ public class quickSegmentation{
 			ImagePlus filteredImp = inputNucleiImp.duplicate();
 			progressBar.setValue(17);
 			
+			/** -------------- Automatic thresholding ---------------- **/
 			IJ.log("Automatic thresholding");
 			
 			if (cancelTask.booleanValue()) {
-	        	break;
+	        	return null;
 	        }
 			filteredImp.setSlice(filteredImp.getNSlices()/2);
 			IJ.run(filteredImp,"Make Binary", "method=Default background=Dark black");//"Make Binary", "method=Li background=black");
 			ImagePlus imp_segmented = filteredImp.duplicate();
 			
-			//ImagePlus imp_segmented = automaticThreshold(filteredImp);
-			//if (filteredImp==null) {
-			//	break;
-			//}
-			//imp_segmented.duplicate().show();
-			
 			progressBar.setValue(20);
 			
 			if (cancelTask.booleanValue()) {
-	        	break;
+	        	return null;
 	        }
 			/***** loop for closing, binarize and filling holes in 2D *****/
 			IJ.log("Binarizing, closing and filling holes");
@@ -152,7 +146,7 @@ public class quickSegmentation{
 //			im2Show.show();
 			
 			if (cancelTask.booleanValue()) {
-	        	break;
+	        	return null;
 	        }
 			
 			progressBar.setValue(31);
@@ -164,7 +158,7 @@ public class quickSegmentation{
 //			im2Show2.show();
 			
 			if (cancelTask.booleanValue()) {
-	        	break;
+	        	return null;
 	        }
 			progressBar.setValue(38);
 			//Watershed process //NOT WORKING AT THIS POINT
@@ -194,7 +188,7 @@ public class quickSegmentation{
 //			/** end watershed CLIJ **/
 			ImageStack resultStack = watershedProcess(BitD, dams, imgFilterSmall, strelRadius3D, toleranceWatershed);
 			if (cancelTask.booleanValue()) {
-	        	break;
+	        	return null;
 	        }
 			
 //			ImagePlus im2Show3 = new ImagePlus("", resultStack);
@@ -206,7 +200,7 @@ public class quickSegmentation{
 			LabelImages.removeLargestLabel(resultStack);
 			
 			if (cancelTask.booleanValue()) {
-	        	break;
+	        	return null;
 	        }
 			
 			progressBar.setValue(83);
@@ -215,7 +209,7 @@ public class quickSegmentation{
 //			im2Show4.show();
 			
 			if (cancelTask.booleanValue()) {
-	        	break;
+	        	return null;
 	        }
 			
 			int nbLabels = labels.length;
@@ -228,7 +222,7 @@ public class quickSegmentation{
 	
 			/******** volume opening ********/
 			if (cancelTask.booleanValue()) {
-	        	break;
+	        	return null;
 	        }
 			IJ.log("Removing outliers");
 			ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
@@ -237,7 +231,7 @@ public class quickSegmentation{
 //			im2Show5.show();
 			
 			if (cancelTask.booleanValue()) {
-	        	break;
+	        	return null;
 	        }
 			
 			ImagePlus imp_segmentedFinal = nuclei3DSegmentation.createColouredImageWithLabels(inputNucleiImp, imgFilterSize);
@@ -246,9 +240,6 @@ public class quickSegmentation{
 			progressBar.setValue(100);
 			
 //			imp_segmentedFinal.show();
-			
-			
-		}
 		return outputImp;
 	}
 	
