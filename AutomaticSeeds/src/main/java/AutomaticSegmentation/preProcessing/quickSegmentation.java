@@ -157,7 +157,7 @@ public class quickSegmentation{
 			
 			progressBar.setValue(31);
 			// Volume opening
-			IJ.log("Small volume opening");
+			IJ.log("Small volume opening: " + pixelsToOpenVolume);
 			ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, pixelsToOpenVolume);
 			
 //			ImagePlus im2Show2 = new ImagePlus("", imgFilterSmall);
