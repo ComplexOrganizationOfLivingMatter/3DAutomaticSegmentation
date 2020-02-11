@@ -125,7 +125,7 @@ public class quickSegmentation {
 		if (cancelTask.booleanValue()) {
 			return null;
 		}
-		/***** loop for closing, binarize and filling holes in 2D *****/
+		/** ------- loop for closing, binarize and filling holes in 2D ---------- **/
 		IJ.log("Binarizing, closing and filling holes");
 		Strel shape2DOp = Strel.Shape.DISK.fromRadius(this.strelRadius2D);
 		Strel shape2DClo = Strel.Shape.DISK.fromRadius(this.strelRadius2D);
@@ -155,7 +155,7 @@ public class quickSegmentation {
 		}
 
 		progressBar.setValue(31);
-		// Volume opening
+		/** -------------- Volume opening ---------------- **/
 		IJ.log("Small volume opening: " + pixelsToOpenVolume);
 		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, pixelsToOpenVolume);
 
@@ -193,15 +193,13 @@ public class quickSegmentation {
 		// clij2.release(binary_input);
 		// clij2.release(watershededImage);
 		// /** end watershed CLIJ **/
+		/** -------------- Watershed ---------------- **/
 		ImageStack resultStack = watershedProcess(BitD, dams, imgFilterSmall, strelRadius3D, toleranceWatershed);
 		if (cancelTask.booleanValue()) {
 			return null;
 		}
 
-		// ImagePlus im2Show3 = new ImagePlus("", resultStack);
-		// im2Show3.show();
-
-		/****** get array of volumes ******/
+		/** ------- Get array of volumes ------------ **/
 		IJ.log("Getting labelled segmented nuclei");
 
 		LabelImages.removeLargestLabel(resultStack);
@@ -227,20 +225,18 @@ public class quickSegmentation {
 		double thresholdVolume = (volumes[nbLabels / 2] / 3);
 		progressBar.setValue(90);
 
-		/******** volume opening ********/
+		/** ------------  Second volume opening ---------- **/
 		if (cancelTask.booleanValue()) {
 			return null;
 		}
 		IJ.log("Removing outliers");
 		ImageStack imgFilterSize = LabelImages.volumeOpening(resultStack, (int) Math.round(thresholdVolume));
 
-		// ImagePlus im2Show5 = new ImagePlus("", imgFilterSize);
-		// im2Show5.show();
-
 		if (cancelTask.booleanValue()) {
 			return null;
 		}
 
+		/** -------------- Create coloured image from labels ---------------- **/
 		ImagePlus imp_segmentedFinal = nuclei3DSegmentation.createColouredImageWithLabels(inputNucleiImp,
 				imgFilterSize);
 
