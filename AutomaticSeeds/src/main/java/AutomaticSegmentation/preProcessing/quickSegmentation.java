@@ -237,8 +237,7 @@ public class quickSegmentation {
 		}
 
 		/** -------------- Create coloured image from labels ---------------- **/
-		ImagePlus imp_segmentedFinal = nuclei3DSegmentation.createColouredImageWithLabels(inputNucleiImp,
-				imgFilterSize);
+		ImagePlus imp_segmentedFinal = nuclei3DSegmentation.createColouredImageWithLabels(imgFilterSize, inputNucleiImp.getCalibration());
 
 		outputImp = imp_segmentedFinal;
 		progressBar.setValue(100);

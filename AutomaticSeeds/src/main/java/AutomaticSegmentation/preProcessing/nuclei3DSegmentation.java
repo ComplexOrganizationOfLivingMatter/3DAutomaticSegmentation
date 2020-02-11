@@ -11,6 +11,7 @@ import filters.Bandpass3D;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.measure.Calibration;
 import ij.plugin.Filters3D;
 import ij.process.ImageConverter;
 import inra.ijpb.data.image.Images3D;
@@ -190,7 +191,7 @@ public class nuclei3DSegmentation{
 		        progressBar.setValue(95);
 		        
 		        /******************** Label and colour the nuclei *********************/
-		        segmentedImp = createColouredImageWithLabels(nucleiChannel, segmentedImp.getStack());
+		        segmentedImp = createColouredImageWithLabels(segmentedImp.getStack(), nucleiChannel.getCalibration());
 		        
 		        if (cancelTask.booleanValue()) {
 		        	IJ.log("Nuclei segmentation STOPPED");
@@ -267,12 +268,12 @@ public class nuclei3DSegmentation{
 	 * @param imgFilterSize
 	 * @return
 	 */
-	public static ImagePlus createColouredImageWithLabels(ImagePlus initImp, ImageStack imgFilterSize) {
+	public static ImagePlus createColouredImageWithLabels(ImageStack imgFilterSize, Calibration initialCalibration) {
 		/*** get colored labels and return image ***/
 		// create image with watershed result
 		ImagePlus imp_segmentedFinal = new ImagePlus("filtered size", imgFilterSize);
 		// assign right calibration
-		imp_segmentedFinal.setCalibration(initImp.getCalibration());
+		imp_segmentedFinal.setCalibration(initialCalibration);
 		// optimize display range
 		Images3D.optimizeDisplayRange(imp_segmentedFinal);
 		// Convert the segmented image to 8-Bit
