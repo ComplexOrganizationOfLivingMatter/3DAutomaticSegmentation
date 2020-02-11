@@ -17,7 +17,11 @@ import inra.ijpb.morphology.Morphology;
 import inra.ijpb.morphology.Reconstruction;
 import inra.ijpb.morphology.Strel;
 import inra.ijpb.morphology.Strel3D;
-import inra.ijpb.watershed.Watershed;
+import net.haesleinhuepf.clij.CLIJ;
+import net.haesleinhuepf.clij.clearcl.ClearCLBuffer;
+import net.haesleinhuepf.clij2.*;
+import net.haesleinhuepf.clijx.CLIJx;
+import net.haesleinhuepf.clij.clearcl.util.CLKernelExecutor;
 
 /**
  * 
@@ -88,7 +92,6 @@ public class quickSegmentation{
 	 */
 	public ImagePlus segmentationProtocol() {
 		outputImp =null;
-		
 		while(!cancelTask.booleanValue() && progressBar.getValue()!=100)  {
 			// Convert the image to 8-Bit
  			if (this.inputNucleiImp.getBitDepth() != 8) {
@@ -143,8 +146,6 @@ public class quickSegmentation{
 				imgFilled.setProcessor((ImageProcessor) processor.duplicate(), i);
 				
 				progressBar.setValue(20 + Math.round((i/filteredImp.getStackSize())*10));
-				
-				
 			}
 			
 			ImagePlus im2Show = new ImagePlus("", imgFilled);
@@ -166,8 +167,31 @@ public class quickSegmentation{
 	        	break;
 	        }
 			progressBar.setValue(38);
-			//Watershed process
-			IJ.log("Init Watershed protocol");
+			//Watershed process //NOT WORKING AT THIS POINT
+//			IJ.log("Init Watershed protocol");
+//			/** CLIJ version **/
+//			CLIJ2 clij2 = CLIJ2.getInstance();
+//			CLIJx clijx = CLIJx.getInstance();
+//			CLIJ clij = CLIJ.getInstance();
+//
+//			// get input parameters
+//			ImagePlus impFilterSmall = new ImagePlus("", imgFilterSmall);
+//			ClearCLBuffer binary_input = clij2.push(impFilterSmall);
+//			ClearCLBuffer thresholded = clij.create(binary_input);
+//			ClearCLBuffer watershededImage = clij.create(binary_input);
+//			
+//			clijx.threshold(binary_input, thresholded, 1);
+//			
+//			//clij2.connectedComponentsLabeling(binary_input, labeling_destination);
+//			net.haesleinhuepf.clijx.plugins.Watershed.watershed(clijx, thresholded, watershededImage);
+//			
+//			ImagePlus watershededImagePlus = clijx.pull(watershededImage);
+//			watershededImagePlus.show();
+//
+//			// cleanup memory on GPU
+//			clij2.release(binary_input);
+//			clij2.release(watershededImage);
+//			/** end watershed CLIJ **/
 			ImageStack resultStack = watershedProcess(BitD, dams, imgFilterSmall, strelRadius3D, toleranceWatershed);
 			if (cancelTask.booleanValue()) {
 	        	break;
@@ -275,6 +299,7 @@ public class quickSegmentation{
 	public ImageStack watershedProcess(int BitD, boolean dams, ImageStack imgFilterSmall, int strelRadius3D, double toleranceWatershed) {
 		ImageStack resultStack = null;
 		while(!cancelTask.booleanValue() && progressBar.getValue()!=80)  {
+			
 			/*************Apply morphological gradient to input image*************/
 			if (cancelTask.booleanValue()) {
 	        	break;
@@ -308,15 +333,16 @@ public class quickSegmentation{
 	        }
 			
 			IJ.log("-Labelling");
-			ImageStack labeledMinima;
+			
+			ImageStack labelledMinima;
 			try {
-				labeledMinima = BinaryImages.componentsLabeling(regionalMinima, CONNECTIVITY, BitD);
+				labelledMinima = BinaryImages.componentsLabeling(regionalMinima, CONNECTIVITY, BitD);
 			} catch (Exception e) {
 				IJ.log("-Corverting to 16-bits");
 				ImagePlus regMinip = new ImagePlus("", regionalMinima);
 				ImageConverter converter = new ImageConverter(regMinip);
 				converter.convertToGray16();
-				labeledMinima = BinaryImages.componentsLabeling(regMinip.getImageStack(), CONNECTIVITY, regMinip.getBitDepth());
+				labelledMinima = BinaryImages.componentsLabeling(regMinip.getImageStack(), CONNECTIVITY, regMinip.getBitDepth());
 				ImagePlus impMin = new ImagePlus("", imposedMinima);
 				ImageConverter converter2 = new ImageConverter(impMin);
 				converter2.convertToGray16();
@@ -330,7 +356,7 @@ public class quickSegmentation{
 	        }
 			
 			IJ.log("	Watershed");
-			resultStack = Watershed.computeWatershed(imposedMinima, labeledMinima, CONNECTIVITY, dams);
+			resultStack = inra.ijpb.watershed.Watershed.computeWatershed(imposedMinima, labelledMinima, CONNECTIVITY, dams);
 			progressBar.setValue(80);
 
 		}

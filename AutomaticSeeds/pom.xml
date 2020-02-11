@@ -196,7 +196,20 @@
 			<groupId>es.escudero</groupId>
 			<artifactId>Epigraph_</artifactId>
 			<version>1.0.2</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.smurn</groupId>
+					<artifactId>jply</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.miglayout</groupId>
+					<artifactId>miglayout</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
+		
+		<!-- CLIJ
+		https://bintray.com/haesleinhuepf/clij/ -->
 		<dependency>
 			<groupId>net.clearcontrol</groupId>
 			<artifactId>clij-clearcl</artifactId>
@@ -213,19 +226,10 @@
 			</exclusions>
 		</dependency>
 		
-		<!--Plugin to read tiff files -->
-		<dependency>
-			<groupId>com.github.jai-imageio</groupId>
-			<artifactId>jai-imageio-core</artifactId>
-			<version>1.4.0</version>
-		</dependency>
-		
-		<!-- https://bintray.com/haesleinhuepf/clij/ -->
 		<dependency>
 			<groupId>net.haesleinhuepf</groupId>
 			<artifactId>clij-core</artifactId>
 			<version>1.4.4</version>
-			<type>pom</type>
 			<exclusions>
 				<exclusion>
 					<artifactId>bridj</artifactId>
@@ -250,7 +254,31 @@
 			<groupId>net.haesleinhuepf</groupId>
 			<artifactId>clij-advanced-filters_</artifactId>
 			<version>0.20.0</version>
-			<type>pom</type>
+			<exclusions>
+				<exclusion>
+					<artifactId>bridj</artifactId>
+					<groupId>com.nativelibs4java</groupId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.nativelibs4java</groupId>
+					<artifactId>javacl</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.miglayout</groupId>
+					<artifactId>miglayout</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>au.com.bytecode</groupId>
+					<artifactId>opencsv</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		
+		<!--Plugin to read tiff files -->
+		<dependency>
+			<groupId>com.github.jai-imageio</groupId>
+			<artifactId>jai-imageio-core</artifactId>
+			<version>1.4.0</version>
 		</dependency>
 		
 		<dependency>
@@ -355,6 +383,9 @@
 										<artifactId>
 											maven-compiler-plugin
 										</artifactId>
+										<configuration>
+											<compilerArgument>-proc:none</compilerArgument>
+										</configuration>
 										<versionRange>
 											[3.7.0,)
 										</versionRange>
