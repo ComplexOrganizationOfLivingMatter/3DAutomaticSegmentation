@@ -264,47 +264,47 @@ public class quickSegmentation {
 			double toleranceWatershed) {
 		ImageStack resultStack = null;
 
-		if (gpuActivated) {
-			IJ.log("Init Watershed protocol");
-			CLIJ2 clij2 = CLIJ2.getInstance();
-			CLIJx clijx = CLIJx.getInstance();
-			CLIJ clij = CLIJ.getInstance();
-
-			//Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(strelRadius3D);
-			//ImageStack imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
-			// get input parameters
-			//ImagePlus impFilterSmall = new ImagePlus("", imgFilterSmall);
-			ImagePlus initImage = new ImagePlus("", imgFilterSmall);
-			
-			ClearCLBuffer binary_input = clij2.push(initImage);
-			ClearCLBuffer watershededImage = clij.create(binary_input);
-
-			ClearCLBuffer thresholded = clij.create(binary_input);
-			//clijx.threshold(binary_input, thresholded, 1);
-
-			net.haesleinhuepf.clijx.plugins.Watershed.watershed(clijx, thresholded, watershededImage);
-
-			ImagePlus watershededImagePlus = clijx.pull(watershededImage);
-//			watershededImagePlus.show();
-
-			ImagePlus impMin = new ImagePlus("", watershededImagePlus.getImageStack());
-			ImageConverter converter2 = new ImageConverter(impMin);
-			converter2.convertToGray16();
-			impMin.show();
-			
-			ImageStack labelledStack = BinaryImages.componentsLabeling(impMin.getImageStack(), CONNECTIVITY,
-					impMin.getBitDepth());
-				
-			//resultStack = watershededImagePlus.getImageStack();
-			resultStack = labelledStack;
-			
-//			ImagePlus resultStackToShow = new ImagePlus("", resultStack);
-//			resultStackToShow.show();
-			
-			// cleanup memory on GPU
-			clij2.release(binary_input);
-			clij2.release(watershededImage);
-		} else {
+//		if (gpuActivated) {
+//			IJ.log("Init Watershed protocol");
+//			CLIJ2 clij2 = CLIJ2.getInstance();
+//			CLIJx clijx = CLIJx.getInstance();
+//			CLIJ clij = CLIJ.getInstance();
+//
+//			//Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(strelRadius3D);
+//			//ImageStack imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
+//			// get input parameters
+//			//ImagePlus impFilterSmall = new ImagePlus("", imgFilterSmall);
+//			ImagePlus initImage = new ImagePlus("", imgFilterSmall);
+//			
+//			ClearCLBuffer binary_input = clij2.push(initImage);
+//			ClearCLBuffer watershededImage = clij.create(binary_input);
+//
+//			ClearCLBuffer thresholded = clij.create(binary_input);
+//			//clijx.threshold(binary_input, thresholded, 1);
+//
+//			net.haesleinhuepf.clijx.plugins.Watershed.watershed(clijx, thresholded, watershededImage);
+//
+//			ImagePlus watershededImagePlus = clijx.pull(watershededImage);
+////			watershededImagePlus.show();
+//
+//			ImagePlus impMin = new ImagePlus("", watershededImagePlus.getImageStack());
+//			ImageConverter converter2 = new ImageConverter(impMin);
+//			converter2.convertToGray16();
+//			impMin.show();
+//			
+//			ImageStack labelledStack = BinaryImages.componentsLabeling(impMin.getImageStack(), CONNECTIVITY,
+//					impMin.getBitDepth());
+//				
+//			//resultStack = watershededImagePlus.getImageStack();
+//			resultStack = labelledStack;
+//			
+////			ImagePlus resultStackToShow = new ImagePlus("", resultStack);
+////			resultStackToShow.show();
+//			
+//			// cleanup memory on GPU
+//			clij2.release(binary_input);
+//			clij2.release(watershededImage);
+//		} else {
 			/*************
 			 * Apply morphological gradient to input image
 			 *************/
@@ -319,6 +319,7 @@ public class quickSegmentation {
 				imgGradient = Utils.gradientCLIJ(imgFilterSmall, strelRadius3D);
 			else
 				imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
+			
 			progressBar.setValue(50);
 
 			/*************
@@ -382,7 +383,7 @@ public class quickSegmentation {
 			resultStack = inra.ijpb.watershed.Watershed.computeWatershed(imposedMinima, labelledMinima, CONNECTIVITY,
 					dams);
 			progressBar.setValue(80);
-		}
+//		}
 
 		return resultStack;
 	}

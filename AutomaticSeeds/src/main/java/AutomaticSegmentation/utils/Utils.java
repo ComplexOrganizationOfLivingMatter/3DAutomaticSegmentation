@@ -112,10 +112,10 @@ final public class Utils {
 		clij2.minimum3DSphere(binary_input, erodedImage, radiusStrel, radiusStrel, radiusStrel); //erosion
 		
 		ImagePlus dilatedImagePlus = clij2.pull(dilatedImage);
-		dilatedImagePlus.show();
+//		dilatedImagePlus.show();
 		
 		ImagePlus erodedImagePlus = clij2.pull(erodedImage);
-		erodedImagePlus.show();
+//		erodedImagePlus.show();
 		
 		ImageStack erodedStack = erodedImagePlus.getImageStack();
 		ImageStack resultStack = dilatedImagePlus.getImageStack();
