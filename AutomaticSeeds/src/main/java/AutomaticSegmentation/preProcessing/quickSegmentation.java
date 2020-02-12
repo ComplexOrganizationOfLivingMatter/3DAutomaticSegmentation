@@ -138,8 +138,8 @@ public class quickSegmentation {
 			progressBar.setValue(20 + Math.round((i / filteredImp.getStackSize()) * 10));
 		}
 
-		ImagePlus im2Show = new ImagePlus("", imgFilled);
-		im2Show.show();
+//		ImagePlus im2Show = new ImagePlus("", imgFilled);
+//		im2Show.show();
 
 		if (cancelTask.booleanValue()) {
 			return null;
@@ -150,8 +150,8 @@ public class quickSegmentation {
 		IJ.log("Small volume opening: " + pixelsToOpenVolume);
 		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, pixelsToOpenVolume);
 
-		ImagePlus im2Show2 = new ImagePlus("", imgFilterSmall);
-		im2Show2.show();
+//		ImagePlus im2Show2 = new ImagePlus("", imgFilterSmall);
+//		im2Show2.show();
 
 		if (cancelTask.booleanValue()) {
 			return null;
@@ -270,27 +270,34 @@ public class quickSegmentation {
 			CLIJ clij = CLIJ.getInstance();
 
 			// get input parameters
-			ImagePlus impFilterSmall = new ImagePlus("", imgFilterSmall);
-			ClearCLBuffer binary_input = clij2.push(impFilterSmall);
+			//ImagePlus impFilterSmall = new ImagePlus("", imgFilterSmall);
+			ImagePlus initImage = new ImagePlus("", imgFilterSmall);
+			
+			ClearCLBuffer binary_input = clij2.push(initImage);
 			ClearCLBuffer watershededImage = clij.create(binary_input);
 
 			ClearCLBuffer thresholded = clij.create(binary_input);
-			clijx.threshold(binary_input, thresholded, 120);
+			clijx.threshold(binary_input, thresholded, 1);
 
-			net.haesleinhuepf.clijx.plugins.Watershed.watershed(clijx, binary_input, watershededImage);
+			net.haesleinhuepf.clijx.plugins.Watershed.watershed(clijx, thresholded, watershededImage);
 
 			ImagePlus watershededImagePlus = clijx.pull(watershededImage);
-			watershededImagePlus.show();
+//			watershededImagePlus.show();
 
-			ImagePlus thresholdedImagePlus = clijx.pull(thresholded);
-			thresholdedImagePlus.show();
-
-			ImagePlus impMin = new ImagePlus("", imposedMinima);
+			ImagePlus impMin = new ImagePlus("", watershededImagePlus.getImageStack());
 			ImageConverter converter2 = new ImageConverter(impMin);
 			converter2.convertToGray16();
-
-			resultStack = watershededImagePlus.getStack();
-
+			impMin.show();
+			
+			ImageStack labelledStack = BinaryImages.componentsLabeling(impMin.getImageStack(), CONNECTIVITY,
+					impMin.getBitDepth());
+				
+			//resultStack = watershededImagePlus.getImageStack();
+			resultStack = labelledStack;
+			
+//			ImagePlus resultStackToShow = new ImagePlus("", resultStack);
+//			resultStackToShow.show();
+			
 			// cleanup memory on GPU
 			clij2.release(binary_input);
 			clij2.release(watershededImage);
