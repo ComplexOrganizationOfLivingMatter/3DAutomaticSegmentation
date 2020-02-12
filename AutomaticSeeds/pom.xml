@@ -213,7 +213,7 @@
 		<dependency>
 			<groupId>net.clearcontrol</groupId>
 			<artifactId>clij-clearcl</artifactId>
-			<version>0.10.3</version>
+			<version>0.10.4</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>bridj</artifactId>
@@ -229,7 +229,7 @@
 		<dependency>
 			<groupId>net.haesleinhuepf</groupId>
 			<artifactId>clij-core</artifactId>
-			<version>1.4.4</version>
+			<version>1.4.5</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>bridj</artifactId>
@@ -253,7 +253,7 @@
 		<dependency>
 			<groupId>net.haesleinhuepf</groupId>
 			<artifactId>clij-advanced-filters_</artifactId>
-			<version>0.20.0</version>
+			<version>0.21.1</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>bridj</artifactId>
