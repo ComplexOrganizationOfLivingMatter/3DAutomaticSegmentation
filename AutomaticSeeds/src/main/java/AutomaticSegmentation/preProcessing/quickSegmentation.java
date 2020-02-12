@@ -262,27 +262,38 @@ public class quickSegmentation {
 	public ImageStack watershedProcess(int BitD, boolean dams, ImageStack imgFilterSmall, int strelRadius3D,
 			double toleranceWatershed) {
 		ImageStack resultStack = null;
-		
-		if (gpuActivated){
-			 //NOT WORKING AT THIS MOMENT
-			 IJ.log("Init Watershed protocol");
-			 CLIJ2 clij2 = CLIJ2.getInstance();
-			 CLIJx clijx = CLIJx.getInstance();
-			 CLIJ clij = CLIJ.getInstance();
-			
-			 // get input parameters
-			 ImagePlus impFilterSmall = new ImagePlus("", imgFilterSmall);
-			 ClearCLBuffer binary_input = clij2.push(impFilterSmall);
-			 ClearCLBuffer watershededImage = clij.create(binary_input);
-			 
-			 net.haesleinhuepf.clijx.plugins.Watershed.watershed(clijx, binary_input, watershededImage);
-			
-			 ImagePlus watershededImagePlus = clijx.pull(watershededImage);
-			 watershededImagePlus.show();
-			
-			 // cleanup memory on GPU
-			 clij2.release(binary_input);
-			 clij2.release(watershededImage);
+
+		if (gpuActivated) {
+			IJ.log("Init Watershed protocol");
+			CLIJ2 clij2 = CLIJ2.getInstance();
+			CLIJx clijx = CLIJx.getInstance();
+			CLIJ clij = CLIJ.getInstance();
+
+			// get input parameters
+			ImagePlus impFilterSmall = new ImagePlus("", imgFilterSmall);
+			ClearCLBuffer binary_input = clij2.push(impFilterSmall);
+			ClearCLBuffer watershededImage = clij.create(binary_input);
+
+			ClearCLBuffer thresholded = clij.create(binary_input);
+			clijx.threshold(binary_input, thresholded, 120);
+
+			net.haesleinhuepf.clijx.plugins.Watershed.watershed(clijx, binary_input, watershededImage);
+
+			ImagePlus watershededImagePlus = clijx.pull(watershededImage);
+			watershededImagePlus.show();
+
+			ImagePlus thresholdedImagePlus = clijx.pull(thresholded);
+			thresholdedImagePlus.show();
+
+			ImagePlus impMin = new ImagePlus("", imposedMinima);
+			ImageConverter converter2 = new ImageConverter(impMin);
+			converter2.convertToGray16();
+
+			resultStack = watershededImagePlus.getStack();
+
+			// cleanup memory on GPU
+			clij2.release(binary_input);
+			clij2.release(watershededImage);
 		} else {
 			/*************
 			 * Apply morphological gradient to input image
@@ -357,7 +368,7 @@ public class quickSegmentation {
 					dams);
 			progressBar.setValue(80);
 		}
-		
+
 		return resultStack;
 	}
 
