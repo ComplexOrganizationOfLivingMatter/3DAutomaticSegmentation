@@ -45,9 +45,10 @@ public class quickSegmentation {
 	 * 
 	 * @param impNuclei
 	 */
-	public quickSegmentation(ImagePlus impNuclei, int minVolumePixels, JProgressBar progressBar, Boolean cancelTask, Boolean gpuActivated) {
-		
-		double minNucleiRadius = Math.cbrt(3*minVolumePixels/(4*Math.PI));
+	public quickSegmentation(ImagePlus impNuclei, int minVolumePixels, JProgressBar progressBar, Boolean cancelTask,
+			Boolean gpuActivated) {
+
+		double minNucleiRadius = Math.cbrt(3 * minVolumePixels / (4 * Math.PI));
 		System.out.println(minNucleiRadius);
 		System.out.println(minVolumePixels);
 		if (Math.round(minNucleiRadius / 5) > 2) {
@@ -113,7 +114,9 @@ public class quickSegmentation {
 		if (cancelTask.booleanValue()) {
 			return null;
 		}
-		/** ------- loop for closing, binarize and filling holes in 2D ---------- **/
+		/**
+		 * ------- loop for closing, binarize and filling holes in 2D ----------
+		 **/
 		IJ.log("Binarizing, closing and filling holes");
 		Strel shape2DOp = Strel.Shape.DISK.fromRadius(this.strelRadius2D);
 		Strel shape2DClo = Strel.Shape.DISK.fromRadius(this.strelRadius2D);
@@ -136,7 +139,7 @@ public class quickSegmentation {
 		}
 
 		ImagePlus im2Show = new ImagePlus("", imgFilled);
-		 im2Show.show();
+		im2Show.show();
 
 		if (cancelTask.booleanValue()) {
 			return null;
@@ -147,14 +150,14 @@ public class quickSegmentation {
 		IJ.log("Small volume opening: " + pixelsToOpenVolume);
 		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, pixelsToOpenVolume);
 
-		 ImagePlus im2Show2 = new ImagePlus("", imgFilterSmall);
-		 im2Show2.show();
+		ImagePlus im2Show2 = new ImagePlus("", imgFilterSmall);
+		im2Show2.show();
 
 		if (cancelTask.booleanValue()) {
 			return null;
 		}
 		progressBar.setValue(38);
-		
+
 		/** -------------- Watershed ---------------- **/
 		ImageStack resultStack = watershedProcess(BitD, dams, imgFilterSmall, strelRadius3D, toleranceWatershed);
 		if (cancelTask.booleanValue()) {
@@ -171,7 +174,7 @@ public class quickSegmentation {
 		}
 
 		progressBar.setValue(83);
-		int[] labels = LabelImages.findAllLabels(resultStack);
+		// int[] labels = LabelImages.findAllLabels(resultStack);
 		// ImagePlus im2Show4 = new ImagePlus("", resultStack);
 		// im2Show4.show();
 
@@ -179,16 +182,17 @@ public class quickSegmentation {
 			return null;
 		}
 
-		int nbLabels = labels.length;
-		// Filter using volumes 3 times smaller than the median
-		double[] volumes = IntrinsicVolumes3D.volumes(resultStack, labels,
-				new ImagePlus("", resultStack).getCalibration());
-		Arrays.sort(volumes);
-		//double thresholdVolume = (volumes[nbLabels / 2] / 3); // ??? We have a minimal radius
+		// int nbLabels = labels.length;
+		// // Filter using volumes 3 times smaller than the median
+		// double[] volumes = IntrinsicVolumes3D.volumes(resultStack, labels,
+		// new ImagePlus("", resultStack).getCalibration());
+		// Arrays.sort(volumes);
+		// double thresholdVolume = (volumes[nbLabels / 2] / 3); // ??? We have
+		// a minimal radius
 		double thresholdVolume = this.pixelsToOpenVolume;
 		progressBar.setValue(90);
 
-		/** ------------  Second volume opening ---------- **/
+		/** ------------ Second volume opening ---------- **/
 		if (cancelTask.booleanValue()) {
 			return null;
 		}
@@ -199,8 +203,11 @@ public class quickSegmentation {
 			return null;
 		}
 
-		/** -------------- Create coloured image from labels ---------------- **/
-		ImagePlus imp_segmentedFinal = nuclei3DSegmentation.createColouredImageWithLabels(imgFilterSize, inputNucleiImp.getCalibration());
+		/**
+		 * -------------- Create coloured image from labels ----------------
+		 **/
+		ImagePlus imp_segmentedFinal = nuclei3DSegmentation.createColouredImageWithLabels(imgFilterSize,
+				inputNucleiImp.getCalibration());
 
 		outputImp = imp_segmentedFinal;
 		progressBar.setValue(100);
