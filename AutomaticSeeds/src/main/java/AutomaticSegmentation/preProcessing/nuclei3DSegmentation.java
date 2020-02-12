@@ -23,7 +23,7 @@ import net.haesleinhuepf.clij.kernels.Kernels;
 
 public class nuclei3DSegmentation{
 
-	private int max_nuc_radius, min_nuc_radius, maxThresh;
+	private int max_nuc_radius, min_nuc_radius, maxThresh, min_volume_pixels;
 	private float zStep;
 	private String dir;
 	private Boolean cancelTask;
@@ -33,10 +33,11 @@ public class nuclei3DSegmentation{
 	private quickSegmentation qseg;
 		
 	public nuclei3DSegmentation(ImagePlus nucleiChannel,int max_nuc_radius, int min_nuc_radius, int maxThresh, float zStep,
-			String dir, Boolean cancelTask, JProgressBar progressBar,JCheckBox prefilteringCheckB, JCheckBox quickSegmentationCheckB, JCheckBox gpuCheckBox) {
+			String dir, Boolean cancelTask, JProgressBar progressBar,JCheckBox prefilteringCheckB, JCheckBox quickSegmentationCheckB, JCheckBox gpuCheckBox, int min_volume_pixels) {
 		super();
 		this.max_nuc_radius = max_nuc_radius;
 		this.min_nuc_radius = min_nuc_radius;
+		this.min_volume_pixels = min_volume_pixels;
 		this.maxThresh = maxThresh;
 		this.zStep = zStep;
 		this.dir = dir;
@@ -110,7 +111,7 @@ public class nuclei3DSegmentation{
 		        }
 		        
 		        progressBar.setValue(15);
-	        	qseg = new quickSegmentation(preprocessedImp,min_nuc_radius, progressBar,cancelTask);
+	        	qseg = new quickSegmentation(preprocessedImp,min_volume_pixels, progressBar,cancelTask, gpuCheckBox.isSelected());
 	        	
 	        	if (cancelTask.booleanValue()) {
 		        	IJ.log("nuclei segmentation STOPPED");

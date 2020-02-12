@@ -39,45 +39,33 @@ public class quickSegmentation {
 	private int pixelsToOpenVolume;
 	private JProgressBar progressBar;
 	private Boolean cancelTask;
+	private boolean gpuActivated;
 
 	/**
 	 * 
 	 * @param impNuclei
 	 */
-	public quickSegmentation(ImagePlus impNuclei, int minNucleiRadius, JProgressBar progressBar, Boolean cancelTask) {
+	public quickSegmentation(ImagePlus impNuclei, int minVolumePixels, JProgressBar progressBar, Boolean cancelTask, Boolean gpuActivated) {
+		
+		double minNucleiRadius = Math.cbrt(3*minVolumePixels/(4*Math.PI));
+		System.out.println(minNucleiRadius);
+		System.out.println(minVolumePixels);
 		if (Math.round(minNucleiRadius / 5) > 2) {
-			this.strelRadius2D = (int) Math.round(minNucleiRadius / 5); // /5??
-			this.strelRadius3D = (int) Math.round(minNucleiRadius / 4); // /4??
+			this.strelRadius2D = (int) Math.round(minNucleiRadius / 5);
+			this.strelRadius3D = (int) Math.round(minNucleiRadius / 4);
 		} else {
 			this.strelRadius2D = 2;
 			this.strelRadius3D = 3;
 		}
+		System.out.println(strelRadius2D);
 		// 10 is a good start point for 8-bit images, 2000 for 16-bits. Minor
 		// tolerance more divided objects with watershed
 		this.toleranceWatershed = 0;
 		this.inputNucleiImp = impNuclei;
-		this.pixelsToOpenVolume = (int) Math.round(minNucleiRadius * minNucleiRadius * Math.PI / 3);
+		this.pixelsToOpenVolume = (int) Math.round(minVolumePixels);
 		this.progressBar = progressBar;
 		this.cancelTask = cancelTask;
-	}
-
-	/**
-	 * 
-	 * @param impNuclei
-	 * @param radius2D
-	 * @param radius3D
-	 * @param tolerance
-	 * @param pixelsToOpenVolume
-	 */
-	public quickSegmentation(ImagePlus impNuclei, int radius2D, int radius3D, int tolerance, int pixelsToOpenVolume,
-			JProgressBar progressBar, Boolean cancelTask) {
-		this.strelRadius2D = radius2D;
-		this.strelRadius3D = radius3D;
-		this.toleranceWatershed = tolerance;
-		this.inputNucleiImp = impNuclei;
-		this.pixelsToOpenVolume = pixelsToOpenVolume;
-		this.progressBar = progressBar;
-		this.cancelTask = cancelTask;
+		this.gpuActivated = gpuActivated;
 	}
 
 	/**
@@ -148,7 +136,7 @@ public class quickSegmentation {
 		}
 
 		ImagePlus im2Show = new ImagePlus("", imgFilled);
-		// im2Show.show();
+		 im2Show.show();
 
 		if (cancelTask.booleanValue()) {
 			return null;
@@ -159,40 +147,14 @@ public class quickSegmentation {
 		IJ.log("Small volume opening: " + pixelsToOpenVolume);
 		ImageStack imgFilterSmall = BinaryImages.volumeOpening(imgFilled, pixelsToOpenVolume);
 
-		// ImagePlus im2Show2 = new ImagePlus("", imgFilterSmall);
-		// im2Show2.show();
+		 ImagePlus im2Show2 = new ImagePlus("", imgFilterSmall);
+		 im2Show2.show();
 
 		if (cancelTask.booleanValue()) {
 			return null;
 		}
 		progressBar.setValue(38);
-		// Watershed process //NOT WORKING AT THIS POINT
-		// IJ.log("Init Watershed protocol");
-		// /** CLIJ version **/
-		// CLIJ2 clij2 = CLIJ2.getInstance();
-		// CLIJx clijx = CLIJx.getInstance();
-		// CLIJ clij = CLIJ.getInstance();
-		//
-		// // get input parameters
-		// ImagePlus impFilterSmall = new ImagePlus("", imgFilterSmall);
-		// ClearCLBuffer binary_input = clij2.push(impFilterSmall);
-		// ClearCLBuffer thresholded = clij.create(binary_input);
-		// ClearCLBuffer watershededImage = clij.create(binary_input);
-		//
-		// clijx.threshold(binary_input, thresholded, 1);
-		//
-		// //clij2.connectedComponentsLabeling(binary_input,
-		// labeling_destination);
-		// net.haesleinhuepf.clijx.plugins.Watershed.watershed(clijx,
-		// thresholded, watershededImage);
-		//
-		// ImagePlus watershededImagePlus = clijx.pull(watershededImage);
-		// watershededImagePlus.show();
-		//
-		// // cleanup memory on GPU
-		// clij2.release(binary_input);
-		// clij2.release(watershededImage);
-		// /** end watershed CLIJ **/
+		
 		/** -------------- Watershed ---------------- **/
 		ImageStack resultStack = watershedProcess(BitD, dams, imgFilterSmall, strelRadius3D, toleranceWatershed);
 		if (cancelTask.booleanValue()) {
@@ -222,7 +184,8 @@ public class quickSegmentation {
 		double[] volumes = IntrinsicVolumes3D.volumes(resultStack, labels,
 				new ImagePlus("", resultStack).getCalibration());
 		Arrays.sort(volumes);
-		double thresholdVolume = (volumes[nbLabels / 2] / 3);
+		//double thresholdVolume = (volumes[nbLabels / 2] / 3); // ??? We have a minimal radius
+		double thresholdVolume = this.pixelsToOpenVolume;
 		progressBar.setValue(90);
 
 		/** ------------  Second volume opening ---------- **/
@@ -292,13 +255,33 @@ public class quickSegmentation {
 	public ImageStack watershedProcess(int BitD, boolean dams, ImageStack imgFilterSmall, int strelRadius3D,
 			double toleranceWatershed) {
 		ImageStack resultStack = null;
-		while (!cancelTask.booleanValue() && progressBar.getValue() != 80) {
-
+		
+		if (gpuActivated){
+			 //NOT WORKING AT THIS MOMENT
+			 IJ.log("Init Watershed protocol");
+			 CLIJ2 clij2 = CLIJ2.getInstance();
+			 CLIJx clijx = CLIJx.getInstance();
+			 CLIJ clij = CLIJ.getInstance();
+			
+			 // get input parameters
+			 ImagePlus impFilterSmall = new ImagePlus("", imgFilterSmall);
+			 ClearCLBuffer binary_input = clij2.push(impFilterSmall);
+			 ClearCLBuffer watershededImage = clij.create(binary_input);
+			 
+			 net.haesleinhuepf.clijx.plugins.Watershed.watershed(clijx, binary_input, watershededImage);
+			
+			 ImagePlus watershededImagePlus = clijx.pull(watershededImage);
+			 watershededImagePlus.show();
+			
+			 // cleanup memory on GPU
+			 clij2.release(binary_input);
+			 clij2.release(watershededImage);
+		} else {
 			/*************
 			 * Apply morphological gradient to input image
 			 *************/
 			if (cancelTask.booleanValue()) {
-				break;
+				return null;
 			}
 			IJ.log("-Gradient");
 			Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(strelRadius3D);
@@ -310,7 +293,7 @@ public class quickSegmentation {
 			 * 'tolerance' and 'conn'-connectivity
 			 *************/
 			if (cancelTask.booleanValue()) {
-				break;
+				return null;
 			}
 
 			IJ.log("-Extended Minima");
@@ -321,7 +304,7 @@ public class quickSegmentation {
 			 * impose minima on gradient image
 			 **********************/
 			if (cancelTask.booleanValue()) {
-				break;
+				return null;
 			}
 
 			IJ.log("-Impose Minima");
@@ -332,7 +315,7 @@ public class quickSegmentation {
 			 * label minima using connected components (32-bit output)
 			 **********************/
 			if (cancelTask.booleanValue()) {
-				break;
+				return null;
 			}
 
 			IJ.log("-Labelling");
@@ -359,15 +342,15 @@ public class quickSegmentation {
 			 * minima-imposed
 			 *****/
 			if (cancelTask.booleanValue()) {
-				break;
+				return null;
 			}
 
 			IJ.log("	Watershed");
 			resultStack = inra.ijpb.watershed.Watershed.computeWatershed(imposedMinima, labelledMinima, CONNECTIVITY,
 					dams);
 			progressBar.setValue(80);
-
 		}
+		
 		return resultStack;
 	}
 
