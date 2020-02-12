@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import javax.swing.JProgressBar;
 
+import AutomaticSegmentation.utils.Utils;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -269,6 +270,8 @@ public class quickSegmentation {
 			CLIJx clijx = CLIJx.getInstance();
 			CLIJ clij = CLIJ.getInstance();
 
+			//Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(strelRadius3D);
+			//ImageStack imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
 			// get input parameters
 			//ImagePlus impFilterSmall = new ImagePlus("", imgFilterSmall);
 			ImagePlus initImage = new ImagePlus("", imgFilterSmall);
@@ -277,7 +280,7 @@ public class quickSegmentation {
 			ClearCLBuffer watershededImage = clij.create(binary_input);
 
 			ClearCLBuffer thresholded = clij.create(binary_input);
-			clijx.threshold(binary_input, thresholded, 1);
+			//clijx.threshold(binary_input, thresholded, 1);
 
 			net.haesleinhuepf.clijx.plugins.Watershed.watershed(clijx, thresholded, watershededImage);
 
@@ -310,7 +313,12 @@ public class quickSegmentation {
 			}
 			IJ.log("-Gradient");
 			Strel3D shape3D = Strel3D.Shape.BALL.fromRadius(strelRadius3D);
-			ImageStack imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
+			
+			ImageStack imgGradient;
+			if (gpuActivated)
+				imgGradient = Utils.gradientCLIJ(imgFilterSmall, strelRadius3D);
+			else
+				imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
 			progressBar.setValue(50);
 
 			/*************
