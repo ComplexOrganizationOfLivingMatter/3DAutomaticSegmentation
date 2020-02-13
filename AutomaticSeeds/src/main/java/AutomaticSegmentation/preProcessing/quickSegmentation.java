@@ -329,10 +329,30 @@ public class quickSegmentation {
 			if (cancelTask.booleanValue()) {
 				return null;
 			}
-
+			
+//			ImagePlus imgGradientImagePlus = new ImagePlus("", imgGradient);
+//			imgGradientImagePlus.show();
+			
 			IJ.log("-Extended Minima");
-			ImageStack regionalMinima = MinimaAndMaxima3D.extendedMinima(imgGradient, toleranceWatershed, CONNECTIVITY);
+			ImageStack regionalMinima;
+			if (toleranceWatershed == 0) { //When tolerance is 0 it is the same as inverting the image
+				ImagePlus regionalMinimaImagePlus = new ImagePlus("", imgGradient);
+				
+				for (int numZ = 1; numZ <= regionalMinimaImagePlus.getImageStack().getSize(); numZ++) {
+					regionalMinimaImagePlus.setSlice(numZ);
+					regionalMinimaImagePlus.getProcessor().invert();
+				}
+				
+				regionalMinima = regionalMinimaImagePlus.getImageStack();
+			} else {
+				regionalMinima = MinimaAndMaxima3D.extendedMinima(imgGradient, toleranceWatershed, CONNECTIVITY);
+			}
+			
 			progressBar.setValue(60);
+			
+			ImagePlus regionalMinimaImagePlus = new ImagePlus("", regionalMinima);
+			regionalMinimaImagePlus.show();
+			
 
 			/************************
 			 * impose minima on gradient image
@@ -342,7 +362,22 @@ public class quickSegmentation {
 			}
 
 			IJ.log("-Impose Minima");
-			ImageStack imposedMinima = MinimaAndMaxima3D.imposeMinima(imgGradient, regionalMinima, CONNECTIVITY);
+			ImageStack imposedMinima;
+			if (gpuActivated) {
+				CLIJ2 clij2 = CLIJ2.getInstance();
+				CLIJ clij = CLIJ.getInstance();
+	
+				ImagePlus initImage = new ImagePlus("", imgGradient);
+				ClearCLBuffer binary_input = clij2.push(initImage);
+				ClearCLBuffer regionalMinimaClij = clij.create(binary_input);
+
+				//Do something
+				
+				ImagePlus imposeMinimaImagePlus = clij2.pull(regionalMinimaClij);
+				imposedMinima = imposeMinimaImagePlus.getImageStack();
+			} else {
+				imposedMinima = MinimaAndMaxima3D.imposeMinima(imgGradient, regionalMinima, CONNECTIVITY);
+			}
 			progressBar.setValue(68);
 
 			/************************
