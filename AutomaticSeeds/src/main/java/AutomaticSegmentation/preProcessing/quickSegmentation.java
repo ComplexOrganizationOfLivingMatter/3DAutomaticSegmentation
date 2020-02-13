@@ -18,6 +18,8 @@ import inra.ijpb.morphology.Morphology;
 import inra.ijpb.morphology.Reconstruction;
 import inra.ijpb.morphology.Strel;
 import inra.ijpb.morphology.Strel3D;
+import inra.ijpb.watershed.ExtendedMinimaWatershed;
+import inra.ijpb.watershed.Watershed;
 import net.haesleinhuepf.clij.CLIJ;
 import net.haesleinhuepf.clij.clearcl.ClearCLBuffer;
 import net.haesleinhuepf.clij2.*;
@@ -109,7 +111,8 @@ public class quickSegmentation {
 																					// "method=Li
 																					// background=black");
 		ImagePlus imp_segmented = filteredImp.duplicate();
-
+		imp_segmented.show();
+		
 		progressBar.setValue(20);
 
 		if (cancelTask.booleanValue()) {
@@ -260,7 +263,16 @@ public class quickSegmentation {
 
 	}
 
-	public ImageStack watershedProcess(int BitD, boolean dams, ImageStack imgFilterSmall, int strelRadius3D,
+	/**
+	 * Segmentation pipeline based on: https://imagej.net/MorphoLibJ
+	 * @param BitD
+	 * @param dams
+	 * @param initialImage
+	 * @param strelRadius3D
+	 * @param toleranceWatershed
+	 * @return
+	 */
+	public ImageStack watershedProcess(int BitD, boolean dams, ImageStack initialImage, int strelRadius3D,
 			double toleranceWatershed) {
 		ImageStack resultStack = null;
 
@@ -316,9 +328,9 @@ public class quickSegmentation {
 			
 			ImageStack imgGradient;
 			if (gpuActivated)
-				imgGradient = Utils.gradientCLIJ(imgFilterSmall, strelRadius3D);
+				imgGradient = Utils.gradientCLIJ(initialImage, strelRadius3D);
 			else
-				imgGradient = Morphology.gradient(imgFilterSmall, shape3D);
+				imgGradient = Morphology.gradient(initialImage, shape3D);
 			
 			progressBar.setValue(50);
 
@@ -333,90 +345,15 @@ public class quickSegmentation {
 //			ImagePlus imgGradientImagePlus = new ImagePlus("", imgGradient);
 //			imgGradientImagePlus.show();
 			
-			IJ.log("-Extended Minima");
-			ImageStack regionalMinima;
-			if (toleranceWatershed == 0) { //When tolerance is 0 it is the same as inverting the image
-				ImagePlus regionalMinimaImagePlus = new ImagePlus("", imgGradient);
-				
-				for (int numZ = 1; numZ <= regionalMinimaImagePlus.getImageStack().getSize(); numZ++) {
-					regionalMinimaImagePlus.setSlice(numZ);
-					regionalMinimaImagePlus.getProcessor().invert();
-				}
-				
-				regionalMinima = regionalMinimaImagePlus.getImageStack();
-			} else {
-				regionalMinima = MinimaAndMaxima3D.extendedMinima(imgGradient, toleranceWatershed, CONNECTIVITY);
-			}
+			ImagePlus imgGradientImagePlus = new ImagePlus("", imgGradient); 
+			ImagePlus watershededImg = ExtendedMinimaWatershed.extendedMinimaWatershed(imgGradientImagePlus, (int) 200, CONNECTIVITY);
+			watershededImg.show();
 			
-			progressBar.setValue(60);
+			ImagePlus labels = BinaryImages.componentsLabeling(imgGradientImagePlus, CONNECTIVITY, BitD);
+			ImagePlus watershededImgNoExtendedMinima = Watershed.computeWatershed(imgGradientImagePlus, labels, CONNECTIVITY);
+			watershededImgNoExtendedMinima.show();
 			
-			ImagePlus regionalMinimaImagePlus = new ImagePlus("", regionalMinima);
-			regionalMinimaImagePlus.show();
-			
-
-			/************************
-			 * impose minima on gradient image
-			 **********************/
-			if (cancelTask.booleanValue()) {
-				return null;
-			}
-
-			IJ.log("-Impose Minima");
-			ImageStack imposedMinima;
-			if (gpuActivated) {
-				CLIJ2 clij2 = CLIJ2.getInstance();
-				CLIJ clij = CLIJ.getInstance();
-	
-				ImagePlus initImage = new ImagePlus("", imgGradient);
-				ClearCLBuffer binary_input = clij2.push(initImage);
-				ClearCLBuffer regionalMinimaClij = clij.create(binary_input);
-
-				//Do something
-				
-				ImagePlus imposeMinimaImagePlus = clij2.pull(regionalMinimaClij);
-				imposedMinima = imposeMinimaImagePlus.getImageStack();
-			} else {
-				imposedMinima = MinimaAndMaxima3D.imposeMinima(imgGradient, regionalMinima, CONNECTIVITY);
-			}
-			progressBar.setValue(68);
-
-			/************************
-			 * label minima using connected components (32-bit output)
-			 **********************/
-			if (cancelTask.booleanValue()) {
-				return null;
-			}
-
-			IJ.log("-Labelling");
-
-			ImageStack labelledMinima;
-			try {
-				labelledMinima = BinaryImages.componentsLabeling(regionalMinima, CONNECTIVITY, BitD);
-			} catch (Exception e) {
-				IJ.log("-Corverting to 16-bits");
-				ImagePlus regMinip = new ImagePlus("", regionalMinima);
-				ImageConverter converter = new ImageConverter(regMinip);
-				converter.convertToGray16();
-				labelledMinima = BinaryImages.componentsLabeling(regMinip.getImageStack(), CONNECTIVITY,
-						regMinip.getBitDepth());
-				ImagePlus impMin = new ImagePlus("", imposedMinima);
-				ImageConverter converter2 = new ImageConverter(impMin);
-				converter2.convertToGray16();
-				imposedMinima = impMin.getImageStack();
-			}
-			progressBar.setValue(72);
-
-			/*****
-			 * Apply marker-based watershed using the labeled minima on the
-			 * minima-imposed
-			 *****/
-			if (cancelTask.booleanValue()) {
-				return null;
-			}
-
-			IJ.log("	Watershed");
-			resultStack = inra.ijpb.watershed.Watershed.computeWatershed(imposedMinima, labelledMinima, CONNECTIVITY,
-					dams);
+			resultStack = watershededImg.getImageStack();
 			progressBar.setValue(80);
 //		}
 

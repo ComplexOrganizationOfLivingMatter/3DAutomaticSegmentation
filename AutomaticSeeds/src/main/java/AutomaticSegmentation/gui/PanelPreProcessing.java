@@ -46,17 +46,17 @@ public class PanelPreProcessing extends JPanel {
 	 * 
 	 */
 	String dir = null;
-    int max_nuc_radius = 28,min_nuc_radius = 18, seed_threshold = 29000, min_volume_microns = 100;
-    private JCheckBox prefilteringCheckB,quickSegmentationCheckB,gpuCheckBox;
+    int max_nuc_radius = 28,min_nuc_radius = 18, seed_threshold = 29000, min_volume_microns = 100, max_volume_microns = 500;
+    private JCheckBox prefilteringCheckB, quickSegmentationCheckB, gpuCheckBox;
     public JComboBox<String> cbSegmentedImg;
-	private JLabel maxNucleusSizeLb, minNucleusSizeLb, localMaximaThresholdLb, zScaleLb;
-	private JSpinner maxNucleusSizeSpin, minNucleusSizeSpin, localMaximaThresholdSpin, zScaleSpin;
+	private JLabel localMaximaThresholdLb, zScaleLb;
+	private JSpinner localMaximaThresholdSpin, zScaleSpin;
 	public JButton btRunCancel;
 	public JButton btLoad;
 	public JButton btShowNuclei;
 	public JButton btCalculateROIs;
 	private static final long serialVersionUID = 1L;
-	private ImagePlus nucleiChannel,segmentedImp,segmentedLoadImg,auxImp;
+	private ImagePlus nucleiChannel, segmentedImp, segmentedLoadImg,auxImp;
 	private JProgressBar progressBar;
     private Thread preprocessingTask;
 	private ExecutorService exec = Executors.newCachedThreadPool();
@@ -67,6 +67,9 @@ public class PanelPreProcessing extends JPanel {
 	private JComboBox<String> cbROIShapes;
 	private JSpinner minVolumeSpin;
 	private JLabel minVolumeLb;
+	private JCheckBox overlappingNucleiCheckB;
+	private JSpinner maxVolumeSpin;
+	private JLabel maxVolumeLb;
 
 	/**
 	 * @param layout
@@ -125,12 +128,13 @@ public class PanelPreProcessing extends JPanel {
 		prefilteringCheckB.setSelected(false);
 		quickSegmentationCheckB = new JCheckBox("Quick segmentation");
 		quickSegmentationCheckB.setSelected(true);
+		overlappingNucleiCheckB = new JCheckBox("Overlapping nuclei");
+		overlappingNucleiCheckB.setSelected(true);
 		gpuCheckBox = new JCheckBox("Use GPU");
 		gpuCheckBox.setSelected(false);
-		maxNucleusSizeLb = new JLabel("Maximal nucleus radius (pixels)");
-		minNucleusSizeLb = new JLabel("Minimal nucleus radius (pixels)");
 		localMaximaThresholdLb = new JLabel("Local maxima threshold");
 		minVolumeLb = new JLabel("<html>Minimum nuclei volume (microns<sup>3</sup>)</html>");
+		maxVolumeLb = new JLabel("<html>Maximum nuclei volume (microns<sup>3</sup>)</html>");
 		zScaleLb = new JLabel("Z scale");
 		cbSegmentedImg = new JComboBox<String>();
 		cbSegmentedImg.addItem("<select labelled image>");
@@ -143,17 +147,14 @@ public class PanelPreProcessing extends JPanel {
 
 		
 		/** ------------- Spinners -------------- **/
-		maxNucleusSizeSpin = new JSpinner(new SpinnerNumberModel(max_nuc_radius, null, null, 1));
-		maxNucleusSizeSpin.setMinimumSize(new Dimension(100, 10));
-		minNucleusSizeSpin = new JSpinner(new SpinnerNumberModel(min_nuc_radius, null, null, 1));
-		minNucleusSizeSpin.setMinimumSize(new Dimension(100, 10));
 		localMaximaThresholdSpin = new JSpinner(new SpinnerNumberModel(seed_threshold, null, null, 1));
 		localMaximaThresholdSpin.setMinimumSize(new Dimension(100, 10));
 		zScaleSpin = new JSpinner(new SpinnerNumberModel(1.00, null, null, 0.01));
 		zScaleSpin.setMinimumSize(new Dimension(100, 10));
 		minVolumeSpin = new JSpinner(new SpinnerNumberModel(min_volume_microns, null, null, 1));
 		minVolumeSpin.setMinimumSize(new Dimension(100, 10));
-		
+		maxVolumeSpin = new JSpinner(new SpinnerNumberModel(max_volume_microns, null, null, 1));
+		maxVolumeSpin.setMinimumSize(new Dimension(100, 10));
 		
 		
 		progressBar = new JProgressBar(0,100);	
@@ -165,17 +166,14 @@ public class PanelPreProcessing extends JPanel {
 		this.add(btShowNuclei, "align center");
 		this.add(prefilteringCheckB,"align left");
 		this.add(quickSegmentationCheckB,"align left,wrap");
-		this.add(maxNucleusSizeSpin,"align center");
-		this.add(maxNucleusSizeLb, "align left");
-		this.add(gpuCheckBox, "align left,wrap");
-		this.add(minNucleusSizeSpin,"align center");
-		this.add(minNucleusSizeLb, "wrap,align left");
 		this.add(localMaximaThresholdSpin,"align center");
 		this.add(localMaximaThresholdLb, "wrap,align left");
 		this.add(minVolumeSpin, "align center");
-		this.add(minVolumeLb, "wrap,align left");
+		this.add(minVolumeLb, "align left");
+		this.add(gpuCheckBox, "align left,wrap");
 		this.add(zScaleSpin,"align center");
-		this.add(zScaleLb, "wrap,align left");
+		this.add(zScaleLb, "align left");
+		this.add(overlappingNucleiCheckB, "align left, wrap");
 		this.add(progressBar,"align center");
 		this.add(btRunCancel,"align left,wrap");
 		this.add(new JLabel(""),"wrap");
@@ -213,13 +211,14 @@ public class PanelPreProcessing extends JPanel {
 						final String command = e.getActionCommand();
 						
 						/**************** Run nuclei segmentation *****************/
-						if (command.equals("Run")) {	
-							int maxN = Integer.valueOf(maxNucleusSizeSpin.getValue().toString()).intValue();
-							int minN = Integer.valueOf(minNucleusSizeSpin.getValue().toString()).intValue();
 							int maxThresh = Integer.valueOf(localMaximaThresholdSpin.getValue().toString()).intValue();
+						if (command.equals("Run")) {
 							float zStep = Float.valueOf(zScaleSpin.getValue().toString()).floatValue();
 							int minVolumeMicrons = Integer.valueOf(minVolumeSpin.getValue().toString()).intValue();
 							double minVolumePixels = minVolumeMicrons / (nucleiChannel.getOriginalFileInfo().pixelWidth * nucleiChannel.getOriginalFileInfo().pixelHeight * nucleiChannel.getOriginalFileInfo().pixelDepth);
+							
+							int maxVolumeMicrons = Integer.valueOf(maxVolumeSpin.getValue().toString()).intValue();
+							double maxVolumePixels = maxVolumeMicrons / (nucleiChannel.getOriginalFileInfo().pixelWidth * nucleiChannel.getOriginalFileInfo().pixelHeight * nucleiChannel.getOriginalFileInfo().pixelDepth);
 							
 							btLoad.setEnabled(false);
 							cbSegmentedImg.setEnabled(false);
@@ -236,7 +235,7 @@ public class PanelPreProcessing extends JPanel {
 										
 										Instant start = Instant.now();
 									   
-										nuc3Dseg = new nuclei3DSegmentation(nucleiChannel,maxN,minN,maxThresh,zStep,dir,cancelTask,progressBar,prefilteringCheckB,quickSegmentationCheckB, gpuCheckBox, (int) minVolumePixels);
+										nuc3Dseg = new nuclei3DSegmentation(nucleiChannel,zStep,dir,cancelTask,progressBar,prefilteringCheckB,quickSegmentationCheckB, gpuCheckBox, (int) minVolumePixels, (int) maxVolumePixels);
 										segmentedImp = nuc3Dseg.segmentationProtocol();
 										
 										Instant finish = Instant.now();

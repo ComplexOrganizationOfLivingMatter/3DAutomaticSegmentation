@@ -23,7 +23,7 @@ import net.haesleinhuepf.clij.kernels.Kernels;
 
 public class nuclei3DSegmentation{
 
-	private int max_nuc_radius, min_nuc_radius, maxThresh, min_volume_pixels;
+	private int maxThresh, max_nuc_radius, min_nuc_radius, min_volume_pixels;
 	private float zStep;
 	private String dir;
 	private Boolean cancelTask;
@@ -32,13 +32,12 @@ public class nuclei3DSegmentation{
 	private JCheckBox prefilteringCheckB,quickSegmentationCheckB,gpuCheckBox;
 	private quickSegmentation qseg;
 		
-	public nuclei3DSegmentation(ImagePlus nucleiChannel,int max_nuc_radius, int min_nuc_radius, int maxThresh, float zStep,
-			String dir, Boolean cancelTask, JProgressBar progressBar,JCheckBox prefilteringCheckB, JCheckBox quickSegmentationCheckB, JCheckBox gpuCheckBox, int min_volume_pixels) {
+	public nuclei3DSegmentation(ImagePlus nucleiChannel, float zStep,
+			String dir, Boolean cancelTask, JProgressBar progressBar,JCheckBox prefilteringCheckB, JCheckBox quickSegmentationCheckB, JCheckBox gpuCheckBox, int min_volume_pixels, int max_volume_pixels) {
 		super();
-		this.max_nuc_radius = max_nuc_radius;
-		this.min_nuc_radius = min_nuc_radius;
+		this.max_nuc_radius =  (int) Math.cbrt(3 * max_volume_pixels / (4 * Math.PI));
+		this.min_nuc_radius = (int) Math.cbrt(3 * min_volume_pixels / (4 * Math.PI));
 		this.min_volume_pixels = min_volume_pixels;
-		this.maxThresh = maxThresh;
 		this.zStep = zStep;
 		this.dir = dir;
 		this.cancelTask = cancelTask;
